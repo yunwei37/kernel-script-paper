@@ -111,6 +111,7 @@ def main() -> int:
     perf_counter = load_json("perf_event_counter_summary.json")
     ringbuf = load_json("ringbuf_workload_summary.json")
     struct_ops = load_json("struct_ops_compat_summary.json")
+    struct_ops_repair = load_json("struct_ops_skeleton_repair_summary.json")
 
     if unit.get("returncode") != 0 or unit.get("reported_failures") != 0:
         raise SystemExit("unit tests are not clean; refusing to generate paper numbers")
@@ -142,6 +143,8 @@ def main() -> int:
         raise SystemExit("ringbuf workload benchmark did not complete successfully")
     if struct_ops.get("status") != "ok":
         raise SystemExit("struct_ops compatibility check did not complete successfully")
+    if struct_ops_repair.get("status") != "ok":
+        raise SystemExit("struct_ops skeleton repair check did not complete successfully")
 
     content = ""
     content += macro("KSCommitShort", str(env["kernelscript_git_head"])[:7])
@@ -360,6 +363,14 @@ def main() -> int:
     content += macro("KSStructOpsCLoadOK", sum(struct_ops_rows["c_libbpf"]["load_ok_samples"]))
     content += macro("KSStructOpsCAttachOK", sum(struct_ops_rows["c_libbpf"]["attach_ok_samples"]))
     content += macro("KSStructOpsCDetachOK", sum(struct_ops_rows["c_libbpf"]["detach_ok_samples"]))
+    content += macro("KSStructOpsRepairExamples", struct_ops_repair["examples"])
+    content += macro("KSStructOpsRepairLibbpfVersion", struct_ops_repair["libbpf_version"])
+    content += macro("KSStructOpsRepairSkeletonLinkSupported", yes_no(bool(struct_ops_repair["skeleton_map_link_field_supported"])))
+    content += macro("KSStructOpsRepairBaselineBuildOK", struct_ops_repair["baseline_build_ok"])
+    content += macro("KSStructOpsRepairBaselineMapLinkFailures", struct_ops_repair["baseline_map_link_failures"])
+    content += macro("KSStructOpsRepairNeeded", struct_ops_repair["repair_needed"])
+    content += macro("KSStructOpsRepairBuildOK", struct_ops_repair["repaired_build_ok"])
+    content += macro("KSStructOpsRepairRemovedAssignments", struct_ops_repair["removed_map_link_assignments"])
 
     OUT.write_text(content, encoding="utf-8")
     return 0

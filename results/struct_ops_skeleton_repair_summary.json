@@ -1,0 +1,42 @@
+{
+  "baseline_build_ok": 0,
+  "baseline_map_link_failures": 2,
+  "description": "version-aware struct_ops skeleton map-link repair for generated userspace builds",
+  "examples": 2,
+  "libbpf_version": "1.3.0",
+  "removed_map_link_assignments": 2,
+  "repair_needed": 2,
+  "repaired_build_ok": 2,
+  "rows": [
+    {
+      "baseline_build_ok": false,
+      "baseline_failure_class": "map_link_field_missing",
+      "binary": "results/build/struct_ops_skeleton_repair/struct_ops_simple/struct_ops_simple",
+      "compile_ok": true,
+      "name": "struct_ops_simple",
+      "oracle_passed": true,
+      "removed_map_link_assignments": 1,
+      "repair_action": "removed_map_link_assignments",
+      "repair_needed": true,
+      "repaired_build_ok": true,
+      "skeleton": "results/build/struct_ops_skeleton_repair/struct_ops_simple/struct_ops_simple.skel.h",
+      "source": "examples/struct_ops_simple.ks"
+    },
+    {
+      "baseline_build_ok": false,
+      "baseline_failure_class": "map_link_field_missing",
+      "binary": "results/build/struct_ops_skeleton_repair/sched_ext_simple/sched_ext_simple",
+      "compile_ok": true,
+      "name": "sched_ext_simple",
+      "oracle_passed": true,
+      "removed_map_link_assignments": 1,
+      "repair_action": "removed_map_link_assignments",
+      "repair_needed": true,
+      "repaired_build_ok": true,
+      "skeleton": "results/build/struct_ops_skeleton_repair/sched_ext_simple/sched_ext_simple.skel.h",
+      "source": "examples/sched_ext_simple.ks"
+    }
+  ],
+  "skeleton_map_link_field_supported": false,
+  "status": "ok"
+}

@@ -10,8 +10,8 @@ The artifact now has a broader 23-case static rejection corpus, local
 traffic-driven XDP and TC checks, one generated perf_event loader lifecycle
 latency check, one perf_event page-fault counter workload, and one ringbuf
 event-emission workload, direct tcp-congestion struct_ops load/attach/detach
-compatibility, and a longer XDP/TC traffic stress rerun in addition to
-BPF_PROG_TEST_RUN microbenchmarks. On
+compatibility, a version-aware struct_ops skeleton build repair, and a longer
+XDP/TC traffic stress rerun in addition to BPF_PROG_TEST_RUN microbenchmarks. On
 fresh veth/netns
 pairs with iperf3 TCP, KernelScript and hand-written C/eBPF pass/count objects
 all pass the traffic oracles. XDP count medians are 17.4Gb/s for KernelScript
@@ -25,7 +25,10 @@ and hand-written objects with exact BPF/perf counter agreement. The ringbuf
 workload reports 2.08 versus 2.14 million events/s with exact
 submitted/received agreement and zero drops. The struct_ops compatibility
 check loads, attaches, and detaches both generated and C/eBPF tcp-congestion
-objects in 3/3 privileged trials without using generated skeletons. The stress
+objects in 3/3 privileged trials without using generated skeletons. The
+struct_ops skeleton repair changes the two original generated userspace build
+failures from 0/2 to 2/2 repaired builds on this host by removing 2
+version-incompatible map-link assignments. The stress
 rerun uses three 5s iperf3 trials per XDP/TC pass/count variant; all oracles
 pass, with XDP count medians of 17.8 versus 18.1Gb/s and TC count medians of
 86.5 versus 91.1Gb/s for KernelScript and C/eBPF respectively.
@@ -44,6 +47,7 @@ pass, with XDP count medians of 17.8 versus 18.1Gb/s and TC count medians of
 | R007 | `results/ringbuf_workload_summary.json` | ok | Ringbuf event-emission objects both pass 10/10 trials; submitted and received counts match at 50000 events with zero drops. |
 | R008 | `results/struct_ops_compat_summary.json` | ok | Generated and C/eBPF tcp-congestion struct_ops objects both load, attach, and detach in 3/3 trials through one direct libbpf runner. |
 | R009 | `results/traffic_stress_summary.json` | ok | Longer 3 x 5s XDP/TC traffic stress rerun passes all oracles; XDP count gap is 2.0%, TC count gap is 5.0% in this local setup. |
+| R010 | `results/struct_ops_skeleton_repair_summary.json` | ok | Original generated struct_ops userspace builds are 0/2; after a local version-aware skeleton header repair, 2/2 generated userspace projects build. |
 
 ## Anomalies And Negative Results
 
@@ -58,11 +62,13 @@ pass, with XDP count medians of 17.8 versus 18.1Gb/s and TC count medians of
   KernelScript count trial, so the stress result supports stability/oracle
   claims more strongly than precise throughput ranking.
 - The struct_ops compatibility experiment does not exercise scheduler-extension
-  struct_ops, a TCP workload through the attached congestion-control object, or
-  generated skeleton userspace code. The perf_event counter, ringbuf, and
-  struct_ops runs are object checks through a shared libbpf runner, and the
-  generated-loader latency check is one perf_event lifecycle workload rather
-  than a broad generated-dispatch-loop throughput study.
+  struct_ops or a TCP workload through the attached congestion-control object.
+  The skeleton repair validates one local generated-userspace build fix, but it
+  does not run the generated binaries or prove portability across libbpf
+  versions. The perf_event counter, ringbuf, and direct struct_ops runs are
+  object checks through a shared libbpf runner, and the generated-loader latency
+  check is one perf_event lifecycle workload rather than a broad
+  generated-dispatch-loop throughput study.
 
 ## Figure/Table Candidates
 
@@ -86,6 +92,7 @@ pass, with XDP count medians of 17.8 versus 18.1Gb/s and TC count medians of
 - `results/perf_event_counter_summary.json`
 - `results/ringbuf_workload_summary.json`
 - `results/struct_ops_compat_summary.json`
+- `results/struct_ops_skeleton_repair_summary.json`
 - `results/traffic_stress_summary.json`
 - `results/xdp_traffic_stress_summary.json`
 - `results/tc_traffic_stress_summary.json`

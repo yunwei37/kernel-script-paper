@@ -1,6 +1,6 @@
 Last updated: 2026-06-13
 Stage at update: audit
-Source/command: manual/fallback experiment audit after `58af0cd Add longer traffic stress evidence`
+Source/command: manual/fallback experiment audit after struct_ops skeleton repair evidence
 Completeness: complete
 
 # Experiment Audit
@@ -18,9 +18,9 @@ general runtime-equivalence or production-deployment claim.
 | Check | Evidence | Result |
 |---|---|---|
 | Required result files exist | Python audit over `results/*.json` inputs used by `experiments/update_paper_numbers.py` | pass |
-| Required status fields are clean | `smoke`, `microbench`, `static`, `lowering`, `compiler_patch`, `verifier`, `attach`, `xdp_traffic`, `tc_traffic`, `traffic_stress`, `perf_event_loader`, `perf_event_counter`, `ringbuf`, and `struct_ops` summaries all report `ok` | pass |
+| Required status fields are clean | `smoke`, `microbench`, `static`, `lowering`, `compiler_patch`, `verifier`, `attach`, `xdp_traffic`, `tc_traffic`, `traffic_stress`, `perf_event_loader`, `perf_event_counter`, `ringbuf`, `struct_ops`, and `struct_ops_skeleton_repair` summaries all report `ok` | pass |
 | Example corpus present | `results/examples_summary.json` contains 44 rows | pass |
-| Paper macro coverage | Parsed `paper/kernelscript-paper.tex` and `results/paper_numbers.tex`: 192 macros defined, 148 used, 0 missing | pass |
+| Paper macro coverage | Parsed `paper/kernelscript-paper.tex` and `results/paper_numbers.tex`: all used `KS...` macros are defined | pass |
 | Paper-number reproducibility | `./experiments/update_paper_numbers.py && git diff --exit-code -- results/paper_numbers.tex` | pass |
 | Paper build | `make -C paper` | pass |
 | Repository object integrity | `git fsck --full` | pass |
@@ -49,6 +49,7 @@ The audit checked these paper-number inputs:
 - `results/perf_event_counter_summary.json`
 - `results/ringbuf_workload_summary.json`
 - `results/struct_ops_compat_summary.json`
+- `results/struct_ops_skeleton_repair_summary.json`
 
 ## Number-To-Paper Consistency
 
@@ -77,6 +78,9 @@ build completes from those macros.
   zero drops and no bad markers or return values.
 - Struct_ops compatibility results require direct libbpf load, attach, and
   detach success for generated and C/eBPF tcp-congestion objects.
+- Struct_ops skeleton repair results require the original generated userspace
+  failures to match the local map-link field mismatch and the repaired
+  generated userspace projects to build successfully.
 
 ## Metric And Normalization Review
 
@@ -91,8 +95,9 @@ paper keeps generated SLOC expansion separate from developer-effort claims.
 The paper explicitly states that it does not establish broad runtime
 equivalence, NIC-rate performance, scheduler-extension struct_ops portability,
 or full generated-dispatch-loop throughput. It also labels traffic results as
-local-host veth evidence and labels the struct_ops result as object
-compatibility rather than workload behavior.
+local-host veth evidence, labels the direct struct_ops result as object
+compatibility rather than workload behavior, and labels the skeleton repair as
+a local generated-userspace build repair rather than cross-version portability.
 
 ## Accepted Warnings
 
@@ -104,8 +109,10 @@ compatibility rather than workload behavior.
    runners, so they do not measure broader generated userspace dispatch-loop
    throughput.
 3. The struct_ops compatibility check covers tcp-congestion object
-   load/attach/detach only. It does not cover scheduler-extension struct_ops,
-   generated skeleton compatibility, or workload behavior.
+   load/attach/detach only, and the skeleton repair covers local generated
+   userspace builds only. They do not cover scheduler-extension struct_ops,
+   workload behavior, running the repaired binaries, or broad libbpf-version
+   portability.
 4. The generated-structure result is a corpus artifact result, not a
    developer-effort study against an expert C implementation.
 

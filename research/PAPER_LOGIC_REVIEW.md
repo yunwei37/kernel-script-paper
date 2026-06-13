@@ -15,7 +15,9 @@ reviewer-facing reconstructability: several abstract and conclusion claims
 omitted denominators, one struct_ops abstract sentence used the trial-count
 macro where it should use success macros, zero-drop ring-buffer language lacked
 trial and variant scope, and the methodology scattered the roles of generated
-objects, generated loaders, shared runners, baselines, and oracles.
+objects, generated loaders, shared runners, baselines, and oracles. A later
+delegated review also found stale research-state artifacts after adding the
+struct_ops skeleton repair and a methodology count mismatch.
 
 ## Must-Fix Findings Applied
 
@@ -44,6 +46,9 @@ objects, generated loaders, shared runners, baselines, and oracles.
    source lines of code, and Compile Once, Run Everywhere.
 7. Replaced the stress-run "all oracles pass" sentence with explicit iperf3 and
    map-count oracle criteria.
+8. Integrated the struct_ops skeleton repair as a local generated-userspace
+   build repair, updated research-state artifacts, and changed the methodology
+   outcome count from nine to ten.
 
 ## Remaining Accepted Limits
 
@@ -53,13 +58,16 @@ objects, generated loaders, shared runners, baselines, and oracles.
   latency distribution, but perf-event counter and ring-buffer workloads use
   shared libbpf runners, so they do not measure broader generated userspace
   dispatch-loop throughput.
-- Struct_ops evidence covers tcp-congestion object load/attach/detach, not a TCP
-  workload, scheduler-extension struct_ops, or generated-skeleton portability.
+- Struct_ops evidence covers tcp-congestion object load/attach/detach and a
+  local generated-userspace skeleton build repair, not a TCP workload,
+  scheduler-extension struct_ops, running repaired generated binaries, or broad
+  libbpf-version portability.
 - Generated-structure evidence is a corpus artifact result, not a developer
   effort study against expert-written C/libbpf.
 
 ## Follow-Up Gate
 
 The next scientific-strength gate is additional evidence rather than prose:
-broader generated-dispatch-loop throughput, scheduler-extension struct_ops, version-aware
-skeleton handling, or non-local deployment/longer-duration workload evidence.
+broader generated-dispatch-loop throughput, scheduler-extension struct_ops,
+upstream-integrated skeleton generation across libbpf versions, or non-local
+deployment/longer-duration workload evidence.

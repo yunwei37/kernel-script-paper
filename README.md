@@ -29,6 +29,8 @@ evaluation scripts, generated results, and a paper draft.
   workload against a hand-written C/eBPF baseline.
 - `experiments/run_struct_ops_compat.py`: direct struct_ops load/attach/detach
   compatibility check against a hand-written C/eBPF baseline.
+- `experiments/run_struct_ops_skeleton_repair.py`: version-aware generated
+  struct_ops skeleton build repair for local libbpf header mismatches.
 - `experiments/run_compiler_patch_ablation.py`: applies a tracked
   compiler-source patch for array-map increment lowering and reruns the XDP
   count benchmark.
@@ -142,6 +144,12 @@ Run the optional struct_ops compatibility check, which also requires
 ./experiments/run_struct_ops_compat.py
 ```
 
+Run the optional struct_ops skeleton repair check:
+
+```bash
+./experiments/run_struct_ops_skeleton_repair.py
+```
+
 Run the compiler-patch lowering ablation, which also requires `sudo -n`:
 
 ```bash
@@ -182,6 +190,10 @@ The current run evaluates KernelScript commit `ccb15b4` on Linux
   stack usage against the 512-byte eBPF limit.
 - Compatibility limit: two struct_ops examples build eBPF objects but fail when
   compiling generated skeleton userspace code against libbpf 1.3.0.
+- Struct_ops skeleton repair: on this host, original generated userspace builds
+  succeed for 0 of 2 affected struct_ops examples; after removing 2
+  version-incompatible map-link assignments from the generated skeleton headers,
+  2 of 2 generated userspace projects build.
 - Smoke test: `smoke_lo` attaches and detaches an XDP pass program on `lo`.
 - Microbenchmarks: XDP pass has the same median as C/eBPF in this harness
   at 5ns average runtime and 2 instructions. XDP array-map count is 13ns and 21
@@ -218,8 +230,13 @@ The current run evaluates KernelScript commit `ccb15b4` on Linux
 - Struct_ops compatibility: over three privileged trials, one direct libbpf
   runner loads, attaches, and detaches both the generated tcp-congestion
   struct_ops object and a minimal C/eBPF object with the same function set. The
-  generated skeleton build still fails because bpftool v7.7 skeletons require
-  map-link fields absent from libbpf-dev 1.3.0.
+  unmodified generated skeleton build still fails because bpftool v7.7
+  skeletons require map-link fields absent from libbpf-dev 1.3.0.
+- Struct_ops skeleton repair: `run_struct_ops_skeleton_repair.py` detects that
+  libbpf-dev 1.3.0 lacks skeleton map-link field support, removes one generated
+  map-link assignment from each affected skeleton header, and rebuilds both
+  generated userspace projects successfully. This is a local build repair, not
+  a scheduler workload or cross-version portability claim.
 - Compiler-patch lowering ablation: applying
   `experiments/patches/kernelscript-map-increment-lowering.patch` to a copied
   KernelScript compiler tree reduces the count object from 21 to 11
