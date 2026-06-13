@@ -89,6 +89,7 @@ def main() -> int:
     tc_traffic = load_json("tc_traffic_summary.json")
     perf_loader = load_json("perf_event_loader_summary.json")
     perf_counter = load_json("perf_event_counter_summary.json")
+    ringbuf = load_json("ringbuf_workload_summary.json")
 
     if unit.get("returncode") != 0 or unit.get("reported_failures") != 0:
         raise SystemExit("unit tests are not clean; refusing to generate paper numbers")
@@ -114,6 +115,8 @@ def main() -> int:
         raise SystemExit("perf_event generated-loader smoke test did not complete successfully")
     if perf_counter.get("status") != "ok":
         raise SystemExit("perf_event counter benchmark did not complete successfully")
+    if ringbuf.get("status") != "ok":
+        raise SystemExit("ringbuf workload benchmark did not complete successfully")
 
     content = ""
     content += macro("KSCommitShort", str(env["kernelscript_git_head"])[:7])
@@ -270,6 +273,22 @@ def main() -> int:
     content += macro("KSPerfCounterCMps", mps_range(perf_counter_rows["c_libbpf"]))
     content += macro("KSPerfCounterRatio", f"{perf_counter_comparison['ks_over_c_ratio']:.2f}x")
     content += macro("KSPerfCounterOverheadPct", f"{perf_counter_comparison['overhead_pct']:.1f}\\%")
+
+    ringbuf_rows = {row["name"]: row for row in ringbuf["rows"]}
+    ringbuf_comparison = ringbuf["comparison"]
+    content += macro("KSRingbufTrials", ringbuf["trials"])
+    content += macro("KSRingbufEvents", ringbuf["target_events"])
+    content += macro("KSRingbufPollEvery", ringbuf["poll_every"])
+    content += macro("KSRingbufKsSubmitted", integer(ringbuf_rows["ks_generated"]["median_submitted"]))
+    content += macro("KSRingbufKsReceived", integer(ringbuf_rows["ks_generated"]["median_received"]))
+    content += macro("KSRingbufKsDropped", integer(ringbuf_rows["ks_generated"]["median_dropped"]))
+    content += macro("KSRingbufCSubmitted", integer(ringbuf_rows["c_libbpf"]["median_submitted"]))
+    content += macro("KSRingbufCReceived", integer(ringbuf_rows["c_libbpf"]["median_received"]))
+    content += macro("KSRingbufCDropped", integer(ringbuf_rows["c_libbpf"]["median_dropped"]))
+    content += macro("KSRingbufKsMps", mps_range(ringbuf_rows["ks_generated"]))
+    content += macro("KSRingbufCMps", mps_range(ringbuf_rows["c_libbpf"]))
+    content += macro("KSRingbufRatio", f"{ringbuf_comparison['ks_over_c_ratio']:.2f}x")
+    content += macro("KSRingbufOverheadPct", f"{ringbuf_comparison['overhead_pct']:.1f}\\%")
 
     OUT.write_text(content, encoding="utf-8")
     return 0

@@ -8,8 +8,8 @@ The artifact is stronger after adding strict verifier-load accounting, the
 isolated XDP attach matrix, local XDP and TC traffic benchmarks, and one
 generated perf_event loader lifecycle smoke test plus a perf_event page-fault
 counter workload, but it is not yet a top-systems weak accept. The main
-remaining gap is representative runtime evidence across ringbuf/struct_ops
-workloads, generated-loader throughput, and stronger traffic/stress methodology.
+remaining gap is representative runtime evidence across struct_ops workloads,
+generated-loader throughput, and stronger traffic/stress methodology.
 
 ## Completed In This Iteration
 
@@ -30,14 +30,18 @@ workloads, generated-loader throughput, and stronger traffic/stress methodology.
 - Added `experiments/run_perf_event_counter.py`, which compares generated and
   hand-written perf_event page-fault counter objects under a shared libbpf
   runner and requires BPF map counts to match perf counter reads.
+- Added `experiments/run_ringbuf_workload.py`, which compares generated and
+  hand-written XDP ringbuf event-emission objects under a shared libbpf runner
+  and requires submitted events to equal received events with zero drops.
 - Updated the paper-number generator, paper, README, and research plan so the
   new verifier, attach, XDP traffic, TC traffic, perf_event loader, and
-  perf_event counter results are generated from checked-in JSON summaries.
+  perf_event counter/ringbuf results are generated from checked-in JSON
+  summaries.
 
 ## Remaining Experiments For Weak-Accept Bar
 
-1. Sustained matched C/libbpf runtime baselines for ringbuf and struct_ops
-   programs, plus broader perf_event event types.
+1. Sustained matched C/libbpf runtime baselines for struct_ops programs, plus
+   broader perf_event event types and generated-loader throughput.
 2. Longer XDP and TC stress runs using isolated network
    namespaces, `xdp-bench`, `pktgen`, or a controlled packet generator.
 3. Packet-behavior checks for the XDP attach-matrix objects, not only

@@ -23,6 +23,8 @@ evaluation scripts, generated results, and a paper draft.
   check against a hand-written C/libbpf loader baseline.
 - `experiments/run_perf_event_counter.py`: perf_event page-fault map-counter
   workload against a hand-written C/eBPF baseline.
+- `experiments/run_ringbuf_workload.py`: XDP ring-buffer event-emission
+  workload against a hand-written C/eBPF baseline.
 - `experiments/run_compiler_patch_ablation.py`: applies a tracked
   compiler-source patch for array-map increment lowering and reruns the XDP
   count benchmark.
@@ -115,6 +117,13 @@ Run the optional perf_event page-fault counter workload, which also requires
 ./experiments/run_perf_event_counter.py
 ```
 
+Run the optional ring-buffer event-emission workload, which also requires
+`sudo -n`:
+
+```bash
+./experiments/run_ringbuf_workload.py
+```
+
 Run the compiler-patch lowering ablation, which also requires `sudo -n`:
 
 ```bash
@@ -177,6 +186,10 @@ The current run evaluates KernelScript commit `ccb15b4` on Linux
 - Perf_event page-fault counter workload: over ten privileged trials, both
   KernelScript and C/eBPF objects report median 262147 BPF map updates matching
   perf counter reads. Median event rates are 1.13 and 1.13 million events/s,
+  respectively.
+- Ring-buffer event-emission workload: over ten privileged trials, both
+  KernelScript and C/eBPF objects submit and receive 50000 events per trial with
+  zero drops. Median event rates are 2.08 and 2.14 million events/s,
   respectively.
 - Compiler-patch lowering ablation: applying
   `experiments/patches/kernelscript-map-increment-lowering.patch` to a copied

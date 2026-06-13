@@ -31,41 +31,38 @@
 \date{}
 
 \begin{document}
-\maketitle
-\vspace{-1.4em}
-
-\begin{abstract}
-eBPF has become a standard mechanism for extending Linux kernel behavior in
-networking, observability, and security.  Yet realistic eBPF applications are
-not single programs: developers coordinate verifier-constrained kernel code,
-userspace loaders, shared maps, generated skeletons, and sometimes kernel
-module code for kfuncs.  This paper studies \tool, a beta domain-specific
-language that explores whether these pieces can be represented in one
-type-checked source model and lowered to conventional libbpf-compatible
-artifacts.  We present a design analysis of \tool's unified programming model,
-then evaluate the public implementation at commit \KSCommitShort.  On our
-test host, \tool's own test suite reports \KSTotalUnitSuites{} successful
-suites and \KSTotalUnitTests{} passing tests.  Of \KSTotalExamples{} repository
-examples, \KSKSCompileOK{} compile from \tool{} source and \KSMakeOK{} build
-into generated C/eBPF projects.  A verifier-load matrix then loads
-\KSVerifierBuildLoadOK{} of those build-success eBPF objects with bpftool, and
-an isolated XDP attach matrix attaches and detaches \KSAttachOK{} of
-\KSAttachEligible{} verifier-clean single-section XDP objects.
-Successful examples have median \KSMedianKSSloc{} lines of \tool{} source and median \KSMedianGeneratedSloc{}
-lines of generated C and build logic, an \KSMedianGeneratedRatio{} expansion
-factor.  The results show that the compiler centralizes recurring project
-structure while exposing remaining compatibility limits in struct\_ops
-skeleton generation, ref-counted object ownership, and kernel-BTF-dependent
-symbols.  An experimental compiler-source patch for one map-update lowering
-choice closes the count microbenchmark gap with hand-written C/eBPF in this
-harness.  Local veth/TCP traffic runs cover both XDP and TC ingress count
-programs.  The TC count run reports \KSTCTrafficKsCountGbps{} Gb/s for generated
-code versus \KSTCTrafficCCountGbps{} Gb/s for hand-written C/eBPF.  A separate
-perf-event generated-loader smoke test completes \KSPerfLoaderTrials{} runs
-against a hand-written C/libbpf loader baseline, and a perf-event page-fault
-counter workload reports \KSPerfCounterKsMps{} and \KSPerfCounterCMps{} million
-events/s for generated and C/eBPF objects.
-\end{abstract}
+\twocolumn[
+\begin{center}
+\vspace{-1.0em}
+{\LARGE\bfseries \tool: Exploring a Typed Unified-Source Programming Model for eBPF\par}
+\vspace{0.6em}
+{\large Anonymous Authors\par}
+\vspace{0.7em}
+\begin{minipage}{0.92\textwidth}
+\small
+\noindent\textbf{Abstract.}
+Realistic eBPF applications span verifier-constrained kernel programs,
+userspace loaders, shared maps, skeletons, and sometimes kernel-module code.
+This paper studies \tool, a beta DSL that explores whether these pieces can be
+represented in one type-checked source model and lowered to conventional
+libbpf-compatible artifacts.  At commit \KSCommitShort{}, \KSKSCompileOK{} of
+\KSTotalExamples{} repository examples compile from \tool{} source,
+\KSMakeOK{} build into generated C/eBPF projects, \KSVerifierBuildLoadOK{} of
+the build-success objects verifier-load under a strict pinned-program
+criterion, and \KSAttachOK{} of \KSAttachEligible{} verifier-clean
+single-section XDP objects attach and detach in isolated namespaces.  Matched
+local workloads cover XDP and TC traffic, perf-event counters, and ring-buffer
+event emission; the ring-buffer workload submits and receives
+\KSRingbufEvents{} events per trial with zero drops and reports
+\KSRingbufKsMps{} versus \KSRingbufCMps{} million events/s for generated and
+C/eBPF objects.  The results support an artifact/prototype claim:
+\tool{} centralizes recurring project structure for this repository corpus and
+exposes concrete compatibility limits, but it does not yet establish broad
+runtime equivalence or struct\_ops portability.
+\end{minipage}
+\vspace{1.0em}
+\end{center}
+]
 
 \section{Introduction}
 
@@ -130,9 +127,13 @@ cross-boundary invariants, including program-handle use, perf-event context
 signatures, and stack-limit violations before load or attach time.  Third, it
 implements a reproducible artifact evaluation of test coverage, example
 buildability, generated-code expansion, example marker coverage, static
-rejection cases, an isolated XDP attach matrix, an attach/detach smoke test,
-XDP microbenchmarks, and a compiler-source patch that isolates one map-update
-lowering mechanism.  The
+rejection cases, strict verifier loading, isolated XDP attachment, matched XDP
+and TC traffic runs, perf-event loader and counter workloads, a ring-buffer
+event-emission workload, and a compiler-source patch that isolates one
+map-update lowering mechanism.  The scientific contribution is not a new BPF
+verifier or a broad performance-equivalence result; it is an executable case
+study of which cross-boundary eBPF invariants a unified source model can expose
+and which compatibility limits still leak through the Linux BPF toolchain.  The
 artifact is designed so that a
 reviewer can rerun the evaluation without changing the \tool{} source tree:
 all scripts, logs, derived tables, and paper macros are stored outside the
@@ -273,24 +274,26 @@ test rather than a throughput benchmark.  Instead, we
 focus on reproducible evidence that
 repository examples exercise multiple eBPF domains, selected errors are
 rejected early, generated artifacts are classified by build and verifier-load
-outcomes against the local toolchain, and one observed runtime gap can be
-traced to a concrete lowering rule.
+outcomes against the local toolchain, matched local workloads cover several
+program classes, and one observed runtime gap can be traced to a concrete
+lowering rule.
 
 The evaluation runs on Linux \KSKernelVersion{} using clang 18, bpftool 7.7,
 libbpf 1.3.0, OCaml 4.14, and dune 3.14.  The host CPU is a
 \KSCPUModel{} with \KSCPUCount{} CPUs, CPU0 governor \KSCPUGovernor{}, turbo
 \KSTurboState{}, and virtualization reported as \KSVirtualization{}.  The
-microbenchmarks do not pin CPUs or change the governor, so their nanosecond
-values should be read as local BPF\_PROG\_TEST\_RUN comparisons rather than
-packet-rate performance claims.  The evaluated commit is \KSCommitShort{}.
-The artifact contains twelve measurement scripts under
+microbenchmarks and object workloads do not pin CPUs or change the governor, so
+their nanosecond and event-rate values should be read as local comparisons
+rather than general performance claims.  The evaluated commit is
+\KSCommitShort{}.  The artifact contains thirteen measurement scripts under
 \texttt{experiments/}.  They cover compiler tests and example builds,
 static-check cases, strict verifier loading, isolated XDP attach/detach, XDP and
 TC traffic over fresh veth/netns pairs, perf-event loader and counter workloads,
-and two map-update lowering ablations.  The traffic scripts compare generated
-objects with matched hand-written C/eBPF baselines.  The perf-event counter
-script uses one libbpf runner for both objects and checks BPF map counts against
-perf counter reads.  The main mechanism-isolation script copies the \tool{}
+ring-buffer event emission, and two map-update lowering ablations.  The traffic
+scripts compare generated objects with matched hand-written C/eBPF baselines.
+The perf-event counter and ring-buffer scripts use one libbpf runner for both
+objects and check BPF map counts or submitted/received event counts.  The main
+mechanism-isolation script copies the \tool{}
 compiler source, applies a tracked compiler-source patch for array-map
 increment lowering, rebuilds the patched compiler, and reruns the same count
 benchmark.
@@ -309,12 +312,30 @@ compared to generated C and Makefile lines.  \textbf{Compatibility} is measured
 by generated build successes, failures, verifier-load outcomes, and isolated
 XDP attach/detach outcomes against the local kernel toolchain.
 \textbf{Mechanism isolation} is measured by the map-update lowering ablation.
-\textbf{Traffic-driven runtime sanity} is measured by iperf3 over veth/netns
-for matched XDP and TC pass/count objects and by a perf-event page-fault
-counter workload.  \textbf{Generated-loader lifecycle}
+\textbf{Runtime sanity} is measured by iperf3 over veth/netns for matched XDP
+and TC pass/count objects, by a perf-event page-fault counter workload, and by
+a ring-buffer event-emission workload with a submitted/received/drop oracle.
+\textbf{Generated-loader lifecycle}
 is measured by a perf-event loader smoke test that requires successful
 load/attach, positive page-fault counter reads, and clean detach for generated
 and hand-written loaders.
+
+\begin{table}[t]
+\centering
+\caption{Claim scope used in the evaluation.}
+\label{tab:claimscope}
+\scriptsize
+\begin{tabular}{@{}p{0.19\columnwidth}p{0.35\columnwidth}p{0.28\columnwidth}@{}}
+\toprule
+Claim & Evidence & Boundary \\
+\midrule
+Project generation & Example builds, feature markers, generated SLOC & Repository corpus only \\
+Early checks & Unit tests and static rejection cases & Selected cases, not soundness \\
+Compatibility & Verifier-load, XDP attach, perf loader & Local kernel/toolchain \\
+Runtime sanity & XDP/TC traffic, perf counter, ringbuf & Local workloads, no struct\_ops \\
+\bottomrule
+\end{tabular}
+\end{table}
 
 The harness treats generated data as first-class evidence.  It writes raw
 stdout and stderr logs for every compiler and make invocation, CSV rows for
@@ -558,6 +579,21 @@ C/eBPF object reaches \KSPerfCounterCMps{} million events/s, a
 \KSPerfCounterOverheadPct{} local gap.  These results are lifecycle and
 page-fault counter evidence, not a broad perf-event throughput study.
 
+\textbf{Ring-buffer event workload.}  To exercise an event-delivery path that
+uses ref-counted ring-buffer records, \texttt{run\_ringbuf\_workload.py}
+compiles matched XDP objects that reserve a ring-buffer record, write a marker,
+submit the record, and increment submitted/drop counters.  One libbpf runner
+executes each object through BPF\_PROG\_TEST\_RUN, consumes the ring buffer, and
+requires submitted events to equal received events with zero drops, bad
+markers, bad return values, or runner errors.  Over \KSRingbufTrials{} trials
+of \KSRingbufEvents{} events, both variants report
+\KSRingbufKsSubmitted{} submitted and \KSRingbufKsReceived{} received events
+with \KSRingbufKsDropped{} drops.  The generated object reaches
+\KSRingbufKsMps{} million events/s, while the C/eBPF object reaches
+\KSRingbufCMps{} million events/s, a \KSRingbufOverheadPct{} local gap.  This
+is object-level ring-buffer evidence; it does not measure generated userspace
+dispatch-loop throughput.
+
 \textbf{Generated code size.}  Among successful repository examples where
 disassembly is available, the median generated eBPF object contains
 \KSMedianInstructions{} instructions.  Small examples compile to tiny programs,
@@ -588,9 +624,10 @@ minimal pass program has no measurable BPF\_PROG\_TEST\_RUN overhead in this
 harness and that the map-update gap is caused by a specific lowering choice,
 not by the unified source model alone.  The
 compiler-source patch result strengthens that mechanism claim.  The XDP attach
-matrix plus XDP, TC, and perf-event runs strengthen the deployment evidence
-across three program classes, but the artifact still does not establish broad
-runtime equivalence with hand-written C/libbpf.
+matrix plus XDP, TC, perf-event, and ring-buffer runs strengthen the local
+deployment and object-workload evidence across four program classes, but the
+artifact still does not establish broad runtime equivalence with hand-written
+C/libbpf.
 
 The struct\_ops failures are instructive.  A DSL can hide coordination code, but it
 cannot hide all ABI and API drift.  When bpftool-generated skeletons and
@@ -649,12 +686,12 @@ XDP objects by installing and removing them on isolated veth devices, and the
 traffic benchmarks send TCP through matched XDP and TC pass/count programs.
 The generated perf-event smoke test adds one repository-example loader that
 opens perf events, attaches BPF programs, reads counters, and detaches cleanly.
-The perf-event counter benchmark adds a sustained page-fault workload, but it
-uses a shared libbpf runner and therefore does not measure generated-loader
-throughput.
+The perf-event counter and ring-buffer benchmarks add sustained object
+workloads, but they use a shared libbpf runner and therefore do not measure
+generated-loader or generated-dispatch-loop throughput.
 However, the traffic runs are local-host veth evidence, not NIC-rate
-performance, and the generated-loader evidence still does not cover ring
-buffers or struct\_ops.  A complete
+performance, and the generated-loader evidence still does not cover
+struct\_ops.  A complete
 deployment study would run each example in a VM with known kernel configuration,
 representative workloads, and explicit cleanup checks after detach.
 
@@ -696,8 +733,9 @@ objects, attaches and detaches \KSAttachOK{} verifier-clean single-section XDP
 objects in isolated namespaces, runs matched XDP and TC traffic baselines,
 rejects an eBPF stack-limit violation before C generation, runs a minimal XDP
 attach/detach smoke test, runs a generated perf-event loader through attach,
-counter-read, and detach checks, and exercises a sustained perf-event page-fault
-counter workload.  The median successful
+counter-read, and detach checks, exercises a sustained perf-event page-fault
+counter workload, and delivers \KSRingbufEvents{} ring-buffer events per trial
+with zero drops in a matched object workload.  The median successful
 example expands from \KSMedianKSSloc{} lines of \tool{} to
 \KSMedianGeneratedSloc{} lines of generated C and build logic, giving concrete
 evidence that the model centralizes recurring project structure.  The remaining gaps
