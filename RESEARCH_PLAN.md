@@ -56,9 +56,11 @@ event-emission workload with submitted/received/drop oracles.
 `experiments/run_struct_ops_compat.py` adds a direct libbpf load/attach/detach
 check for the generated tcp-congestion struct_ops object and a hand-written
 C/eBPF object with the same minimal function set, without relying on generated
-skeleton code. `experiments/run_struct_ops_skeleton_repair.py` rebuilds the two
-generated struct_ops userspace projects before and after a version-aware
-generated-skeleton repair for the local libbpf map-link mismatch.
+skeleton code. `experiments/run_struct_ops_workload.py` adds a loopback TCP
+socket workload that selects the registered BPF congestion-control algorithm,
+transfers a fixed byte count, and detaches. `experiments/run_struct_ops_skeleton_repair.py`
+rebuilds the two generated struct_ops userspace projects before and after a
+version-aware generated-skeleton repair for the local libbpf map-link mismatch.
 
 RQ6. Is the XDP map-update gap caused by the unified source model or by a
 specific lowering choice?
@@ -215,7 +217,19 @@ one libbpf runner.
    - Writes `results/struct_ops_compat_summary.csv` and
      `results/struct_ops_compat_summary.json`.
 
-15. `experiments/run_struct_ops_skeleton_repair.py`
+15. `experiments/run_struct_ops_workload.py`
+   - Compiles the same generated and hand-written tcp-congestion struct_ops
+     objects as the direct compatibility check.
+   - Uses one libbpf runner to load and attach each object.
+   - Creates a loopback TCP client/server pair, selects the registered BPF
+     algorithm with `TCP_CONGESTION` on the sender socket, and transfers a fixed
+     byte count.
+   - Requires algorithm selection, full byte transfer, successful client exit,
+     and detach in every trial.
+   - Writes `results/struct_ops_workload_summary.csv` and
+     `results/struct_ops_workload_summary.json`.
+
+16. `experiments/run_struct_ops_skeleton_repair.py`
    - Compiles `kernelscript/examples/struct_ops_simple.ks` and
      `kernelscript/examples/sched_ext_simple.ks` into generated projects.
    - Records the original generated userspace build status and classifies the
@@ -227,7 +241,7 @@ one libbpf runner.
    - Writes `results/struct_ops_skeleton_repair_summary.csv` and
      `results/struct_ops_skeleton_repair_summary.json`.
 
-16. `experiments/run_lowering_ablation.py`
+17. `experiments/run_lowering_ablation.py`
    - Compiles the KernelScript XDP count benchmark.
    - Copies the generated project and patches the map update lowering from
      lookup plus update helper to in-place atomic add.
@@ -238,12 +252,12 @@ one libbpf runner.
    - Writes `results/lowering_ablation_summary.csv` and
      `results/lowering_ablation_summary.json`.
 
-17. `experiments/update_paper_numbers.py`
+18. `experiments/update_paper_numbers.py`
    - Checks that unit tests, static checks, smoke test, microbenchmarks, and
      XDP traffic, TC traffic, traffic stress, perf_event loader lifecycle,
      perf_event counter, ringbuf workload, struct_ops compatibility, struct_ops
-     skeleton repair, verifier matrix, attach matrix, and both lowering
-     ablations have successful summaries.
+     workload, struct_ops skeleton repair, verifier matrix, attach matrix, and
+     both lowering ablations have successful summaries.
    - Writes `results/paper_numbers.tex` for the LaTeX paper.
 
 ## Current Results
@@ -272,6 +286,9 @@ At commit `ccb15b4`, on Linux `6.15.11-061511-generic`:
   the generated tcp-congestion object and a minimal C/eBPF object in 3 of 3
   privileged trials, separating object compatibility from the generated
   skeleton/header mismatch on this host.
+- The struct_ops TCP workload check selects the generated and C/eBPF BPF
+  congestion-control algorithms on loopback sender sockets, transfers 1MiB, and
+  detaches successfully in 10 of 10 privileged trials for both variants.
 - The struct_ops skeleton repair check confirms the original generated
   userspace builds fail for 0 of 2 affected examples, removes 2 local
   version-incompatible map-link assignments from generated skeleton headers,
@@ -320,7 +337,8 @@ BPF_PROG_TEST_RUN microbenchmarks, local veth/TCP traffic benchmarks for XDP and
 TC, one longer local XDP/TC traffic stress rerun, one generated perf_event
 loader lifecycle latency test, a perf_event page-fault map-counter workload, a
 ring-buffer event-emission workload, one direct struct_ops compatibility check,
-and one local struct_ops skeleton build repair.
+one loopback struct_ops TCP workload, and one local struct_ops skeleton build
+repair.
 The attach matrix confirms that verifier-clean single-section XDP objects can
 be installed and removed on isolated veth devices, and the traffic benchmark
 checks matched XDP and TC pass/count objects under real TCP traffic. The
@@ -328,11 +346,13 @@ stress rerun extends that check to three 5s trials per variant while retaining
 the same oracles. The perf_event lifecycle test checks one generated
 repository-example loader against a matched C/libbpf loader, the counter
 workload checks one sustained page-fault event path, and the ring-buffer
-workload checks object-level event delivery and loss. The struct_ops repair
+workload checks object-level event delivery and loss. The struct_ops TCP
+workload checks socket-level algorithm selection and byte transfer; the repair
 checks one local generated userspace build fix but does not run the repaired
 binaries. The evaluation still does not validate NIC-rate throughput,
-struct_ops runtime behavior, broader skeleton version coverage, broader
-perf_event workloads, or generated-loader throughput.
+scheduler-extension struct_ops behavior, callback-level TCP coverage, broader
+skeleton version coverage, broader perf_event workloads, or generated-loader
+throughput.
 A full runtime comparison should add matched hand-written C/libbpf baselines
 for struct_ops programs, upstream-integrated skeleton generation across libbpf
 versions, broader perf_event workloads, and larger or non-local XDP/TC stress
@@ -345,5 +365,6 @@ structured map values. The current artifact is still useful as a systems
 prototype study because it grounds claims about example marker coverage,
 generated structure, compatibility, attachability for an XDP subset,
 small-program runtime overhead, local XDP/TC traffic behavior, ring-buffer
-event delivery, local struct_ops skeleton repair, and one concrete lowering
-optimization in reproducible evidence.
+event delivery, local tcp-congestion struct_ops workload behavior, local
+struct_ops skeleton repair, and one concrete lowering optimization in
+reproducible evidence.

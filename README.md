@@ -29,6 +29,8 @@ evaluation scripts, generated results, and a paper draft.
   workload against a hand-written C/eBPF baseline.
 - `experiments/run_struct_ops_compat.py`: direct struct_ops load/attach/detach
   compatibility check against a hand-written C/eBPF baseline.
+- `experiments/run_struct_ops_workload.py`: loopback TCP workload using selected
+  BPF tcp-congestion struct_ops algorithms.
 - `experiments/run_struct_ops_skeleton_repair.py`: version-aware generated
   struct_ops skeleton build repair for local libbpf header mismatches.
 - `experiments/run_compiler_patch_ablation.py`: applies a tracked
@@ -144,6 +146,12 @@ Run the optional struct_ops compatibility check, which also requires
 ./experiments/run_struct_ops_compat.py
 ```
 
+Run the optional struct_ops TCP workload check, which also requires `sudo -n`:
+
+```bash
+./experiments/run_struct_ops_workload.py
+```
+
 Run the optional struct_ops skeleton repair check:
 
 ```bash
@@ -194,6 +202,10 @@ The current run evaluates KernelScript commit `ccb15b4` on Linux
   succeed for 0 of 2 affected struct_ops examples; after removing 2
   version-incompatible map-link assignments from the generated skeleton headers,
   2 of 2 generated userspace projects build.
+- Struct_ops TCP workload: over ten privileged trials, both the generated
+  tcp-congestion object and the C/eBPF object are selected with `TCP_CONGESTION`
+  on a loopback sender socket, transfer 1MiB, and detach successfully in 10 of
+  10 trials.
 - Smoke test: `smoke_lo` attaches and detaches an XDP pass program on `lo`.
 - Microbenchmarks: XDP pass has the same median as C/eBPF in this harness
   at 5ns average runtime and 2 instructions. XDP array-map count is 13ns and 21
@@ -237,6 +249,10 @@ The current run evaluates KernelScript commit `ccb15b4` on Linux
   map-link assignment from each affected skeleton header, and rebuilds both
   generated userspace projects successfully. This is a local build repair, not
   a scheduler workload or cross-version portability claim.
+- Struct_ops TCP workload: `run_struct_ops_workload.py` attaches the generated
+  and C/eBPF tcp-congestion objects, selects the registered BPF algorithm on a
+  loopback TCP sender socket, transfers 1MiB, and detaches. This is a local
+  socket-level workload oracle, not a production TCP throughput claim.
 - Compiler-patch lowering ablation: applying
   `experiments/patches/kernelscript-map-increment-lowering.patch` to a copied
   KernelScript compiler tree reduces the count object from 21 to 11

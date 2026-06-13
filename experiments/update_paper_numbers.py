@@ -112,6 +112,7 @@ def main() -> int:
     ringbuf = load_json("ringbuf_workload_summary.json")
     struct_ops = load_json("struct_ops_compat_summary.json")
     struct_ops_repair = load_json("struct_ops_skeleton_repair_summary.json")
+    struct_ops_workload = load_json("struct_ops_workload_summary.json")
 
     if unit.get("returncode") != 0 or unit.get("reported_failures") != 0:
         raise SystemExit("unit tests are not clean; refusing to generate paper numbers")
@@ -145,6 +146,8 @@ def main() -> int:
         raise SystemExit("struct_ops compatibility check did not complete successfully")
     if struct_ops_repair.get("status") != "ok":
         raise SystemExit("struct_ops skeleton repair check did not complete successfully")
+    if struct_ops_workload.get("status") != "ok":
+        raise SystemExit("struct_ops workload check did not complete successfully")
 
     content = ""
     content += macro("KSCommitShort", str(env["kernelscript_git_head"])[:7])
@@ -371,6 +374,20 @@ def main() -> int:
     content += macro("KSStructOpsRepairNeeded", struct_ops_repair["repair_needed"])
     content += macro("KSStructOpsRepairBuildOK", struct_ops_repair["repaired_build_ok"])
     content += macro("KSStructOpsRepairRemovedAssignments", struct_ops_repair["removed_map_link_assignments"])
+    struct_ops_workload_rows = {row["name"]: row for row in struct_ops_workload["rows"]}
+    content += macro("KSStructOpsWorkloadTrials", struct_ops_workload["trials"])
+    content += macro("KSStructOpsWorkloadBytes", struct_ops_workload["bytes_per_trial"])
+    content += macro("KSStructOpsWorkloadMiB", f"{struct_ops_workload['bytes_per_trial'] / (1024 * 1024):.0f}")
+    content += macro("KSStructOpsWorkloadKsOK", sum(struct_ops_workload_rows["ks_generated"]["workload_ok_samples"]))
+    content += macro("KSStructOpsWorkloadCOK", sum(struct_ops_workload_rows["c_libbpf"]["workload_ok_samples"]))
+    content += macro("KSStructOpsWorkloadKsSelected", sum(struct_ops_workload_rows["ks_generated"]["cc_selected_samples"]))
+    content += macro("KSStructOpsWorkloadCSelected", sum(struct_ops_workload_rows["c_libbpf"]["cc_selected_samples"]))
+    content += macro("KSStructOpsWorkloadKsDetachOK", sum(struct_ops_workload_rows["ks_generated"]["detach_ok_samples"]))
+    content += macro("KSStructOpsWorkloadCDetachOK", sum(struct_ops_workload_rows["c_libbpf"]["detach_ok_samples"]))
+    content += macro("KSStructOpsWorkloadKsElapsedMs", elapsed_ms(struct_ops_workload_rows["ks_generated"]["median_elapsed_sec"]))
+    content += macro("KSStructOpsWorkloadCElapsedMs", elapsed_ms(struct_ops_workload_rows["c_libbpf"]["median_elapsed_sec"]))
+    content += macro("KSStructOpsWorkloadKsMiBps", f"{struct_ops_workload_rows['ks_generated']['median_mib_per_sec']:.1f}")
+    content += macro("KSStructOpsWorkloadCMiBps", f"{struct_ops_workload_rows['c_libbpf']['median_mib_per_sec']:.1f}")
 
     OUT.write_text(content, encoding="utf-8")
     return 0
