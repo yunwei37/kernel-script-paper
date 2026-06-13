@@ -228,7 +228,6 @@ def benchmark_object(name: str, obj: Path, pkt: Path) -> dict[str, object]:
                 ROOT,
                 sudo=True,
             )
-            elapsed = time.perf_counter() - start
             write(LOGS / f"{name}.run{i}.stdout", res.stdout)
             write(LOGS / f"{name}.run{i}.stderr", res.stderr)
             check(res, f"{name} bpftool run trial {i}")
@@ -321,7 +320,7 @@ def main() -> int:
             "max_avg_ns",
             "samples_avg_ns",
         ]
-        writer = csv.DictWriter(f, fieldnames=fields)
+        writer = csv.DictWriter(f, fieldnames=fields, lineterminator="\n")
         writer.writeheader()
         for row in rows:
             out = dict(row)

@@ -43,6 +43,17 @@ def ns_range(row) -> str:
     return f"{row['median_avg_ns']:.0f} ({row['min_avg_ns']:.0f}--{row['max_avg_ns']:.0f})"
 
 
+def gbps_range(row) -> str:
+    return (
+        f"{row['median_receiver_gbps']:.1f} "
+        f"({row['min_receiver_gbps']:.1f}--{row['max_receiver_gbps']:.1f})"
+    )
+
+
+def mpps(value: int | float) -> str:
+    return f"{value:.2f}"
+
+
 def turbo_state(no_turbo: str) -> str:
     if no_turbo == "0":
         return "enabled"
@@ -63,6 +74,7 @@ def main() -> int:
     compiler_patch = load_json("compiler_patch_ablation_summary.json")
     verifier = load_json("verifier_matrix_summary.json")
     attach = load_json("attach_matrix_summary.json")
+    xdp_traffic = load_json("xdp_traffic_summary.json")
 
     if unit.get("returncode") != 0 or unit.get("reported_failures") != 0:
         raise SystemExit("unit tests are not clean; refusing to generate paper numbers")
@@ -80,6 +92,8 @@ def main() -> int:
         raise SystemExit("verifier matrix did not complete successfully")
     if attach.get("status") != "ok":
         raise SystemExit("attach matrix did not complete successfully")
+    if xdp_traffic.get("status") != "ok":
+        raise SystemExit("XDP traffic benchmark did not complete successfully")
 
     content = ""
     content += macro("KSCommitShort", str(env["kernelscript_git_head"])[:7])
@@ -189,6 +203,20 @@ def main() -> int:
     content += macro("KSCPInstrReductionPct", pct(current_vs_compiler_patch["instruction_reduction"], cp_current["instructions"]))
     content += macro("KSCPNsReduction", f"{current_vs_compiler_patch['median_ns_reduction']:.0f}")
     content += macro("KSCPNsReductionPct", pct(current_vs_compiler_patch["median_ns_reduction"], cp_current["median_avg_ns"]))
+
+    traffic_rows = {row["name"]: row for row in xdp_traffic["rows"]}
+    traffic_comparisons = xdp_traffic["comparisons"]
+    content += macro("KSTrafficTrials", xdp_traffic["trials"])
+    content += macro("KSTrafficSeconds", xdp_traffic["seconds_per_trial"])
+    content += macro("KSTrafficKsPassGbps", gbps_range(traffic_rows["ks_pass"]))
+    content += macro("KSTrafficCPassGbps", gbps_range(traffic_rows["c_pass"]))
+    content += macro("KSTrafficKsCountGbps", gbps_range(traffic_rows["ks_count"]))
+    content += macro("KSTrafficCCountGbps", gbps_range(traffic_rows["c_count"]))
+    content += macro("KSTrafficKsCountMpps", mpps(traffic_rows["ks_count"]["median_xdp_map_mpps"]))
+    content += macro("KSTrafficCCountMpps", mpps(traffic_rows["c_count"]["median_xdp_map_mpps"]))
+    content += macro("KSTrafficPassRatio", f"{traffic_comparisons['pass']['ks_over_c_ratio']:.2f}x")
+    content += macro("KSTrafficCountRatio", f"{traffic_comparisons['count']['ks_over_c_ratio']:.2f}x")
+    content += macro("KSTrafficCountOverheadPct", f"{traffic_comparisons['count']['overhead_pct']:.1f}\\%")
 
     OUT.write_text(content, encoding="utf-8")
     return 0

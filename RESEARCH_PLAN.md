@@ -10,7 +10,8 @@ conventional libbpf-compatible artifacts.
 
 ## Research Questions
 
-RQ1. Can a unified source model cover representative eBPF programming domains?
+RQ1. Can a unified source model cover the eBPF domains exercised by the
+repository examples?
 
 Evidence: compile and build every repository example, then classify each example
 by program type and language feature.
@@ -55,7 +56,9 @@ benchmark, and rerun the same BPF_PROG_TEST_RUN harness against the current
 compiler object and hand-written C/eBPF. The patch lowers constant increments
 on integer array maps from lookup-plus-update to checked lookup plus in-place
 atomic add. The harness resets and reads the `counts` map on every trial to
-verify that all variants perform the same 100000 increments.
+verify that all variants perform the same 100000 increments. Then run matched
+KernelScript and hand-written C/eBPF XDP pass/count objects over iperf3 TCP
+traffic on isolated veth pairs.
 
 ## Implemented Experiments
 
@@ -123,7 +126,17 @@ verify that all variants perform the same 100000 increments.
    - Writes `results/compiler_patch_ablation_summary.csv` and
      `results/compiler_patch_ablation_summary.json`.
 
-8. `experiments/run_lowering_ablation.py`
+8. `experiments/run_xdp_traffic.py`
+   - Compiles the same KernelScript XDP pass/count programs and hand-written
+     C/eBPF baselines.
+   - Creates a fresh network namespace and veth pair for each trial.
+   - Attaches each XDP object to the receiver-side veth and runs iperf3 TCP
+     traffic through the path.
+   - Reads the `counts` map for count variants as a positive execution oracle.
+   - Writes `results/xdp_traffic_summary.csv` and
+     `results/xdp_traffic_summary.json`.
+
+9. `experiments/run_lowering_ablation.py`
    - Compiles the KernelScript XDP count benchmark.
    - Copies the generated project and patches the map update lowering from
      lookup plus update helper to in-place atomic add.
@@ -134,10 +147,10 @@ verify that all variants perform the same 100000 increments.
    - Writes `results/lowering_ablation_summary.csv` and
      `results/lowering_ablation_summary.json`.
 
-9. `experiments/update_paper_numbers.py`
+10. `experiments/update_paper_numbers.py`
    - Checks that unit tests, static checks, smoke test, microbenchmarks, and
-     verifier matrix, attach matrix, and both lowering ablations have successful
-     summaries.
+     XDP traffic, verifier matrix, attach matrix, and both lowering ablations
+     have successful summaries.
    - Writes `results/paper_numbers.tex` for the LaTeX paper.
 
 ## Current Results
@@ -169,6 +182,11 @@ At commit `ccb15b4`, on Linux `6.15.11-061511-generic`:
   compared with hand-written C/eBPF, and 4ns median overhead for an array-map
   counter because the generated code emits a lookup plus update helper rather
   than an in-place atomic add.
+- The XDP traffic benchmark runs matched KernelScript and hand-written C/eBPF
+  pass/count objects over iperf3 TCP on fresh veth/netns pairs. Pass medians are
+  17.8Gb/s for KernelScript and 18.1Gb/s for C/eBPF. Count medians are 17.4Gb/s
+  for KernelScript and 17.5Gb/s for C/eBPF, with positive count-map rates of
+  1.51 and 1.52 Mpps respectively.
 - The compiler-patch lowering ablation reduces the generated count object from
   21 to 11 instructions and from 12ns to 9ns median, matching the hand-written
   C/eBPF baseline in this harness while preserving the expected 100000 count
@@ -176,18 +194,21 @@ At commit `ccb15b4`, on Linux `6.15.11-061511-generic`:
 
 ## Threats and Next Experiments
 
-The current runtime evaluation combines attach/detach checks and
-BPF_PROG_TEST_RUN microbenchmarks, not a packet-rate performance study. The
-attach matrix confirms that verifier-clean single-section XDP objects can be
-installed and removed on isolated veth devices, but it does not validate packet
-behavior or generated-loader correctness for those objects. A full runtime
-comparison should add matched hand-written C/libbpf baselines for XDP, TC,
-perf_event, ring buffer, and struct_ops programs. It should run traffic with
-`pktgen` or `xdp-bench` and report throughput, tail latency, verifier log size,
-and CPU utilization. The current compiler-source patch should be upstreamed or
-otherwise integrated, semantically generalized beyond constant array-map
-increments where safe, and retested across hash, per-CPU, and structured map
-values. The current artifact is still useful as a systems prototype study
-because it grounds claims about example marker coverage, generated structure,
-compatibility, attachability for an XDP subset, small-program runtime overhead,
-and one concrete lowering optimization in reproducible evidence.
+The current runtime evaluation combines attach/detach checks,
+BPF_PROG_TEST_RUN microbenchmarks, and one local veth/TCP traffic benchmark.
+The attach matrix confirms that verifier-clean single-section XDP objects can
+be installed and removed on isolated veth devices, and the traffic benchmark
+checks matched pass/count objects under real TCP traffic. It still does not
+validate generated-loader correctness for the repository examples, NIC-rate
+throughput, TC, perf_event, ring buffer, or struct_ops programs. A full runtime
+comparison should add matched hand-written C/libbpf baselines for TC,
+perf_event, ring buffer, and struct_ops programs, plus longer XDP stress runs
+with `pktgen` or `xdp-bench` that report throughput, tail latency, verifier log
+size, and CPU utilization. The current compiler-source patch should be
+upstreamed or otherwise integrated, semantically generalized beyond constant
+array-map increments where safe, and retested across hash, per-CPU, and
+structured map values. The current artifact is still useful as a systems
+prototype study because it grounds claims about example marker coverage,
+generated structure, compatibility, attachability for an XDP subset,
+small-program runtime overhead, local XDP traffic behavior, and one concrete
+lowering optimization in reproducible evidence.
