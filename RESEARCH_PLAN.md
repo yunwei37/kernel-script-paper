@@ -2,25 +2,25 @@
 
 ## Claim
 
-KernelScript explores a type-safe, unified-source programming model for eBPF.
-The scientific claim is that a language-level model can reduce eBPF
-development complexity and reject some verifier-relevant errors before kernel
-loading, while preserving a low-level compilation path to conventional
-libbpf-compatible artifacts.
+KernelScript explores a typed, compiler-checked unified-source programming
+model for eBPF. The scientific claim is that a language-level model can
+centralize recurring eBPF project structure and reject some verifier-relevant
+errors before kernel loading, while preserving a low-level compilation path to
+conventional libbpf-compatible artifacts.
 
-## OSDI-Style Research Questions
+## Research Questions
 
 RQ1. Can a unified source model cover representative eBPF programming domains?
 
 Evidence: compile and build every repository example, then classify each example
 by program type and language feature.
 
-RQ2. How much low-level boilerplate does the language remove?
+RQ2. How much low-level generated project structure does the language centralize?
 
 Evidence: compare KernelScript source SLOC with generated userspace C, eBPF C,
 kernel-module C, and Makefile SLOC. This is not a hand-written C baseline; it is
 a conservative expansion-factor measurement showing the amount of generated
-artifact a developer does not write.
+artifact a developer does not have to maintain by hand.
 
 RQ3. Which classes of errors are rejected before load/attach time?
 
@@ -92,7 +92,7 @@ The current runtime evaluation is a microbenchmark study, not a packet-rate
 performance study. A full runtime comparison should add matched hand-written
 C/libbpf baselines for XDP, TC, perf_event, ring buffer, and struct_ops programs;
 run traffic with `pktgen` or `xdp-bench`; and report throughput, tail latency,
-verifier log size, and CPU utilization. The current artifact is still useful for
-an OSDI-style systems paper because it grounds claims about expressiveness,
-boilerplate, compatibility, and small-program runtime overhead in reproducible
-evidence.
+verifier log size, and CPU utilization. The current artifact is still useful as
+a systems prototype study because it grounds claims about expressiveness,
+generated structure, compatibility, and small-program runtime overhead in
+reproducible evidence.

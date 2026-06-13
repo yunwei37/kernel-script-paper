@@ -26,8 +26,8 @@
 
 \newcommand{\tool}{KernelScript}
 
-\title{\vspace{-1.0em}\tool: Exploring a Type-Safe Unified-Source Programming Model for eBPF}
-\author{Anonymous Artifact Draft}
+\title{\vspace{-1.0em}\tool: Exploring a Typed Unified-Source Programming Model for eBPF}
+\author{Anonymous Authors}
 \date{}
 
 \begin{document}
@@ -50,7 +50,7 @@ examples, \KSKSCompileOK{} compile from \tool{} source and \KSMakeOK{} build
 into generated C/eBPF projects.  Successful examples have median
 \KSMedianKSSloc{} lines of \tool{} source and median \KSMedianGeneratedSloc{}
 lines of generated C and build logic, an \KSMedianGeneratedRatio{} expansion
-factor.  The results support the core productivity claim and expose two
+factor.  The results show that the compiler centralizes recurring project structure and expose two
 current limits: struct\_ops skeleton compatibility with the installed libbpf
 headers, and a map-update microbenchmark where generated code uses more
 instructions than an idiomatic hand-written baseline.
@@ -110,11 +110,11 @@ a prototype for studying the design space rather than as a production-ready
 replacement for libbpf.
 
 This paper makes three contributions.  First, we identify the central
-scientific contribution of \tool{} as a type-safe unified-source model for
-multi-artifact eBPF applications.  Second, we describe how this model
+scientific contribution of \tool{} as a typed, compiler-checked unified-source
+model for multi-artifact eBPF applications.  Second, we describe how this model
 organizes programs, maps, lifecycle operations, and kernel extension code so
 that cross-boundary constraints can be checked before load or attach time.
-Third, we implement and run an OSDI-style artifact evaluation that measures
+Third, we implement and run a reproducible artifact evaluation that measures
 test coverage, example buildability, generated-code expansion, feature
 coverage, and an attach/detach smoke test.  The artifact is designed so that a
 reviewer can rerun the evaluation without changing the \tool{} source tree:
@@ -288,8 +288,8 @@ and generated skeleton headers are excluded from the expansion factor because
 they are bpftool outputs rather than \tool{} compiler outputs.  The expansion
 therefore counts only source and build logic produced directly by \tool{}:
 userspace C, eBPF C, optional kernel-module C, and Makefile lines.  This
-definition is conservative for the productivity claim because it omits the
-large skeleton header that a low-level build still needs.
+definition is conservative for the generated-structure claim because it omits
+the large skeleton header that a low-level build still needs.
 
 \section{Results}
 
@@ -319,10 +319,10 @@ verifier-relevant problem early and provides a specific repair suggestion.
 Outcome & Count & Fraction \\
 \midrule
 Examples total & \KSTotalExamples{} & 100\% \\
-\tool{} compile success & \KSKSCompileOK{} & 97.7\% \\
-Generated project build success & \KSMakeOK{} & 93.2\% \\
-Safety rejection & 1 & 2.3\% \\
-Struct\_ops/libbpf mismatch & 2 & 4.5\% \\
+\tool{} compile success & \KSKSCompileOK{} & \KSKSCompilePct{} \\
+Generated project build success & \KSMakeOK{} & \KSMakePct{} \\
+Safety rejection & 1 & \KSSafetyPct{} \\
+Struct\_ops/libbpf mismatch & 2 & \KSStructOpsMismatchPct{} \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -336,28 +336,34 @@ struct\_ops path, not a parser or type-checking failure.  It is also a useful
 systems result: a unified-source language still inherits version skew across
 bpftool, libbpf, and kernel headers.
 
-\textbf{Feature coverage.}  The examples exercise many eBPF domains.  The
-syntactic feature classifier finds XDP in 38 examples, TC in 5, probes in 4,
-tracepoints in 2, perf events in 2, kfunc or extern kernel calls in 4,
-struct\_ops in 2, maps in 17, ring buffers in 3, dynptrs in 1, and tail-call
-style examples in 2.  These counts should not be read as a complete language
-coverage proof; they show that the artifact is broader than a tracing-only
-DSL and includes examples for several verifier-sensitive features.
+\textbf{Feature coverage.}  The examples exercise many eBPF domains.
+Table~\ref{tab:features} reports attempted examples, examples that pass the
+\tool{} compiler, and examples that fully build against the local toolchain.
+These counts should not be read as a complete language coverage proof; they show
+that the artifact is broader than a tracing-only DSL while making the struct\_ops
+compatibility gap explicit.
 
 \begin{table}[t]
 \centering
-\caption{Syntactic feature coverage in repository examples.}
+\caption{Feature coverage in repository examples. A = attempted, KS = \tool{} compiler success, B = generated project build success.}
 \label{tab:features}
-\begin{tabular}{lr@{\hspace{1.2em}}lr}
+\scriptsize
+\begin{tabular}{lrrr@{\hspace{0.8em}}lrrr}
 \toprule
-Feature & Count & Feature & Count \\
+Feature & A & KS & B & Feature & A & KS & B \\
 \midrule
-XDP & 38 & TC & 5 \\
-Probe & 4 & Tracepoint & 2 \\
-Perf event & 2 & Maps & 17 \\
-Ring buffer & 3 & Dynptr & 1 \\
-kfunc/extern & 4 & Struct\_ops & 2 \\
-Tail-call style & 2 & Userspace main & 39 \\
+XDP & \KSFeatXDPAttempt{} & \KSFeatXDPKS{} & \KSFeatXDPBuild{} &
+TC & \KSFeatTCAttempt{} & \KSFeatTCKS{} & \KSFeatTCBuild{} \\
+Probe & \KSFeatProbeAttempt{} & \KSFeatProbeKS{} & \KSFeatProbeBuild{} &
+Tracepoint & \KSFeatTracepointAttempt{} & \KSFeatTracepointKS{} & \KSFeatTracepointBuild{} \\
+Perf & \KSFeatPerfAttempt{} & \KSFeatPerfKS{} & \KSFeatPerfBuild{} &
+Maps & \KSFeatMapsAttempt{} & \KSFeatMapsKS{} & \KSFeatMapsBuild{} \\
+Ringbuf & \KSFeatRingbufAttempt{} & \KSFeatRingbufKS{} & \KSFeatRingbufBuild{} &
+Dynptr & \KSFeatDynptrAttempt{} & \KSFeatDynptrKS{} & \KSFeatDynptrBuild{} \\
+kfunc & \KSFeatKfuncAttempt{} & \KSFeatKfuncKS{} & \KSFeatKfuncBuild{} &
+Struct\_ops & \KSFeatStructOpsAttempt{} & \KSFeatStructOpsKS{} & \KSFeatStructOpsBuild{} \\
+Tail-call & \KSFeatTailCallAttempt{} & \KSFeatTailCallKS{} & \KSFeatTailCallBuild{} &
+Userspace & \KSFeatUserspaceAttempt{} & \KSFeatUserspaceKS{} & \KSFeatUserspaceBuild{} \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -369,34 +375,34 @@ generation.  A later performance study should rebalance the corpus so that TC,
 perf events, ring buffers, kfuncs, and struct\_ops each have multiple matched
 programs with comparable hand-written baselines.
 
-\textbf{Boilerplate reduction.}  For successful examples, the median
+\textbf{Generated structure.}  For successful examples, the median
 \tool{} source size is \KSMedianKSSloc{} nonblank noncomment lines.  The
 median generated project size, counting userspace C, eBPF C, optional module
 C, and Makefile lines but excluding generated \texttt{vmlinux.h} and skeleton
 headers, is \KSMedianGeneratedSloc{} lines.  The median expansion factor is
-\KSMedianGeneratedRatio{}.  This is the strongest quantitative evidence for
-the productivity claim: a small unified source file expands to hundreds of
-lines of low-level build and coordination code that a C/libbpf developer would
-otherwise write or maintain through templates.
+\KSMedianGeneratedRatio{}.  This is evidence that a small unified source file
+centralizes hundreds of lines of low-level build and coordination code.
 
 This metric is intentionally conservative.  It does not say that every
 generated line is exactly a hand-written line saved, and it does not compare
 against an expert-written minimal C baseline.  It does show that \tool{}
-centralizes a large amount of recurring eBPF project structure.  Examples such
+centralizes recurring eBPF project structure.  Examples such
 as perf events have particularly high expansion factors because attaching and
-reading counters requires substantial userspace boilerplate relative to the
+reading counters requires substantial userspace coordination code relative to the
 kernel program itself.
 
 \textbf{Runtime microbenchmarks.}  Table~\ref{tab:micro} compares two generated
 XDP objects with hand-written C/eBPF baselines.  Each program is loaded with
 bpftool and executed through BPF\_PROG\_TEST\_RUN for 100000 repetitions over
-seven trials; the table reports the median average nanoseconds per run.  The
-minimal pass program is identical in instruction count and measured cost:
-2 instructions and 5ns for both implementations.  The map counter is different.
+seven trials; the table reports median average nanoseconds with the observed
+min--max range.  The minimal pass program has the same median in this harness:
+2 instructions and \KSMicroKsPassNs{} for \tool{} versus
+\KSMicroCPassNs{} for C.  The map counter is different.
 \tool{} emits a lookup followed by an update helper, while the C baseline uses
 an in-place atomic add on the array-map value.  The generated version therefore
-has 21 instructions and 13ns median average time versus 11 instructions and
-9ns for C.  This result is small in absolute terms but important scientifically:
+has \KSMicroKsCountInstr{} instructions and \KSMicroKsCountNs{} median average
+time versus \KSMicroCCountInstr{} instructions and \KSMicroCCountNs{} for C.
+This result is small in absolute terms but important scientifically:
 the unified model need not impose overhead for trivial programs, but map
 assignment lowering can miss an optimization that an expert C programmer would
 write manually.
@@ -407,12 +413,12 @@ write manually.
 \label{tab:micro}
 \begin{tabular}{llrr}
 \toprule
-Benchmark & Impl. & Instr. & Median ns \\
+Benchmark & Impl. & Instr. & Median ns (range) \\
 \midrule
-pass & \tool{} & 2 & 5 \\
-pass & C/eBPF & 2 & 5 \\
-count & \tool{} & 21 & 13 \\
-count & C/eBPF & 11 & 9 \\
+pass & \tool{} & \KSMicroKsPassInstr{} & \KSMicroKsPassNs{} \\
+pass & C/eBPF & \KSMicroCPassInstr{} & \KSMicroCPassNs{} \\
+count & \tool{} & \KSMicroKsCountInstr{} & \KSMicroKsCountNs{} \\
+count & C/eBPF & \KSMicroCCountInstr{} & \KSMicroCCountNs{} \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -444,7 +450,7 @@ detected before kernel loading.  The results establish parity only for a
 minimal pass program; they do not yet establish broad runtime performance
 parity with hand-written C/libbpf.
 
-The struct\_ops failures are instructive.  A DSL can hide boilerplate, but it
+The struct\_ops failures are instructive.  A DSL can hide coordination code, but it
 cannot hide all ABI and API drift.  When bpftool-generated skeletons and
 installed libbpf headers disagree, the generated userspace C fails.  A
 production compiler would need version-aware generation, dependency checks, or
@@ -468,8 +474,8 @@ programs.  This is appropriate for measuring how much project structure the
 compiler creates, but it is not a direct developer-effort study.  An expert
 could write smaller C for some examples, especially tiny XDP pass/drop
 programs.  Conversely, generated code omits comments and may be denser than
-maintainable production C.  The right interpretation is therefore ``boilerplate
-centralized by the compiler,'' not ``exact lines saved.''
+maintainable production C.  The right interpretation is therefore ``generated
+project structure centralized by the compiler,'' not ``exact lines saved.''
 
 \textbf{Repository examples may be biased.}  The corpus comes from the public
 \tool{} repository, so it naturally reflects the features the implementation
@@ -530,14 +536,14 @@ space.
 
 \section{Conclusion}
 
-\tool{} is an early but useful prototype for studying type-safe unified-source
+\tool{} is an early but useful prototype for studying typed unified-source
 eBPF development.  Our artifact evaluation shows that the current compiler
 passes a broad test suite, compiles most repository examples, builds most
 generated projects, rejects an eBPF stack-limit violation before C generation,
 and can run a minimal XDP attach/detach smoke test.  The median successful
 example expands from \KSMedianKSSloc{} lines of \tool{} to
 \KSMedianGeneratedSloc{} lines of generated C and build logic, giving concrete
-evidence that the model removes substantial boilerplate.  The remaining gaps
+evidence that the model centralizes recurring project structure.  The remaining gaps
 are equally clear: struct\_ops compatibility needs version-aware handling, and
 runtime performance is mixed beyond trivial XDP pass programs.  Taken together,
 the results frame \tool{}'s scientific contribution as an exploration of a

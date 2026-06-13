@@ -1,7 +1,7 @@
 # KernelScript Paper Artifact
 
 This directory contains a cloned KernelScript repository, reproducible
-evaluation scripts, generated results, and a six-page paper draft.
+evaluation scripts, generated results, and a paper draft.
 
 ## Layout
 
@@ -11,7 +11,9 @@ evaluation scripts, generated results, and a six-page paper draft.
 - `experiments/run_microbench.py`: XDP BPF_PROG_TEST_RUN microbenchmarks
   against hand-written C/eBPF baselines.
 - `experiments/programs/smoke_lo.ks`: minimal smoke-test KernelScript program.
-- `results/`: generated CSV, JSON, logs, build outputs, and paper macros.
+- `results/`: tracked CSV/JSON summaries and paper macros. Local reruns also
+  create ignored build outputs and logs under `results/build/` and
+  `results/logs/`.
 - `paper/`: LaTeX paper source and build files.
 - `RESEARCH_PLAN.md`: research questions, methodology, and threat model.
 
@@ -31,13 +33,16 @@ Run the main evaluation:
 ```
 
 Run the optional smoke test, which requires passwordless sudo or a prior sudo
-credential:
+credential. The paper-number generator requires the checked-in smoke summary to
+have status `ok`.
 
 ```bash
 ./experiments/run_smoke.sh
 ```
 
-Run the optional runtime microbenchmarks, which also require `sudo -n`:
+Run the optional runtime microbenchmarks, which also require `sudo -n`. The
+paper-number generator requires the checked-in microbenchmark summary to have
+status `ok`.
 
 ```bash
 ./experiments/run_microbench.py
@@ -62,6 +67,6 @@ The current run evaluates KernelScript commit `6f9e6e8` on Linux
 - Compatibility limit: two struct_ops examples build eBPF objects but fail when
   compiling generated skeleton userspace code against libbpf 1.3.0.
 - Smoke test: `smoke_lo` attaches and detaches an XDP pass program on `lo`.
-- Microbenchmarks: XDP pass matches C/eBPF at 5ns median average runtime and 2
-  instructions; XDP array-map count is 13ns and 21 instructions for
+- Microbenchmarks: XDP pass has the same median as C/eBPF in this harness
+  at 5ns average runtime and 2 instructions; XDP array-map count is 13ns and 21 instructions for
   KernelScript versus 9ns and 11 instructions for hand-written C/eBPF.
