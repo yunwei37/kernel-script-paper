@@ -61,6 +61,7 @@ def main() -> int:
     static = load_json("static_checks_summary.json")
     lowering = load_json("lowering_ablation_summary.json")
     compiler_patch = load_json("compiler_patch_ablation_summary.json")
+    verifier = load_json("verifier_matrix_summary.json")
 
     if unit.get("returncode") != 0 or unit.get("reported_failures") != 0:
         raise SystemExit("unit tests are not clean; refusing to generate paper numbers")
@@ -74,6 +75,8 @@ def main() -> int:
         raise SystemExit("lowering ablation did not complete successfully")
     if compiler_patch.get("status") != "ok":
         raise SystemExit("compiler patch ablation did not complete successfully")
+    if verifier.get("status") != "ok":
+        raise SystemExit("verifier matrix did not complete successfully")
 
     content = ""
     content += macro("KSCommitShort", str(env["kernelscript_git_head"])[:7])
@@ -103,6 +106,19 @@ def main() -> int:
     content += macro("KSStaticLifecycle", static["matched_by_category"].get("lifecycle_api", 0))
     content += macro("KSStaticContext", static["matched_by_category"].get("context_signature", 0))
     content += macro("KSStaticSafety", static["matched_by_category"].get("safety_analysis", 0))
+    content += macro("KSVerifierTotalObjects", verifier["total_objects"])
+    content += macro("KSVerifierLoadOK", verifier["load_ok"])
+    content += macro("KSVerifierLoadFailed", verifier["load_failed"])
+    content += macro("KSVerifierBuildObjects", verifier["build_success_objects"])
+    content += macro("KSVerifierBuildLoadOK", verifier["build_success_load_ok"])
+    content += macro("KSVerifierBuildLoadFailed", verifier["build_success_load_failed"])
+    content += macro("KSVerifierBuildLoadOKPct", pct(verifier["build_success_load_ok"], verifier["build_success_objects"]))
+    failure_classes = verifier["failure_classes"]
+    content += macro("KSVerifierReferenceLeak", failure_classes.get("verifier_reference_leak", 0))
+    content += macro("KSVerifierRejected", failure_classes.get("verifier_rejected", 0))
+    content += macro("KSVerifierMapCreateFailed", failure_classes.get("map_create_failed", 0))
+    content += macro("KSVerifierMissingBTF", failure_classes.get("missing_kernel_btf_symbol", 0))
+    content += macro("KSVerifierStructOpsArg", failure_classes.get("struct_ops_argument_type", 0))
 
     features = {
         "XDP": "feature_xdp",

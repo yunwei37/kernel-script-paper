@@ -32,7 +32,8 @@ RQ4. Do generated artifacts remain compatible with the local kernel toolchain?
 
 Evidence: compile generated eBPF objects, generate libbpf skeletons with
 `bpftool`, link userspace loaders, and build generated kernel modules when
-present.
+present. Then run `bpftool prog loadall` on each generated eBPF object to
+classify which objects pass kernel verifier loading without attaching them.
 
 RQ5. Can at least one generated loader execute end to end?
 
@@ -70,12 +71,22 @@ verify that all variants perform the same 100000 increments.
    - Writes `results/static_checks_summary.csv` and
      `results/static_checks_summary.json`.
 
-3. `experiments/run_smoke.sh`
+3. `experiments/run_verifier_matrix.py`
+   - Reads `results/examples_summary.csv` after `run_evaluation.py`.
+   - Attempts `bpftool prog loadall` for every generated eBPF object under
+     `results/build/examples`.
+   - Pins programs and maps under `/sys/fs/bpf/kernelscript-paper`, removes pins
+     after each attempt, and keeps raw bpftool logs under
+     `results/logs/verifier_matrix`.
+   - Writes `results/verifier_matrix_summary.csv` and
+     `results/verifier_matrix_summary.json`.
+
+4. `experiments/run_smoke.sh`
    - Compiles and builds `experiments/programs/smoke_lo.ks`.
    - Runs the generated binary with `sudo -n`.
    - Writes `results/smoke_summary.json` and logs under `results/logs/`.
 
-4. `experiments/run_microbench.py`
+5. `experiments/run_microbench.py`
    - Compiles two KernelScript XDP microbenchmarks and two hand-written C/eBPF
      baselines.
    - Loads each object with `bpftool prog load`.
@@ -84,7 +95,7 @@ verify that all variants perform the same 100000 increments.
    - Writes `results/microbench_summary.csv` and
      `results/microbench_summary.json`.
 
-5. `experiments/run_compiler_patch_ablation.py`
+6. `experiments/run_compiler_patch_ablation.py`
    - Copies the KernelScript compiler source tree into `results/build`.
    - Applies `experiments/patches/kernelscript-map-increment-lowering.patch`.
    - Builds the patched compiler with `dune build`.
@@ -97,7 +108,7 @@ verify that all variants perform the same 100000 increments.
    - Writes `results/compiler_patch_ablation_summary.csv` and
      `results/compiler_patch_ablation_summary.json`.
 
-6. `experiments/run_lowering_ablation.py`
+7. `experiments/run_lowering_ablation.py`
    - Compiles the KernelScript XDP count benchmark.
    - Copies the generated project and patches the map update lowering from
      lookup plus update helper to in-place atomic add.
@@ -108,9 +119,9 @@ verify that all variants perform the same 100000 increments.
    - Writes `results/lowering_ablation_summary.csv` and
      `results/lowering_ablation_summary.json`.
 
-7. `experiments/update_paper_numbers.py`
+8. `experiments/update_paper_numbers.py`
    - Checks that unit tests, static checks, smoke test, microbenchmarks, and
-     both lowering ablations have successful summaries.
+     verifier matrix plus both lowering ablations have successful summaries.
    - Writes `results/paper_numbers.tex` for the LaTeX paper.
 
 ## Current Results
@@ -120,6 +131,9 @@ At commit `6f9e6e8`, on Linux `6.15.11-061511-generic`:
 - 85 unit test suites and 1092 unit tests pass.
 - 43 of 44 examples compile from KernelScript.
 - 41 examples build fully into generated C/eBPF artifacts.
+- The verifier-load matrix loads 33 of 43 generated eBPF objects. Among the 41
+  objects from full generated-project build successes, 32 load successfully and
+  9 expose verifier, map-creation, or local BTF-symbol failures.
 - The one KernelScript rejection is an intentional safety rejection for stack
   usage above the eBPF limit.
 - The static-check corpus has 6 cases, including 5 expected compiler

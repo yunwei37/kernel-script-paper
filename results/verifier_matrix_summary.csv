@@ -1,0 +1,135 @@
+name,source,make_status,classification,object,program_sections,section_kinds,program_count,load_status,failure_class,failure_excerpt
+basic_match,examples/basic_match.ks,ok,success,results/build/examples/basic_match/basic_match.ebpf.o,xdp,xdp,1,ok,,
+break_continue_unbound,examples/break_continue_unbound.ks,ok,success,results/build/examples/break_continue_unbound/break_continue_unbound.ebpf.o,xdp,xdp,1,ok,,
+dynptr,examples/dynptr.ks,ok,success,results/build/examples/dynptr/dynptr.ebpf.o,xdp,xdp,1,failed,verifier_rejected,"libbpf: prog 'test': BPF program load failed: -EACCES
+libbpf: prog 'test': -- BEGIN PROG LOAD LOG --
+0: R1=ctx() R10=fp0
+; enum xdp_action test(struct xdp_md* ctx) { @ dynptr.ebpf.c:63
+0: (b7) r6 = 0                        ; R6_w=0
+; __arrow_access_0 = (void*)(long)ctx->data; @ dynptr.ebpf.c:74
+1: (61) r1 = *(u32 *)(r1 +0)          ; R1_w=pkt(r=0)
+; __unop_1 = SAFE_DEREF(__arrow_access_0); @ dynptr.ebpf.c:75
+2: (15) if r1 == 0x0 goto pc+4        ; R1_w=pkt(r=0)
+3: (71) r1 = *(u8 *)(r1 +0)
+invalid access to packet, off=0 size=1, R1(id=0,off=0,r=0)
+R1 offset is outside of the packet"
+error_handling_demo,examples/error_handling_demo.ks,ok,success,results/build/examples/error_handling_demo/error_handling_demo.ebpf.o,xdp,xdp,1,ok,,
+extern_kfunc_demo,examples/extern_kfunc_demo.ks,ok,success,results/build/examples/extern_kfunc_demo/extern_kfunc_demo.ebpf.o,xdp,xdp,1,failed,verifier_rejected,"libbpf: prog 'packet_tracer': BPF program load failed: -EACCES
+libbpf: prog 'packet_tracer': -- BEGIN PROG LOAD LOG --
+0: R1=ctx() R10=fp0
+; timestamp = bpf_ktime_get_ns(); @ extern_kfunc_demo.ebpf.c:45
+0: (85) call bpf_ktime_get_ns#5       ; R0_w=scalar()
+; pid_tgid = bpf_get_current_pid_tgid(); @ extern_kfunc_demo.ebpf.c:47
+1: (85) call bpf_get_current_pid_tgid#14      ; R0_w=scalar()
+; result = bpf_trace_printk(NULL, 0); @ extern_kfunc_demo.ebpf.c:49
+2: (b7) r1 = 0                        ; R1_w=0
+3: (b7) r2 = 0                        ; R2_w=0
+4: (85) call bpf_trace_printk#6
+R1 type=scalar expected=fp, pkt, pkt_meta, map_key, map_value, mem, ringbuf_mem, buf, trusted_ptr_"
+functions,examples/functions.ks,ok,success,results/build/examples/functions/functions.ebpf.o,xdp,xdp,1,ok,,
+import_demo,examples/import_demo.ks,ok,success,results/build/examples/import_demo/import_demo.ebpf.o,xdp,xdp,1,ok,,
+include_demo,examples/include_demo.ks,ok,success,results/build/examples/include_demo/include_demo.ebpf.o,xdp,xdp,1,ok,,
+local_global_vars,examples/local_global_vars.ks,ok,success,results/build/examples/local_global_vars/local_global_vars.ebpf.o,xdp,xdp,1,ok,,
+map_operations_demo,examples/map_operations_demo.ks,ok,success,results/build/examples/map_operations_demo/map_operations_demo.ebpf.o,xdp tc/ingress tracepoint/syscalls/sys_enter_open fentry/vfs_read,fentry tc tracepoint xdp,4,failed,verifier_reference_leak,"libbpf: prog 'event_logger': BPF program load failed: -EINVAL
+libbpf: prog 'event_logger': -- BEGIN PROG LOAD LOG --
+0: R1=ctx() R10=fp0
+; __s32 event_logger(struct trace_event_raw_sys_enter* ctx) { @ map_operations_demo.ebpf.c:1067
+0: (bf) r6 = r1                       ; R1=ctx() R6_w=ctx()
+1: (bf) r4 = r10                      ; R4_w=fp0 R10=fp0
+;  @ map_operations_demo.ebpf.c:0
+2: (07) r4 += -16                     ; R4_w=fp-16
+; if (bpf_ringbuf_reserve_dynptr(&event_stream, sizeof(struct Event), 0, &__ringbuf_reserve_2_dynptr) == 0) { @ map_operations_demo.ebpf.c:1074
+3: (18) r1 = 0xffff8975d5e13800       ; R1_w=map_ptr(map=event_stream,ks=0,vs=0)
+5: (b7) r2 = 16                       ; R2_w=16
+6: (b7) r3 = 0                        ; R3_w=0"
+maps_demo,examples/maps_demo.ks,ok,success,results/build/examples/maps_demo/maps_demo.ebpf.o,xdp tc/ingress,tc xdp,2,ok,,
+multi_programs,examples/multi_programs.ks,ok,success,results/build/examples/multi_programs/multi_programs.ebpf.o,xdp tc/ingress,tc xdp,2,ok,,
+named_return,examples/named_return.ks,ok,success,results/build/examples/named_return/named_return.ebpf.o,xdp,xdp,1,ok,,
+object_allocation,examples/object_allocation.ks,ok,success,results/build/examples/object_allocation/object_allocation.ebpf.o,xdp,xdp,1,failed,verifier_reference_leak,"libbpf: prog 'packet_inspector': BPF program load failed: -EINVAL
+libbpf: prog 'packet_inspector': -- BEGIN PROG LOAD LOG --
+0: R1=ctx() R10=fp0
+; enum xdp_action packet_inspector(struct xdp_md* ctx) { @ object_allocation.ebpf.c:79
+0: (b7) r1 = 134744072                ; R1_w=0x8080808
+; __u32 src_ip = 0x08080808; @ object_allocation.ebpf.c:88
+1: (63) *(u32 *)(r10 -4) = r1         ; R1_w=0x8080808 R10=fp0 fp-8=mmmm????
+2: (bf) r2 = r10                      ; R2_w=fp0 R10=fp0
+;  @ object_allocation.ebpf.c:0
+3: (07) r2 += -4                      ; R2_w=fp-4
+; __map_lookup_0 = bpf_map_lookup_elem(&conn_tracker, &src_ip); @ object_allocation.ebpf.c:90
+4: (18) r1 = 0xffff8975d30f8400       ; R1_w=map_ptr(map=conn_tracker,ks=4,vs=8)"
+packet_filter,examples/packet_filter.ks,ok,success,results/build/examples/packet_filter/packet_filter.ebpf.o,xdp,xdp,1,ok,,
+packet_matching,examples/packet_matching.ks,ok,success,results/build/examples/packet_matching/packet_matching.ebpf.o,xdp tc/ingress,tc xdp,2,ok,,
+pattern_test,examples/pattern_test.ks,ok,success,results/build/examples/pattern_test/pattern_test.ebpf.o,xdp,xdp,1,ok,,
+perf_cache_miss,examples/perf_cache_miss.ks,ok,success,results/build/examples/perf_cache_miss/perf_cache_miss.ebpf.o,perf_event,perf_event,1,ok,,
+perf_page_fault,examples/perf_page_fault.ks,ok,success,results/build/examples/perf_page_fault/perf_page_fault.ebpf.o,perf_event,perf_event,1,ok,,
+pointer_simple,examples/pointer_simple.ks,ok,success,results/build/examples/pointer_simple/pointer_simple.ebpf.o,xdp,xdp,1,ok,,
+print_demo,examples/print_demo.ks,ok,success,results/build/examples/print_demo/print_demo.ebpf.o,xdp,xdp,1,ok,,
+private_kfunc,examples/private_kfunc.ks,ok,success,results/build/examples/private_kfunc/private_kfunc.ebpf.o,xdp,xdp,1,failed,missing_kernel_btf_symbol,"libbpf: extern (func ksym) 'process_value': not found in kernel or module BTFs
+Error: failed to load object file"
+probe_do_exit,examples/probe_do_exit.ks,ok,success,results/build/examples/probe_do_exit/probe_do_exit.ebpf.o,fentry/do_exit,fentry,1,ok,,
+rate_limiter,examples/rate_limiter.ks,ok,success,results/build/examples/rate_limiter/rate_limiter.ebpf.o,xdp,xdp,1,ok,,
+ringbuf_demo,examples/ringbuf_demo.ks,ok,success,results/build/examples/ringbuf_demo/ringbuf_demo.ebpf.o,xdp fentry/sys_openat,fentry xdp,2,failed,map_create_failed,"libbpf: Error in bpf_create_map_xattr(__pinned_globals): -EINVAL. Retrying without BTF.
+libbpf: map '__pinned_globals': failed to create: -EINVAL
+Error: failed to load object file"
+ringbuf_on_event_demo,examples/ringbuf_on_event_demo.ks,ok,success,results/build/examples/ringbuf_on_event_demo/ringbuf_on_event_demo.ebpf.o,xdp fentry/sys_openat,fentry xdp,2,failed,verifier_reference_leak,"libbpf: prog 'network_monitor': BPF program load failed: -EINVAL
+libbpf: prog 'network_monitor': -- BEGIN PROG LOAD LOG --
+0: R1=ctx() R10=fp0
+; enum xdp_action network_monitor(struct xdp_md* ctx) { @ ringbuf_on_event_demo.ebpf.c:69
+0: (bf) r4 = r10                      ; R4_w=fp0 R10=fp0
+; if (bpf_ringbuf_reserve_dynptr(&network_events, sizeof(struct NetworkEvent), 0, &__ringbuf_reserve_0_dynptr) == 0) { @ ringbuf_on_event_demo.ebpf.c:73
+1: (07) r4 += -16                     ; R4_w=fp-16
+2: (18) r1 = 0xffff89760333eb00       ; R1_w=map_ptr(map=network_events,ks=0,vs=0)
+4: (b7) r2 = 12                       ; R2_w=12
+5: (b7) r3 = 0                        ; R3_w=0
+6: (85) call bpf_ringbuf_reserve_dynptr#198   ; R0_w=scalar() fp-16_w=dynptr_ringbuf(id=1,ref_id=2,dynptr_id=1) refs=2
+7: (55) if r0 != 0x0 goto pc+10       ; R0_w=0 refs=2"
+sched_ext_simple,examples/sched_ext_simple.ks,failed,libbpf_struct_ops_skeleton_api_mismatch,results/build/examples/sched_ext_simple/sched_ext_simple.ebpf.o,struct_ops/select_cpu struct_ops/enqueue struct_ops/dispatch struct_ops/runnable struct_ops/running struct_ops/stopping struct_ops/quiescent struct_ops/init_task struct_ops/exit_task struct_ops/enable struct_ops/init struct_ops/exit,struct_ops,12,failed,struct_ops_argument_type,"libbpf: prog 'select_cpu': BPF program load failed: -EINVAL
+libbpf: prog 'select_cpu': -- BEGIN PROG LOAD LOG --
+0: R1=ctx() R10=fp0
+; __s32 select_cpu(struct task_struct* p, __s32 prev_cpu, __u64 wake_flags) { @ sched_ext_simple.ebpf.c:16
+0: (bf) r6 = r1                       ; R1=ctx() R6_w=ctx()
+1: (b7) r1 = 0                        ; R1_w=0
+; __u8 direct = 0; @ sched_ext_simple.ebpf.c:18
+2: (73) *(u8 *)(r10 -1) = r1          ; R1_w=0 R10=fp0 fp-8=0???????
+3: (bf) r4 = r10                      ; R4_w=fp0 R10=fp0
+;  @ sched_ext_simple.ebpf.c:0
+4: (07) r4 += -1                      ; R4_w=fp-1
+; cpu = scx_bpf_select_cpu_dfl(p, prev_cpu, wake_flags, __unop_0); @ sched_ext_simple.ebpf.c:21"
+simple_gfp_test,examples/simple_gfp_test.ks,ok,success,results/build/examples/simple_gfp_test/simple_gfp_test.ebpf.o,xdp,xdp,1,failed,verifier_rejected,"libbpf: prog 'valid_ebpf_allocation': BPF program load failed: -EACCES
+libbpf: prog 'valid_ebpf_allocation': -- BEGIN PROG LOAD LOG --
+0: R1=ctx() R10=fp0
+; ptr = bpf_obj_new(struct TestData); @ simple_gfp_test.ebpf.c:73
+0: (18) r1 = 0x8                      ; R1_w=8
+2: (b7) r2 = 0                        ; R2_w=0
+3: (85) call bpf_obj_new_impl#72771   ; R0_w=ptr_or_null_TestData(id=2,ref_obj_id=2) refs=2
+; bpf_obj_drop(ptr); @ simple_gfp_test.ebpf.c:74
+4: (bf) r1 = r0                       ; R0_w=ptr_or_null_TestData(id=2,ref_obj_id=2) R1_w=ptr_or_null_TestData(id=2,ref_obj_id=2) refs=2
+5: (b7) r2 = 0                        ; R2_w=0 refs=2
+6: (85) call bpf_obj_drop_impl#72754
+Possibly NULL pointer passed to trusted arg0"
+simple_program_lifecycle,examples/simple_program_lifecycle.ks,ok,success,results/build/examples/simple_program_lifecycle/simple_program_lifecycle.ebpf.o,xdp,xdp,1,ok,,
+string_test,examples/string_test.ks,ok,success,results/build/examples/string_test/string_test.ebpf.o,xdp,xdp,1,failed,verifier_rejected,"libbpf: prog 'string_demo': BPF program load failed: -EACCES
+libbpf: prog 'string_demo': -- BEGIN PROG LOAD LOG --
+0: R1=ctx() R10=fp0
+; enum xdp_action string_demo(struct xdp_md* ctx) { @ string_test.ebpf.c:55
+0: (b7) r1 = 327680                   ; R1_w=0x50000
+; str_16_t name = { @ string_test.ebpf.c:62
+1: (63) *(u32 *)(r10 -64) = r1        ; R1_w=0x50000 R10=fp0 fp-64=????0x50000
+2: (b7) r6 = 0                        ; R6_w=0
+3: (7b) *(u64 *)(r10 -72) = r6        ; R6_w=0 R10=fp0 fp-72_w=0
+4: (18) r1 = 0x6f6c6c6568             ; R1_w=0x6f6c6c6568
+6: (7b) *(u64 *)(r10 -80) = r1        ; R1_w=0x6f6c6c6568 R10=fp0 fp-80_w=0x6f6c6c6568
+7: (18) r1 = 0x5006f6c6c6568          ; R1_w=0x5006f6c6c6568"
+struct_ops_simple,examples/struct_ops_simple.ks,failed,libbpf_struct_ops_skeleton_api_mismatch,results/build/examples/struct_ops_simple/struct_ops_simple.ebpf.o,struct_ops/ssthresh struct_ops/undo_cwnd struct_ops/cong_avoid struct_ops/set_state struct_ops/cwnd_event,struct_ops,5,ok,,
+symbols,examples/symbols.ks,ok,success,results/build/examples/symbols/symbols.ebpf.o,xdp tc/ingress,tc xdp,2,ok,,
+sysctl_demo,examples/sysctl_demo.ks,ok,success,results/build/examples/sysctl_demo/sysctl_demo.ebpf.o,xdp,xdp,1,ok,,
+tail_call,examples/tail_call.ks,ok,success,results/build/examples/tail_call/tail_call.ebpf.o,xdp,xdp,1,ok,,
+test_config,examples/test_config.ks,ok,success,results/build/examples/test_config/test_config.ebpf.o,xdp,xdp,1,ok,,
+test_error_handling,examples/test_error_handling.ks,ok,success,results/build/examples/test_error_handling/test_error_handling.ebpf.o,xdp,xdp,1,ok,,
+test_exec,examples/test_exec.ks,ok,success,results/build/examples/test_exec/test_exec.ebpf.o,xdp,xdp,1,ok,,
+test_functions,examples/test_functions.ks,ok,success,results/build/examples/test_functions/test_functions.ebpf.o,xdp,xdp,1,ok,,
+tracepoint_sched_switch,examples/tracepoint_sched_switch.ks,ok,success,results/build/examples/tracepoint_sched_switch/tracepoint_sched_switch.ebpf.o,tracepoint/sched/sched_switch,tracepoint,1,ok,,
+type_alias,examples/type_alias.ks,ok,success,results/build/examples/type_alias/type_alias.ebpf.o,xdp,xdp,1,ok,,
+type_checking,examples/type_checking.ks,ok,success,results/build/examples/type_checking/type_checking.ebpf.o,xdp,xdp,1,ok,,
+types_demo,examples/types_demo.ks,ok,success,results/build/examples/types_demo/types_demo.ebpf.o,xdp,xdp,1,ok,,
+userspace_example,examples/userspace_example.ks,ok,success,results/build/examples/userspace_example/userspace_example.ebpf.o,xdp,xdp,1,ok,,

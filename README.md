@@ -7,6 +7,8 @@ evaluation scripts, generated results, and a paper draft.
 
 - `kernelscript/`: cloned upstream repository.
 - `experiments/run_evaluation.py`: compiler/test/example build evaluation.
+- `experiments/run_verifier_matrix.py`: bpftool verifier-load matrix for
+  generated eBPF objects.
 - `experiments/run_static_checks.py`: positive and negative static-check corpus.
 - `experiments/run_smoke.sh`: privileged attach/detach smoke test on `lo`.
 - `experiments/run_microbench.py`: XDP BPF_PROG_TEST_RUN microbenchmarks
@@ -37,6 +39,13 @@ Run the main evaluation:
 
 ```bash
 ./experiments/run_evaluation.py
+```
+
+Run the verifier-load matrix, which requires `sudo -n` and the generated
+example build outputs from `run_evaluation.py`:
+
+```bash
+./experiments/run_verifier_matrix.py
 ```
 
 Run the static-check corpus:
@@ -87,6 +96,10 @@ The current run evaluates KernelScript commit `6f9e6e8` on Linux
 - Unit tests: 85 suites, 1092 tests, 0 reported failures.
 - Examples: 44 total, 43 KernelScript compile successes, 41 full generated
   C/eBPF build successes.
+- Verifier-load matrix: 33 of 43 generated eBPF objects load with
+  `bpftool prog loadall`. Among the 41 objects from full generated-project
+  build successes, 32 load successfully and 9 fail with recorded verifier,
+  map-creation, or local BTF-symbol diagnostics.
 - Static checks: 6 total cases, including 5 expected compiler rejections and
   1 positive control, all matching expected outcomes.
 - Safety: `safety_demo.ks` is rejected before C generation for 608 bytes of
