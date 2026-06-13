@@ -1,0 +1,19 @@
+# KernelScript upstream build products
+kernelscript/_build/
+
+# Generated experiment build artifacts and logs
+results/build/
+results/logs/
+
+# LaTeX generated files; keep paper/kernelscript-osdi.pdf
+paper/*.aux
+paper/*.bbl
+paper/*.blg
+paper/*.fdb_latexmk
+paper/*.fls
+paper/*.log
+paper/*.out
+
+# Local editor/cache files
+.DS_Store
+*.swp

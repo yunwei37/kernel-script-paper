@@ -1,0 +1,11 @@
+{
+  "argv": [
+    "dune",
+    "build"
+  ],
+  "cwd": "/home/yunwei37/workspace/kernel-script-paper/kernelscript",
+  "elapsed_sec": 0.09821167299924127,
+  "returncode": 0,
+  "stderr": "",
+  "stdout": ""
+}

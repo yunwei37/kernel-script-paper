@@ -1,0 +1,31 @@
+{
+  "classifications": {
+    "libbpf_struct_ops_skeleton_api_mismatch": 2,
+    "safety_rejected_stack_limit": 1,
+    "success": 41
+  },
+  "feature_counts": {
+    "feature_dynptr": 1,
+    "feature_kfunc": 4,
+    "feature_maps": 17,
+    "feature_perf_event": 2,
+    "feature_probe": 4,
+    "feature_ringbuf": 3,
+    "feature_struct_ops": 2,
+    "feature_tail_call": 2,
+    "feature_tc": 5,
+    "feature_tracepoint": 2,
+    "feature_userspace": 39,
+    "feature_xdp": 38
+  },
+  "ks_compile_failed": 1,
+  "ks_compile_ok": 43,
+  "make_failed_after_ks": 2,
+  "make_ok": 41,
+  "max_generated_to_ks_ratio_success": 41.26,
+  "median_ebpf_instructions_success": 18.5,
+  "median_generated_sloc_success": 472.0,
+  "median_generated_to_ks_ratio_success": 11.33,
+  "median_ks_sloc_success": 31.0,
+  "total_examples": 44
+}

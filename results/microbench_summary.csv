@@ -1,0 +1,5 @@
+name,object,object_bytes,instructions,repeat,trials,median_avg_ns,min_avg_ns,max_avg_ns,samples_avg_ns
+ks_pass,results/build/microbench/ks_pass/perf_pass.ebpf.o,4632,2,100000,7,5.0,5.0,6.0,5.0 5.0 5.0 6.0 5.0 5.0 5.0
+ks_count,results/build/microbench/ks_count/perf_count.ebpf.o,7496,21,100000,7,13.0,12.0,13.0,13.0 13.0 12.0 13.0 13.0 13.0 13.0
+c_pass,results/build/microbench/handwritten/c_pass.o,4720,2,100000,7,5.0,5.0,6.0,5.0 5.0 5.0 6.0 5.0 5.0 5.0
+c_count,results/build/microbench/handwritten/c_count.o,6480,11,100000,7,9.0,8.0,9.0,9.0 9.0 8.0 9.0 9.0 9.0 9.0

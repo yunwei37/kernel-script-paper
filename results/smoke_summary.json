@@ -1,0 +1,6 @@
+{
+  "status": "ok",
+  "returncode": 0,
+  "program": "smoke_lo",
+  "target": "lo"
+}

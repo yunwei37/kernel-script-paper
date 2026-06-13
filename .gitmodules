@@ -1,0 +1,3 @@
+[submodule "kernelscript"]
+	path = kernelscript
+	url = https://github.com/multikernel/kernelscript.git
