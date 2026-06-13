@@ -8,7 +8,7 @@ Source/command: `./experiments/run_xdp_traffic.py`, `./experiments/run_tc_traffi
 
 The artifact now has a broader 23-case static rejection corpus, local
 traffic-driven XDP and TC checks, one generated perf_event loader lifecycle
-check, one perf_event page-fault counter workload, and one ringbuf
+latency check, one perf_event page-fault counter workload, and one ringbuf
 event-emission workload, direct tcp-congestion struct_ops load/attach/detach
 compatibility, and a longer XDP/TC traffic stress rerun in addition to
 BPF_PROG_TEST_RUN microbenchmarks. On
@@ -17,7 +17,9 @@ pairs with iperf3 TCP, KernelScript and hand-written C/eBPF pass/count objects
 all pass the traffic oracles. XDP count medians are 17.4Gb/s for KernelScript
 and 17.5Gb/s for C/eBPF. TC count medians are 87.0Gb/s for KernelScript and
 90.6Gb/s for C/eBPF. The generated perf_event loader and the hand-written
-C/libbpf loader both pass 5/5 attach, counter-read, and detach trials. The
+C/libbpf loader both pass 20/20 attach, counter-read, and detach trials. Median
+end-to-end invocation latencies are 11.1ms and 15.2ms, with p90 latencies of
+44.1ms and 40.3ms, respectively. The
 perf_event counter workload reports 1.13 million events/s for both generated
 and hand-written objects with exact BPF/perf counter agreement. The ringbuf
 workload reports 2.08 versus 2.14 million events/s with exact
@@ -37,7 +39,7 @@ pass, with XDP count medians of 17.8 versus 18.1Gb/s and TC count medians of
 | R002 | `results/attach_matrix_summary.json` | ok | 27/27 verifier-clean single-section XDP objects attach/detach in isolated namespaces. |
 | R003 | `results/xdp_traffic_summary.json` | ok | XDP pass/count KS and C baselines all pass iperf3 traffic; count gap is 0.6% in this local setup. |
 | R004 | `results/tc_traffic_summary.json` | ok | TC ingress pass/count KS and C baselines all pass iperf3 traffic; count gap is 4.0% in this local setup. |
-| R005 | `results/perf_event_loader_summary.json` | ok | Generated perf_event loader and C/libbpf baseline both pass 5/5 lifecycle trials with positive page-fault counters. |
+| R005 | `results/perf_event_loader_summary.json` | ok | Generated perf_event loader and C/libbpf baseline both pass 20/20 lifecycle trials; median invocation latencies are 11.1ms and 15.2ms, with p90 latencies of 44.1ms and 40.3ms. |
 | R006 | `results/perf_event_counter_summary.json` | ok | Perf_event page-fault counter objects both pass 10/10 trials; median BPF map counts exactly match perf counts at 262147 events. |
 | R007 | `results/ringbuf_workload_summary.json` | ok | Ringbuf event-emission objects both pass 10/10 trials; submitted and received counts match at 50000 events with zero drops. |
 | R008 | `results/struct_ops_compat_summary.json` | ok | Generated and C/eBPF tcp-congestion struct_ops objects both load, attach, and detach in 3/3 trials through one direct libbpf runner. |
@@ -58,8 +60,9 @@ pass, with XDP count medians of 17.8 versus 18.1Gb/s and TC count medians of
 - The struct_ops compatibility experiment does not exercise scheduler-extension
   struct_ops, a TCP workload through the attached congestion-control object, or
   generated skeleton userspace code. The perf_event counter, ringbuf, and
-  struct_ops runs are object checks through a shared libbpf runner, not
-  generated-loader throughput evidence.
+  struct_ops runs are object checks through a shared libbpf runner, and the
+  generated-loader latency check is one perf_event lifecycle workload rather
+  than a broad generated-dispatch-loop throughput study.
 
 ## Figure/Table Candidates
 

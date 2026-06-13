@@ -49,8 +49,10 @@ objects, generated loaders, shared runners, baselines, and oracles.
 
 - Runtime evidence remains local-host evidence rather than NIC-rate or
   long-duration deployment evidence.
-- Perf-event counter and ring-buffer workloads use shared libbpf runners, so
-  they do not measure generated userspace dispatch-loop throughput.
+- The perf-event loader workload records one generated-loader invocation
+  latency distribution, but perf-event counter and ring-buffer workloads use
+  shared libbpf runners, so they do not measure broader generated userspace
+  dispatch-loop throughput.
 - Struct_ops evidence covers tcp-congestion object load/attach/detach, not a TCP
   workload, scheduler-extension struct_ops, or generated-skeleton portability.
 - Generated-structure evidence is a corpus artifact result, not a developer
@@ -59,5 +61,5 @@ objects, generated loaders, shared runners, baselines, and oracles.
 ## Follow-Up Gate
 
 The next scientific-strength gate is additional evidence rather than prose:
-generated-loader throughput, scheduler-extension struct_ops, version-aware
+broader generated-dispatch-loop throughput, scheduler-extension struct_ops, version-aware
 skeleton handling, or non-local deployment/longer-duration workload evidence.

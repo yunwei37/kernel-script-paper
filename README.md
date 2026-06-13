@@ -22,7 +22,7 @@ evaluation scripts, generated results, and a paper draft.
 - `experiments/run_traffic_stress.py`: longer XDP and TC traffic stress rerun
   that writes separate stress summaries without replacing headline results.
 - `experiments/run_perf_event_loader.py`: generated perf_event loader lifecycle
-  check against a hand-written C/libbpf loader baseline.
+  latency check against a hand-written C/libbpf loader baseline.
 - `experiments/run_perf_event_counter.py`: perf_event page-fault map-counter
   workload against a hand-written C/eBPF baseline.
 - `experiments/run_ringbuf_workload.py`: XDP ring-buffer event-emission
@@ -114,8 +114,8 @@ Run the optional longer traffic stress rerun, which also requires `sudo -n`,
 ./experiments/run_traffic_stress.py
 ```
 
-Run the optional perf_event generated-loader lifecycle check, which requires
-`sudo -n`:
+Run the optional perf_event generated-loader lifecycle latency check, which
+requires `sudo -n`:
 
 ```bash
 ./experiments/run_perf_event_loader.py
@@ -201,10 +201,12 @@ The current run evaluates KernelScript commit `ccb15b4` on Linux
   and TC pass/count stress oracles pass. XDP count medians are 17.8Gb/s for
   KernelScript and 18.1Gb/s for C/eBPF. TC count medians are 86.5Gb/s for
   KernelScript and 91.1Gb/s for C/eBPF.
-- Perf_event generated-loader lifecycle: over five privileged trials, both the
-  generated `perf_page_fault` loader and a hand-written C/libbpf loader attach
-  two perf_event programs, read positive page-fault counters, read branch-miss
-  counters, and detach cleanly.
+- Perf_event generated-loader lifecycle latency: over twenty privileged trials,
+  both the generated `perf_page_fault` loader and a hand-written C/libbpf loader
+  attach two perf_event programs, read positive page-fault counters, read
+  branch-miss counters, and detach cleanly. Median end-to-end invocation
+  latencies are 11.1ms and 15.2ms, with p90 latencies of 44.1ms and 40.3ms,
+  respectively.
 - Perf_event page-fault counter workload: over ten privileged trials, both
   KernelScript and C/eBPF objects report median 262147 BPF map updates matching
   perf counter reads. Median event rates are 1.13 and 1.13 million events/s,

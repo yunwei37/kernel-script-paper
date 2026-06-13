@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Run generated-loader perf_event lifecycle checks with a C/libbpf baseline."""
+"""Run generated-loader perf_event lifecycle latency checks with a C/libbpf baseline."""
 
 from __future__ import annotations
 
@@ -20,7 +20,7 @@ RESULTS = ROOT / "results"
 BUILD = RESULTS / "build" / "perf_event_loader"
 LOGS = RESULTS / "logs" / "perf_event_loader"
 COMPILER = REPO / "_build" / "default" / "src" / "main.exe"
-TRIALS = int(os.environ.get("KERNELSCRIPT_PERF_LOADER_TRIALS", "5"))
+TRIALS = int(os.environ.get("KERNELSCRIPT_PERF_LOADER_TRIALS", "20"))
 
 
 def run(
@@ -64,6 +64,19 @@ def check_prerequisites() -> str | None:
     if not COMPILER.exists():
         return f"missing KernelScript compiler at {COMPILER}"
     return None
+
+
+def percentile(values: list[float], pct: float) -> float:
+    if not values:
+        return 0.0
+    ordered = sorted(values)
+    if len(ordered) == 1:
+        return ordered[0]
+    rank = (len(ordered) - 1) * pct
+    lower = int(rank)
+    upper = min(lower + 1, len(ordered) - 1)
+    weight = rank - lower
+    return ordered[lower] * (1.0 - weight) + ordered[upper] * weight
 
 
 def compile_kernelscript_loader() -> Path:
@@ -200,6 +213,7 @@ def summarize(name: str, implementation: str, binary: Path) -> dict[str, object]
     page_counts = [int(row["page_fault_count"]) for row in samples]
     branch_counts = [int(row["branch_miss_count"]) for row in samples]
     elapsed = [float(row["elapsed_sec"]) for row in samples]
+    median_elapsed_sec = statistics.median(elapsed)
     return {
         "name": name,
         "implementation": implementation,
@@ -213,8 +227,27 @@ def summarize(name: str, implementation: str, binary: Path) -> dict[str, object]
         "elapsed_sec_samples": elapsed,
         "median_page_fault_count": statistics.median(page_counts),
         "median_branch_miss_count": statistics.median(branch_counts),
-        "median_elapsed_sec": statistics.median(elapsed),
+        "min_elapsed_sec": min(elapsed),
+        "median_elapsed_sec": median_elapsed_sec,
+        "p90_elapsed_sec": percentile(elapsed, 0.90),
+        "max_elapsed_sec": max(elapsed),
+        "median_lifecycle_invocations_per_sec": 1.0 / median_elapsed_sec if median_elapsed_sec > 0 else 0.0,
         "oracle_passed": all(bool(row["oracle_passed"]) for row in samples),
+    }
+
+
+def compare(rows: list[dict[str, object]]) -> dict[str, float]:
+    by_name = {str(row["name"]): row for row in rows}
+    ks = by_name["ks_generated"]
+    c = by_name["c_libbpf"]
+    ks_elapsed = float(ks["median_elapsed_sec"])
+    c_elapsed = float(c["median_elapsed_sec"])
+    ks_rate = float(ks["median_lifecycle_invocations_per_sec"])
+    c_rate = float(c["median_lifecycle_invocations_per_sec"])
+    return {
+        "ks_over_c_elapsed_ratio": ks_elapsed / c_elapsed if c_elapsed else 0.0,
+        "elapsed_overhead_pct": ((ks_elapsed / c_elapsed) - 1.0) * 100.0 if c_elapsed else 0.0,
+        "ks_over_c_rate_ratio": ks_rate / c_rate if c_rate else 0.0,
     }
 
 
@@ -242,9 +275,11 @@ def main() -> int:
     status = "ok" if all(bool(row["oracle_passed"]) for row in rows) else "failed"
     summary = {
         "status": status,
-        "description": "privileged perf_event generated-loader lifecycle check with a hand-written C/libbpf loader baseline",
+        "description": "privileged perf_event generated-loader lifecycle latency check with a hand-written C/libbpf loader baseline",
         "trials": TRIALS,
+        "latency_scope": "end-to-end process invocation around load, attach, counter read, detach, and teardown",
         "rows": rows,
+        "comparison": compare(rows),
     }
 
     fields = [
@@ -254,7 +289,11 @@ def main() -> int:
         "trials",
         "median_page_fault_count",
         "median_branch_miss_count",
+        "min_elapsed_sec",
         "median_elapsed_sec",
+        "p90_elapsed_sec",
+        "max_elapsed_sec",
+        "median_lifecycle_invocations_per_sec",
         "oracle_passed",
         "returncodes",
         "attached_samples",

@@ -286,8 +286,8 @@ preserves a compile/build path to ordinary libbpf artifacts on our host, and
 rejects selected pre-load errors.  We do not claim
 packet-rate performance equivalence in this paper, because the current traffic
 evidence is limited to matched XDP and TC pass/count programs on local veth
-pairs, and generated-loader runtime evidence is a perf-event lifecycle smoke
-test rather than a throughput benchmark.  Instead, we
+pairs, and generated-loader runtime evidence is a perf-event lifecycle latency
+check rather than a dispatch-loop throughput benchmark.  Instead, we
 focus on reproducible evidence that
 repository examples exercise multiple eBPF domains, selected errors are
 rejected early, generated artifacts are classified by build and verifier-load
@@ -344,9 +344,9 @@ runner that loads, attaches, and detaches the generated
 tcp-congestion-control struct\_ops object and a minimal C/eBPF object with the
 same function set, avoiding generated skeleton code.
 \textbf{Generated-loader lifecycle}
-is measured by a perf-event loader smoke test that requires successful
-load/attach, positive page-fault counter reads, and clean detach for generated
-and hand-written loaders.
+is measured by a perf-event loader latency check that requires successful
+load/attach, positive page-fault counter reads, clean detach, and end-to-end
+invocation timing for generated and hand-written loaders.
 
 \begin{table*}[t]
 \centering
@@ -360,7 +360,7 @@ Claim & Artifact under test & Baseline or actor & Oracle & Boundary \\
 \midrule
 Project generation & Repository examples lowered to generated projects & Compiler and make harness & Build rows, feature markers, generated source lines & Repository corpus only \\
 Early checks & Unit tests and targeted invalid programs & Dune and static-check harnesses & Test success and expected diagnostic categories & Selected cases, not soundness \\
-Compatibility & Generated objects and generated perf loader & Local kernel/toolchain & Pinned-program load criterion, attach state, loader attach/read/detach & Local host only \\
+Compatibility & Generated objects and generated perf loader & Local kernel/toolchain & Pinned-program load criterion, attach state, loader attach/read/detach and invocation timing & Local host only \\
 Runtime sanity & Generated XDP, TC, perf-counter, and ring-buffer objects & Matched C/eBPF objects or shared libbpf runner & iperf3 JSON, positive map counts, perf-counter equality, submitted/received/drop counts & Local workloads only \\
 Struct\_ops compatibility & Generated tcp-congestion object & Minimal C/eBPF object with same function set & Shared libbpf runner load/attach/detach & Object compatibility only, no TCP or scheduler workload \\
 \bottomrule
@@ -641,7 +641,15 @@ coordination beyond XDP attachment, the perf-event loader script compiles
 \texttt{perf\_page\_fault.ks}, compiles a matched hand-written C/libbpf loader,
 and runs each binary with \texttt{sudo -n}.  Over \KSPerfLoaderTrials{} trials,
 both loaders attach two perf-event programs, read page-fault and branch-miss
-counters, and detach cleanly.  To add a sustained non-XDP object workload,
+counters, and detach cleanly.  The generated loader's median end-to-end
+invocation latency is \KSPerfLoaderKsElapsedMs{}ms, with p90
+\KSPerfLoaderKsPNinetyMs{}ms, while the C/libbpf loader reports
+\KSPerfLoaderCElapsedMs{}ms and p90 \KSPerfLoaderCPNinetyMs{}ms.  The corresponding
+median lifecycle invocation rates are \KSPerfLoaderKsIps{} and
+\KSPerfLoaderCIps{} invocations/s.  Because this timing includes process
+startup, sudo, load, attach, counter read, detach, and teardown, we treat it as
+generated-loader lifecycle sanity evidence rather than a dispatch-loop
+throughput claim.  To add a sustained non-XDP object workload,
 \texttt{run\_perf\_event\_counter.py} compiles matched page-fault counter
 objects and runs both with one libbpf runner.  Each trial faults
 \KSPerfCounterPages{} pages for \KSPerfCounterRounds{} rounds, then requires the
@@ -701,9 +709,9 @@ harness and that the map-update gap is caused by a specific lowering choice,
 not by the unified source model alone.  The
 compiler-source patch result strengthens that mechanism claim.  The XDP attach
 matrix plus XDP, TC, perf-event, ring-buffer, and direct struct\_ops checks
-strengthen the local deployment, object-workload, and object-compatibility
-evidence across five program classes, and the longer traffic rerun adds a
-small stress check for the XDP and TC cases.  The
+strengthen the local deployment, generated-loader lifecycle, object-workload,
+and object-compatibility evidence across five program classes, and the longer
+traffic rerun adds a small stress check for the XDP and TC cases.  The
 artifact still does not establish broad runtime equivalence with hand-written
 C/libbpf.
 
@@ -767,11 +775,12 @@ loads generated eBPF objects and therefore catches failures beyond C
 compilation.  The attach matrix goes further for verifier-clean single-section
 XDP objects by installing and removing them on isolated veth devices, and the
 traffic benchmarks send TCP through matched XDP and TC pass/count programs.
-The generated perf-event smoke test adds one repository-example loader that
-opens perf events, attaches BPF programs, reads counters, and detaches cleanly.
-The perf-event counter and ring-buffer benchmarks add sustained object
-workloads, but they use a shared libbpf runner and therefore do not measure
-generated-loader or generated-dispatch-loop throughput.
+The generated perf-event loader test adds one repository-example loader that
+opens perf events, attaches BPF programs, reads counters, detaches cleanly, and
+records end-to-end invocation latency against a C/libbpf loader.  The
+perf-event counter and ring-buffer benchmarks add sustained object workloads,
+but they use a shared libbpf runner and therefore do not measure
+generated-dispatch-loop throughput.
 The struct\_ops compatibility check also uses a shared libbpf runner and
 covers only load/attach/detach of a tcp-congestion object.  It does not run a
 TCP workload through the attached congestion-control implementation, cover
@@ -824,8 +833,9 @@ namespaces, runs matched XDP and TC traffic baselines and a longer local traffic
 stress rerun,
 rejects \KSStaticExpectedFailures{} invalid programs in a targeted static
 corpus, runs a minimal XDP attach/detach smoke test, runs a generated
-perf-event loader through attach, counter-read, and detach checks, exercises a
-sustained perf-event page-fault counter workload, and delivers
+perf-event loader through \KSPerfLoaderTrials{} attach/counter-read/detach
+trials with median end-to-end invocation latency \KSPerfLoaderKsElapsedMs{}ms,
+exercises a sustained perf-event page-fault counter workload, and delivers
 \KSRingbufEvents{} ring-buffer events per trial over \KSRingbufTrials{} trials
 in a matched object workload, with \KSRingbufKsDropped{} generated-object drops
 and \KSRingbufCDropped{} C/eBPF-object drops.  The direct struct\_ops

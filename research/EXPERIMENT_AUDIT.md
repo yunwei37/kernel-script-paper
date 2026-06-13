@@ -80,17 +80,17 @@ build completes from those macros.
 
 ## Metric And Normalization Review
 
-The paper reports absolute counts, medians, ranges, and local gaps from result
-files. Ratios and overhead percentages are derived against matched C/eBPF
-baselines and are labeled as local comparisons. The audit found no headline
-claim that normalizes by KernelScript's own output distribution. The paper
-keeps generated SLOC expansion separate from developer-effort claims.
+The paper reports absolute counts, medians, ranges, and local median differences
+from result files. Ratios and percentage differences are derived against matched
+C/eBPF baselines and are labeled as local comparisons. The audit found no
+headline claim that normalizes by KernelScript's own output distribution. The
+paper keeps generated SLOC expansion separate from developer-effort claims.
 
 ## Scope Language Review
 
 The paper explicitly states that it does not establish broad runtime
 equivalence, NIC-rate performance, scheduler-extension struct_ops portability,
-or full generated-loader throughput. It also labels traffic results as
+or full generated-dispatch-loop throughput. It also labels traffic results as
 local-host veth evidence and labels the struct_ops result as object
 compatibility rather than workload behavior.
 
@@ -99,8 +99,10 @@ compatibility rather than workload behavior.
 1. The traffic and stress results are local veth/TCP measurements. They are
    useful deployment sanity checks but not NIC-rate or long-duration soak
    evidence.
-2. The perf-event counter and ring-buffer workloads use shared libbpf runners,
-   so they do not measure generated userspace dispatch-loop throughput.
+2. The perf-event loader workload records generated-loader invocation latency,
+   but the perf-event counter and ring-buffer workloads use shared libbpf
+   runners, so they do not measure broader generated userspace dispatch-loop
+   throughput.
 3. The struct_ops compatibility check covers tcp-congestion object
    load/attach/detach only. It does not cover scheduler-extension struct_ops,
    generated skeleton compatibility, or workload behavior.

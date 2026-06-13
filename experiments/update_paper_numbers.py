@@ -61,6 +61,21 @@ def mps_range(row) -> str:
     )
 
 
+def elapsed_ms_range(row) -> str:
+    return (
+        f"{row['median_elapsed_sec'] * 1000.0:.1f} "
+        f"({row['min_elapsed_sec'] * 1000.0:.1f}--{row['max_elapsed_sec'] * 1000.0:.1f})"
+    )
+
+
+def elapsed_ms(value: int | float) -> str:
+    return f"{value * 1000.0:.1f}"
+
+
+def ips(value: int | float) -> str:
+    return f"{value:.1f}"
+
+
 def integer(value: int | float) -> str:
     return f"{value:.0f}"
 
@@ -291,11 +306,20 @@ def main() -> int:
     content += macro("KSTrafficStressTCCountOverheadPct", f"{stress_comparisons['tc']['count']['overhead_pct']:.1f}\\%")
 
     perf_rows = {row["name"]: row for row in perf_loader["rows"]}
+    perf_loader_comparison = perf_loader["comparison"]
     content += macro("KSPerfLoaderTrials", perf_loader["trials"])
     content += macro("KSPerfLoaderKsPageFaults", integer(perf_rows["ks_generated"]["median_page_fault_count"]))
     content += macro("KSPerfLoaderCPageFaults", integer(perf_rows["c_libbpf"]["median_page_fault_count"]))
     content += macro("KSPerfLoaderKsBranchMisses", integer(perf_rows["ks_generated"]["median_branch_miss_count"]))
     content += macro("KSPerfLoaderCBranchMisses", integer(perf_rows["c_libbpf"]["median_branch_miss_count"]))
+    content += macro("KSPerfLoaderKsElapsedMs", elapsed_ms_range(perf_rows["ks_generated"]))
+    content += macro("KSPerfLoaderCElapsedMs", elapsed_ms_range(perf_rows["c_libbpf"]))
+    content += macro("KSPerfLoaderKsPNinetyMs", elapsed_ms(perf_rows["ks_generated"]["p90_elapsed_sec"]))
+    content += macro("KSPerfLoaderCPNinetyMs", elapsed_ms(perf_rows["c_libbpf"]["p90_elapsed_sec"]))
+    content += macro("KSPerfLoaderKsIps", ips(perf_rows["ks_generated"]["median_lifecycle_invocations_per_sec"]))
+    content += macro("KSPerfLoaderCIps", ips(perf_rows["c_libbpf"]["median_lifecycle_invocations_per_sec"]))
+    content += macro("KSPerfLoaderElapsedOverheadPct", f"{perf_loader_comparison['elapsed_overhead_pct']:.1f}\\%")
+    content += macro("KSPerfLoaderRateRatio", f"{perf_loader_comparison['ks_over_c_rate_ratio']:.2f}x")
 
     perf_counter_rows = {row["name"]: row for row in perf_counter["rows"]}
     perf_counter_comparison = perf_counter["comparison"]
