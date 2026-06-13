@@ -293,16 +293,17 @@ libbpf 1.3.0, OCaml 4.14, and dune 3.14.  The host CPU is a
 microbenchmarks and object workloads do not pin CPUs or change the governor, so
 their nanosecond and event-rate values should be read as local comparisons
 rather than general performance claims.  The evaluated commit is
-\KSCommitShort{}.  The artifact contains fourteen measurement scripts under
+\KSCommitShort{}.  The artifact contains fifteen measurement scripts under
 \texttt{experiments/}.  They cover compiler tests and example builds,
 static-check cases, strict verifier loading, isolated XDP attach/detach, XDP and
 TC traffic over fresh veth/netns pairs, perf-event loader and counter workloads,
 ring-buffer event emission, direct struct\_ops load/attach/detach
-compatibility, and two map-update lowering ablations.  The traffic scripts compare generated
-objects with matched hand-written C/eBPF baselines.  The perf-event counter,
-ring-buffer, and struct\_ops scripts use one libbpf runner for both objects and
-check BPF map counts, submitted/received event counts, or load/attach/detach
-outcomes.  The main
+compatibility, a longer XDP/TC traffic stress rerun, and two map-update
+lowering ablations.  The traffic scripts compare generated objects with
+matched hand-written C/eBPF baselines.  The perf-event counter, ring-buffer,
+and struct\_ops scripts use one libbpf runner for both objects and check BPF
+map counts, submitted/received event counts, or load/attach/detach outcomes.
+The main
 mechanism-isolation script copies the \tool{}
 compiler source, applies a tracked compiler-source patch for array-map
 increment lowering, rebuilds the patched compiler, and reruns the same count
@@ -325,6 +326,8 @@ XDP attach/detach outcomes against the local kernel toolchain.
 \textbf{Runtime sanity} is measured by iperf3 over veth/netns for matched XDP
 and TC pass/count objects, by a perf-event page-fault counter workload, and by
 a ring-buffer event-emission workload with a submitted/received/drop oracle.
+The traffic stress rerun repeats the XDP and TC traffic checks with longer
+per-trial iperf3 runs.
 \textbf{Struct\_ops object compatibility} is measured by a direct libbpf
 runner that loads, attaches, and detaches the generated
 tcp-congestion-control struct\_ops object and a minimal C/eBPF object with the
@@ -601,6 +604,21 @@ respectively, and all TC trials have zero retransmits in the checked-in run.
 This result is still local-host evidence, but it directly addresses the
 XDP-only limitation of the earlier runtime checks.
 
+\textbf{Longer traffic stress.}  To check whether the one-second traffic
+trials hide immediate instability, \texttt{run\_traffic\_stress.py} reruns the
+same XDP and TC pass/count objects for \KSTrafficStressTrials{} trials of
+\KSTrafficStressSeconds{}s each.  All stress-run oracles pass.  In the count
+benchmarks, XDP reports \KSTrafficStressXDPKsCountGbps{} Gb/s for \tool{} and
+\KSTrafficStressXDPCCountGbps{} Gb/s for C/eBPF, a
+\KSTrafficStressXDPCountOverheadPct{} local gap, while TC reports
+\KSTrafficStressTCKsCountGbps{} Gb/s and \KSTrafficStressTCCCountGbps{} Gb/s,
+a \KSTrafficStressTCCountOverheadPct{} local gap.  The count-map invocation
+rates remain positive at \KSTrafficStressXDPKsCountMpps{} and
+\KSTrafficStressXDPCCountMpps{} Mpps for XDP, and
+\KSTrafficStressTCKsCountMpps{} and \KSTrafficStressTCCCountMpps{} Mpps for
+TC.  This is still a short local stress check, but it reduces the risk that the
+traffic evidence is only a one-second artifact.
+
 \textbf{Perf-event loader and counter workloads.}  To check generated userspace
 coordination beyond XDP attachment, the perf-event loader script compiles
 \texttt{perf\_page\_fault.ks}, compiles a matched hand-written C/libbpf loader,
@@ -665,7 +683,8 @@ not by the unified source model alone.  The
 compiler-source patch result strengthens that mechanism claim.  The XDP attach
 matrix plus XDP, TC, perf-event, ring-buffer, and direct struct\_ops checks
 strengthen the local deployment, object-workload, and object-compatibility
-evidence across five program classes, but the
+evidence across five program classes, and the longer traffic rerun adds a
+small stress check for the XDP and TC cases.  The
 artifact still does not establish broad runtime equivalence with hand-written
 C/libbpf.
 
@@ -738,8 +757,9 @@ The struct\_ops compatibility check also uses a shared libbpf runner and
 covers only load/attach/detach of a tcp-congestion object.  It does not run a
 TCP workload through the attached congestion-control implementation, cover
 scheduler-extension struct\_ops, or measure generated-loader behavior.
-However, the traffic runs are local-host veth evidence, not NIC-rate
-performance.  A complete
+However, the traffic runs, including the \KSTrafficStressSeconds{}s stress
+rerun, are local-host veth evidence, not NIC-rate performance or long-duration
+soak tests.  A complete
 deployment study would run each example in a VM with known kernel configuration,
 representative workloads, and explicit cleanup checks after detach.
 
@@ -778,7 +798,8 @@ eBPF development.  Our artifact evaluation shows that the current compiler
 passes a broad test suite, compiles most repository examples, builds most
 generated projects, verifier-loads \KSVerifierBuildLoadOK{} build-success
 objects, attaches and detaches \KSAttachOK{} verifier-clean single-section XDP
-objects in isolated namespaces, runs matched XDP and TC traffic baselines,
+objects in isolated namespaces, runs matched XDP and TC traffic baselines and a
+longer local traffic stress rerun,
 rejects \KSStaticExpectedFailures{} invalid programs in a targeted static
 corpus, runs a minimal XDP attach/detach smoke test, runs a generated
 perf-event loader through attach, counter-read, and detach checks, exercises a

@@ -91,6 +91,7 @@ def main() -> int:
     attach = load_json("attach_matrix_summary.json")
     xdp_traffic = load_json("xdp_traffic_summary.json")
     tc_traffic = load_json("tc_traffic_summary.json")
+    traffic_stress = load_json("traffic_stress_summary.json")
     perf_loader = load_json("perf_event_loader_summary.json")
     perf_counter = load_json("perf_event_counter_summary.json")
     ringbuf = load_json("ringbuf_workload_summary.json")
@@ -116,6 +117,8 @@ def main() -> int:
         raise SystemExit("XDP traffic benchmark did not complete successfully")
     if tc_traffic.get("status") != "ok":
         raise SystemExit("TC traffic benchmark did not complete successfully")
+    if traffic_stress.get("status") != "ok":
+        raise SystemExit("traffic stress benchmark did not complete successfully")
     if perf_loader.get("status") != "ok":
         raise SystemExit("perf_event generated-loader smoke test did not complete successfully")
     if perf_counter.get("status") != "ok":
@@ -267,6 +270,25 @@ def main() -> int:
     content += macro("KSTCTrafficPassRatio", f"{tc_comparisons['pass']['ks_over_c_ratio']:.2f}x")
     content += macro("KSTCTrafficCountRatio", f"{tc_comparisons['count']['ks_over_c_ratio']:.2f}x")
     content += macro("KSTCTrafficCountOverheadPct", f"{tc_comparisons['count']['overhead_pct']:.1f}\\%")
+
+    stress_rows = {(row["family"], row["name"]): row for row in traffic_stress["rows"]}
+    stress_comparisons = traffic_stress["comparisons"]
+    content += macro("KSTrafficStressTrials", traffic_stress["trials"])
+    content += macro("KSTrafficStressSeconds", traffic_stress["seconds_per_trial"])
+    content += macro("KSTrafficStressXDPKsPassGbps", gbps_range(stress_rows[("xdp", "ks_pass")]))
+    content += macro("KSTrafficStressXDPCPassGbps", gbps_range(stress_rows[("xdp", "c_pass")]))
+    content += macro("KSTrafficStressXDPKsCountGbps", gbps_range(stress_rows[("xdp", "ks_count")]))
+    content += macro("KSTrafficStressXDPCCountGbps", gbps_range(stress_rows[("xdp", "c_count")]))
+    content += macro("KSTrafficStressXDPKsCountMpps", mpps(stress_rows[("xdp", "ks_count")]["median_map_mpps"]))
+    content += macro("KSTrafficStressXDPCCountMpps", mpps(stress_rows[("xdp", "c_count")]["median_map_mpps"]))
+    content += macro("KSTrafficStressXDPCountOverheadPct", f"{stress_comparisons['xdp']['count']['overhead_pct']:.1f}\\%")
+    content += macro("KSTrafficStressTCKsPassGbps", gbps_range(stress_rows[("tc", "ks_pass")]))
+    content += macro("KSTrafficStressTCCPassGbps", gbps_range(stress_rows[("tc", "c_pass")]))
+    content += macro("KSTrafficStressTCKsCountGbps", gbps_range(stress_rows[("tc", "ks_count")]))
+    content += macro("KSTrafficStressTCCCountGbps", gbps_range(stress_rows[("tc", "c_count")]))
+    content += macro("KSTrafficStressTCKsCountMpps", mpps(stress_rows[("tc", "ks_count")]["median_map_mpps"]))
+    content += macro("KSTrafficStressTCCCountMpps", mpps(stress_rows[("tc", "c_count")]["median_map_mpps"]))
+    content += macro("KSTrafficStressTCCountOverheadPct", f"{stress_comparisons['tc']['count']['overhead_pct']:.1f}\\%")
 
     perf_rows = {row["name"]: row for row in perf_loader["rows"]}
     content += macro("KSPerfLoaderTrials", perf_loader["trials"])

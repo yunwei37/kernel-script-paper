@@ -19,6 +19,8 @@ evaluation scripts, generated results, and a paper draft.
   benchmark against hand-written C/eBPF baselines.
 - `experiments/run_tc_traffic.py`: iperf3-over-veth TC ingress pass/count
   traffic benchmark against hand-written C/eBPF baselines.
+- `experiments/run_traffic_stress.py`: longer XDP and TC traffic stress rerun
+  that writes separate stress summaries without replacing headline results.
 - `experiments/run_perf_event_loader.py`: generated perf_event loader lifecycle
   check against a hand-written C/libbpf loader baseline.
 - `experiments/run_perf_event_counter.py`: perf_event page-fault map-counter
@@ -105,6 +107,13 @@ requirements and uses `tc qdisc clsact` plus direct-action BPF filters:
 ./experiments/run_tc_traffic.py
 ```
 
+Run the optional longer traffic stress rerun, which also requires `sudo -n`,
+`iperf3`, and local veth/netns support:
+
+```bash
+./experiments/run_traffic_stress.py
+```
+
 Run the optional perf_event generated-loader lifecycle check, which requires
 `sudo -n`:
 
@@ -188,6 +197,10 @@ The current run evaluates KernelScript commit `ccb15b4` on Linux
   C/eBPF. Count medians are 87.0Gb/s for KernelScript and 90.6Gb/s for C/eBPF,
   with positive `counts` map invocation rates at 0.25 and 0.26 Mpps
   respectively.
+- Longer traffic stress: over three 5s iperf3 TCP trials per variant, all XDP
+  and TC pass/count stress oracles pass. XDP count medians are 17.8Gb/s for
+  KernelScript and 18.1Gb/s for C/eBPF. TC count medians are 86.5Gb/s for
+  KernelScript and 91.1Gb/s for C/eBPF.
 - Perf_event generated-loader lifecycle: over five privileged trials, both the
   generated `perf_page_fault` loader and a hand-written C/libbpf loader attach
   two perf_event programs, read positive page-fault counters, read branch-miss

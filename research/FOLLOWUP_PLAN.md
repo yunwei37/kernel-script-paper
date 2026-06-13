@@ -9,11 +9,11 @@ isolated XDP attach matrix, local XDP and TC traffic benchmarks, one generated
 perf_event loader lifecycle smoke test, a perf_event page-fault counter
 workload, a ringbuf event-emission workload, a direct tcp-congestion struct_ops
 load/attach/detach compatibility check, and a broader 23-case static negative
-corpus.
+corpus. It now also includes a longer XDP/TC traffic stress rerun.
 It is still not yet a top-systems weak accept. The main remaining gap is
 representative runtime evidence across scheduler-extension or workload-level
-struct_ops, generated-loader throughput, and stronger traffic/stress
-methodology.
+struct_ops, generated-loader throughput, and non-local or longer-duration
+deployment methodology.
 
 ## Completed In This Iteration
 
@@ -40,6 +40,9 @@ methodology.
 - Added `experiments/run_struct_ops_compat.py`, which compares generated and
   hand-written tcp-congestion struct_ops objects under a shared libbpf runner
   and requires load, attach, and detach success without generated skeletons.
+- Added `experiments/run_traffic_stress.py`, which reruns matched XDP and TC
+  pass/count traffic checks for three 5s trials per variant while preserving
+  the headline 1s summaries.
 - Expanded `experiments/run_static_checks.py` to 23 deterministic cases,
   including 22 expected rejections across lifecycle, signature, map, type,
   symbol, config, ringbuf, and safety categories.
@@ -53,8 +56,9 @@ methodology.
 1. Sustained matched C/libbpf runtime baselines for scheduler-extension or
    workload-level struct_ops programs, plus broader perf_event event types and
    generated-loader throughput.
-2. Longer XDP and TC stress runs using isolated network
-   namespaces, `xdp-bench`, `pktgen`, or a controlled packet generator.
+2. Larger XDP and TC stress runs using isolated network
+   namespaces, `xdp-bench`, `pktgen`, a controlled packet generator, or a
+   non-local VM/NIC setup.
 3. Packet-behavior checks for the XDP attach-matrix objects, not only
    attach/detach.
 4. Expanded static negative corpus beyond the current targeted 23-case suite,

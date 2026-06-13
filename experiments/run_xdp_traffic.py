@@ -17,8 +17,14 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 REPO = Path(os.environ.get("KERNELSCRIPT_REPO", ROOT / "kernelscript")).resolve()
 RESULTS = ROOT / "results"
-BUILD = RESULTS / "build" / "xdp_traffic"
-LOGS = RESULTS / "logs" / "xdp_traffic"
+RUN_LABEL = os.environ.get("KERNELSCRIPT_XDP_TRAFFIC_LABEL", os.environ.get("KERNELSCRIPT_TRAFFIC_LABEL", "")).strip()
+if RUN_LABEL and not re.fullmatch(r"[A-Za-z0-9_]+", RUN_LABEL):
+    raise SystemExit("KERNELSCRIPT_XDP_TRAFFIC_LABEL must contain only letters, digits, and underscores")
+RUN_NAME = "xdp_traffic" if not RUN_LABEL else f"xdp_traffic_{RUN_LABEL}"
+BUILD = RESULTS / "build" / RUN_NAME
+LOGS = RESULTS / "logs" / RUN_NAME
+SUMMARY_JSON = RESULTS / f"{RUN_NAME}_summary.json"
+SUMMARY_CSV = RESULTS / f"{RUN_NAME}_summary.csv"
 COMPILER = REPO / "_build" / "default" / "src" / "main.exe"
 TRIALS = int(os.environ.get("KERNELSCRIPT_TRAFFIC_TRIALS", "10"))
 SECONDS = int(os.environ.get("KERNELSCRIPT_TRAFFIC_SECONDS", "1"))
@@ -338,7 +344,7 @@ def main() -> int:
     reason = check_prerequisites()
     if reason:
         summary = {"status": "skipped", "reason": reason}
-        write(RESULTS / "xdp_traffic_summary.json", json.dumps(summary, indent=2) + "\n")
+        write(SUMMARY_JSON, json.dumps(summary, indent=2) + "\n")
         print(json.dumps(summary, indent=2))
         return 0
 
@@ -370,6 +376,7 @@ def main() -> int:
     summary = {
         "status": status,
         "description": "iperf3 TCP over veth/netns with XDP objects attached on the receiver-side veth.",
+        "run_label": RUN_LABEL or "default",
         "trials": TRIALS,
         "seconds_per_trial": SECONDS,
         "rows": row_list,
@@ -395,7 +402,7 @@ def main() -> int:
         "xdp_map_count_samples",
         "xdp_map_mpps_samples",
     ]
-    with (RESULTS / "xdp_traffic_summary.csv").open("w", newline="", encoding="utf-8") as f:
+    with SUMMARY_CSV.open("w", newline="", encoding="utf-8") as f:
         writer = csv.DictWriter(f, fieldnames=fields, lineterminator="\n")
         writer.writeheader()
         for row in row_list:
@@ -410,7 +417,7 @@ def main() -> int:
                 out[key] = " ".join(str(value) for value in row[key])
             writer.writerow({key: out[key] for key in fields})
 
-    write(RESULTS / "xdp_traffic_summary.json", json.dumps(summary, indent=2, sort_keys=True) + "\n")
+    write(SUMMARY_JSON, json.dumps(summary, indent=2, sort_keys=True) + "\n")
     print(json.dumps({k: summary[k] for k in summary if k != "rows"}, indent=2, sort_keys=True))
     return 0 if status == "ok" else 1
 

@@ -69,8 +69,9 @@ on integer array maps from lookup-plus-update to checked lookup plus in-place
 atomic add. The harness resets and reads the `counts` map on every trial to
 verify that all variants perform the same 100000 increments. Then run matched
 KernelScript and hand-written C/eBPF XDP and TC pass/count objects over iperf3
-TCP traffic on isolated veth pairs, plus matched ring-buffer event emission
-through one libbpf runner.
+TCP traffic on isolated veth pairs, repeat the XDP/TC traffic checks with
+longer per-trial stress runs, plus matched ring-buffer event emission through
+one libbpf runner.
 
 ## Implemented Experiments
 
@@ -169,7 +170,17 @@ through one libbpf runner.
    - Writes `results/perf_event_loader_summary.csv` and
      `results/perf_event_loader_summary.json`.
 
-11. `experiments/run_perf_event_counter.py`
+11. `experiments/run_traffic_stress.py`
+   - Runs the XDP and TC traffic harnesses with a separate `stress` result
+     label.
+   - Uses 3 trials of 5 seconds by default for each XDP/TC pass/count variant.
+   - Preserves the headline 1s traffic summaries while writing
+     `results/xdp_traffic_stress_summary.json`,
+     `results/tc_traffic_stress_summary.json`, and
+     `results/traffic_stress_summary.json`.
+   - Requires all XDP and TC traffic oracles to pass.
+
+12. `experiments/run_perf_event_counter.py`
    - Compiles a KernelScript perf_event page-fault counter and a matched
      hand-written C/eBPF object.
    - Uses one libbpf runner to attach both objects to a software page-fault perf
@@ -179,7 +190,7 @@ through one libbpf runner.
    - Writes `results/perf_event_counter_summary.csv` and
      `results/perf_event_counter_summary.json`.
 
-12. `experiments/run_ringbuf_workload.py`
+13. `experiments/run_ringbuf_workload.py`
    - Compiles a KernelScript XDP ringbuf event emitter and a matched
      hand-written C/eBPF object.
    - Uses one libbpf runner to execute both objects through BPF_PROG_TEST_RUN
@@ -189,7 +200,7 @@ through one libbpf runner.
    - Writes `results/ringbuf_workload_summary.csv` and
      `results/ringbuf_workload_summary.json`.
 
-13. `experiments/run_struct_ops_compat.py`
+14. `experiments/run_struct_ops_compat.py`
    - Compiles `kernelscript/examples/struct_ops_simple.ks` with `make
      ebpf-only`.
    - Compiles a hand-written tcp-congestion struct_ops C/eBPF object with the
@@ -202,7 +213,7 @@ through one libbpf runner.
    - Writes `results/struct_ops_compat_summary.csv` and
      `results/struct_ops_compat_summary.json`.
 
-14. `experiments/run_lowering_ablation.py`
+15. `experiments/run_lowering_ablation.py`
    - Compiles the KernelScript XDP count benchmark.
    - Copies the generated project and patches the map update lowering from
      lookup plus update helper to in-place atomic add.
@@ -213,11 +224,12 @@ through one libbpf runner.
    - Writes `results/lowering_ablation_summary.csv` and
      `results/lowering_ablation_summary.json`.
 
-15. `experiments/update_paper_numbers.py`
+16. `experiments/update_paper_numbers.py`
    - Checks that unit tests, static checks, smoke test, microbenchmarks, and
-     XDP traffic, TC traffic, perf_event loader smoke, perf_event counter,
-     ringbuf workload, struct_ops compatibility, verifier matrix, attach
-     matrix, and both lowering ablations have successful summaries.
+     XDP traffic, TC traffic, traffic stress, perf_event loader smoke,
+     perf_event counter, ringbuf workload, struct_ops compatibility, verifier
+     matrix, attach matrix, and both lowering ablations have successful
+     summaries.
    - Writes `results/paper_numbers.tex` for the LaTeX paper.
 
 ## Current Results
@@ -263,6 +275,10 @@ At commit `ccb15b4`, on Linux `6.15.11-061511-generic`:
   medians are 86.7Gb/s for KernelScript and 87.4Gb/s for C/eBPF. Count medians
   are 87.0Gb/s for KernelScript and 90.6Gb/s for C/eBPF, with positive
   count-map invocation rates of 0.25 and 0.26 Mpps respectively.
+- The longer traffic stress rerun uses 3 trials of 5s per XDP/TC pass/count
+  variant. All stress oracles pass. XDP count medians are 17.8Gb/s for
+  KernelScript and 18.1Gb/s for C/eBPF, and TC count medians are 86.5Gb/s for
+  KernelScript and 91.1Gb/s for C/eBPF.
 - The perf_event loader smoke test runs a generated KernelScript loader and a
   hand-written C/libbpf loader for 5 privileged trials. Both attach two
   perf_event programs, read counters, and detach cleanly in every trial.
@@ -283,20 +299,23 @@ At commit `ccb15b4`, on Linux `6.15.11-061511-generic`:
 
 The current runtime evaluation combines attach/detach checks,
 BPF_PROG_TEST_RUN microbenchmarks, local veth/TCP traffic benchmarks for XDP and
-TC, one generated perf_event loader lifecycle smoke test, a perf_event
-page-fault map-counter workload, and a ring-buffer event-emission workload.
+TC, one longer local XDP/TC traffic stress rerun, one generated perf_event
+loader lifecycle smoke test, a perf_event page-fault map-counter workload, and
+a ring-buffer event-emission workload.
 The attach matrix confirms that verifier-clean single-section XDP objects can
 be installed and removed on isolated veth devices, and the traffic benchmark
 checks matched XDP and TC pass/count objects under real TCP traffic. The
-perf_event smoke test checks one generated repository-example loader against a
-matched C/libbpf loader, the counter workload checks one sustained page-fault
-event path, and the ring-buffer workload checks object-level event delivery and
-loss. The evaluation still does not validate NIC-rate throughput, struct_ops
-runtime behavior, broader perf_event workloads, or generated-loader throughput.
+stress rerun extends that check to three 5s trials per variant while retaining
+the same oracles. The perf_event smoke test checks one generated
+repository-example loader against a matched C/libbpf loader, the counter
+workload checks one sustained page-fault event path, and the ring-buffer
+workload checks object-level event delivery and loss. The evaluation still
+does not validate NIC-rate throughput, struct_ops runtime behavior, broader
+perf_event workloads, or generated-loader throughput.
 A full runtime comparison should add matched hand-written C/libbpf baselines
-for struct_ops programs, broader perf_event workloads, and longer XDP/TC stress
-runs with `pktgen` or `xdp-bench` that report throughput, tail latency,
-verifier log size, and CPU utilization.
+for struct_ops programs, broader perf_event workloads, and larger or non-local
+XDP/TC stress runs with `pktgen` or `xdp-bench` that report throughput, tail
+latency, verifier log size, and CPU utilization.
 The current compiler-source patch should be
 upstreamed or otherwise integrated, semantically generalized beyond constant
 array-map increments where safe, and retested across hash, per-CPU, and
