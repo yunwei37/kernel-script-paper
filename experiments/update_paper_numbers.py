@@ -43,6 +43,14 @@ def ns_range(row) -> str:
     return f"{row['median_avg_ns']:.0f} ({row['min_avg_ns']:.0f}--{row['max_avg_ns']:.0f})"
 
 
+def turbo_state(no_turbo: str) -> str:
+    if no_turbo == "0":
+        return "enabled"
+    if no_turbo == "1":
+        return "disabled"
+    return "unavailable"
+
+
 def main() -> int:
     env = load_json("environment.json")
     unit = load_json("unit_tests_summary.json")
@@ -52,6 +60,7 @@ def main() -> int:
     micro = load_json("microbench_summary.json")
     static = load_json("static_checks_summary.json")
     lowering = load_json("lowering_ablation_summary.json")
+    compiler_patch = load_json("compiler_patch_ablation_summary.json")
 
     if unit.get("returncode") != 0 or unit.get("reported_failures") != 0:
         raise SystemExit("unit tests are not clean; refusing to generate paper numbers")
@@ -63,10 +72,17 @@ def main() -> int:
         raise SystemExit("static checks did not complete successfully")
     if lowering.get("status") != "ok":
         raise SystemExit("lowering ablation did not complete successfully")
+    if compiler_patch.get("status") != "ok":
+        raise SystemExit("compiler patch ablation did not complete successfully")
 
     content = ""
     content += macro("KSCommitShort", str(env["kernelscript_git_head"])[:7])
     content += macro("KSKernelVersion", env["kernel"])
+    content += macro("KSCPUModel", env.get("cpu_model", "unavailable"))
+    content += macro("KSCPUCount", env.get("cpu_count", "unavailable"))
+    content += macro("KSCPUGovernor", env.get("cpu_governor_cpu0", "unavailable"))
+    content += macro("KSTurboState", turbo_state(str(env.get("cpu_intel_pstate_no_turbo", "unavailable"))))
+    content += macro("KSVirtualization", env.get("virtualization", "unavailable"))
     content += macro("KSTotalUnitSuites", unit["suites_successful"])
     content += macro("KSTotalUnitTests", unit["tests_successful"])
     content += macro("KSTotalExamples", summary["total_examples"])
@@ -131,6 +147,24 @@ def main() -> int:
     content += macro("KSAblInstrReductionPct", pct(current_vs_atomic["instruction_reduction"], ablation_current["instructions"]))
     content += macro("KSAblNsReduction", f"{current_vs_atomic['median_ns_reduction']:.0f}")
     content += macro("KSAblNsReductionPct", pct(current_vs_atomic["median_ns_reduction"], ablation_current["median_avg_ns"]))
+
+    compiler_patch_labels = {
+        "ks_count_current": "Current",
+        "ks_count_compiler_patch": "CompilerPatch",
+        "c_count": "C",
+    }
+    for name, label in compiler_patch_labels.items():
+        row = micro_row(compiler_patch, name)
+        content += macro(f"KSCP{label}Instr", row["instructions"])
+        content += macro(f"KSCP{label}Ns", ns_range(row))
+    cp_current = micro_row(compiler_patch, "ks_count_current")
+    content += macro("KSCPTrials", cp_current["trials"])
+    content += macro("KSCPExpectedCount", cp_current["expected_count"])
+    current_vs_compiler_patch = compiler_patch["comparisons"]["current_vs_compiler_patch"]
+    content += macro("KSCPInstrReduction", current_vs_compiler_patch["instruction_reduction"])
+    content += macro("KSCPInstrReductionPct", pct(current_vs_compiler_patch["instruction_reduction"], cp_current["instructions"]))
+    content += macro("KSCPNsReduction", f"{current_vs_compiler_patch['median_ns_reduction']:.0f}")
+    content += macro("KSCPNsReductionPct", pct(current_vs_compiler_patch["median_ns_reduction"], cp_current["median_avg_ns"]))
 
     OUT.write_text(content, encoding="utf-8")
     return 0

@@ -1,0 +1,109 @@
+--- a/src/ir_generator.ml
++++ b/src/ir_generator.ml
+@@ -1437,6 +1437,63 @@
+   emit_instruction ctx instr
+ 
+ (** Lower AST statements to IR instructions *)
++and is_integer_ir_type = function
++  | IRU8 | IRU16 | IRU32 | IRU64 | IRI8 | IRI16 | IRI32 | IRI64 -> true
++  | _ -> false
++
++and same_source_expr left right =
++  Ast.string_of_expr left = Ast.string_of_expr right
++
++and find_map_self_add_delta map_name key_expr value_expr =
++  match value_expr.Ast.expr_desc with
++  | Ast.BinaryOp ({ Ast.expr_desc = Ast.ArrayAccess ({ Ast.expr_desc = Ast.Identifier read_map; _ }, read_key); _ },
++                  Ast.Add,
++                  delta_expr)
++      when read_map = map_name
++           && same_source_expr read_key key_expr
++           && Map_assignment.is_constant_expression delta_expr ->
++      Some delta_expr
++  | Ast.BinaryOp (delta_expr,
++                  Ast.Add,
++                  { Ast.expr_desc = Ast.ArrayAccess ({ Ast.expr_desc = Ast.Identifier read_map; _ }, read_key); _ })
++      when read_map = map_name
++           && same_source_expr read_key key_expr
++           && Map_assignment.is_constant_expression delta_expr ->
++      Some delta_expr
++  | _ -> None
++
++and can_array_map_atomic_add ctx map_name delta_expr =
++  Hashtbl.mem ctx.maps map_name
++  && Map_assignment.is_constant_expression delta_expr
++  && let map_def = Hashtbl.find ctx.maps map_name in
++     map_def.map_type = IRMapArray && is_integer_ir_type map_def.map_value_type
++
++and emit_array_map_atomic_add ctx map_name key_expr delta_expr pos =
++  let map_def = Hashtbl.find ctx.maps map_name in
++  let key_val = lower_expression ctx key_expr in
++  let delta_val = lower_expression ctx delta_expr in
++  let map_val =
++    make_ir_value (IRMapRef map_name) (IRPointer (IRU8, make_bounds_info ())) pos
++  in
++  let current_val =
++    allocate_temp_variable ctx "map_current"
++      (IRPointer (map_def.map_value_type, make_bounds_info ())) pos
++  in
++  let load_instr =
++    make_ir_instruction
++      (IRMapLoad (map_val, key_val, current_val, MapLookup))
++      ~verifier_hints:[HelperCall "map_lookup_elem"]
++      pos
++  in
++  emit_instruction ctx load_instr;
++  let add_instr =
++    make_ir_instruction
++      (IRCall (DirectCall "__sync_fetch_and_add", [current_val; delta_val], None))
++      ~verifier_hints:[HelperCall "__sync_fetch_and_add"]
++      pos
++  in
++  emit_instruction ctx (make_ir_instruction (IRIf (current_val, [add_instr], None)) pos)
++
+ and lower_statement ctx stmt =
+   match stmt.stmt_desc with
+   | Ast.ExprStmt expr ->
+@@ -1560,6 +1617,9 @@
+         let assign_instr = make_ir_instruction (IRAssign (target_val, bin_expr)) stmt.stmt_pos in
+         emit_instruction ctx assign_instr
+       
++  | Ast.CompoundIndexAssignment ({ Ast.expr_desc = Ast.Identifier map_name; _ }, key_expr, Ast.Add, value_expr)
++      when can_array_map_atomic_add ctx map_name value_expr ->
++      emit_array_map_atomic_add ctx map_name key_expr value_expr stmt.stmt_pos
+   | Ast.CompoundIndexAssignment (map_expr, key_expr, op, value_expr) ->
+       let key_val = lower_expression ctx key_expr in
+       let value_val = lower_expression ctx value_expr in
+@@ -1593,6 +1653,32 @@
+            (* For non-map expressions, currently not supported - could be extended for arrays *)
+            failwith "Compound index assignment is currently only supported for maps")
+       
++  | Ast.IndexAssignment (({ Ast.expr_desc = Ast.Identifier map_name; _ } as map_expr), key_expr, value_expr)
++      when Hashtbl.mem ctx.maps map_name ->
++      (match find_map_self_add_delta map_name key_expr value_expr with
++       | Some delta_expr when can_array_map_atomic_add ctx map_name delta_expr ->
++           emit_array_map_atomic_add ctx map_name key_expr delta_expr stmt.stmt_pos
++       | _ ->
++           let map_val = lower_expression ctx map_expr in
++           let key_val = lower_expression ctx key_expr in
++           let value_val = lower_expression ctx value_expr in
++
++           (* Check for optimization opportunities *)
++           let hints = match ctx.assignment_optimizations with
++             | Some opt_info when opt_info.constant_folding && Map_assignment.is_constant_expression value_expr ->
++                 [HelperCall "map_update_elem"; BoundsChecked]  (* Mark as optimizable *)
++             | Some _opt_info ->
++                 [HelperCall "map_update_elem"]
++             | _ -> [HelperCall "map_update_elem"]
++           in
++
++           (* Generate map store instruction with optimization hints *)
++           let instr = make_ir_instruction
++             (IRMapStore (map_val, key_val, value_val, MapUpdate))
++             ~verifier_hints:hints
++             stmt.stmt_pos
++           in
++           emit_instruction ctx instr)
+   | Ast.IndexAssignment (map_expr, key_expr, value_expr) ->
+       let map_val = lower_expression ctx map_expr in
+       let key_val = lower_expression ctx key_expr in

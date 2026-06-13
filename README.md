@@ -11,8 +11,12 @@ evaluation scripts, generated results, and a paper draft.
 - `experiments/run_smoke.sh`: privileged attach/detach smoke test on `lo`.
 - `experiments/run_microbench.py`: XDP BPF_PROG_TEST_RUN microbenchmarks
   against hand-written C/eBPF baselines.
-- `experiments/run_lowering_ablation.py`: map-update lowering ablation for the
-  XDP count benchmark.
+- `experiments/run_compiler_patch_ablation.py`: applies a tracked
+  compiler-source patch for array-map increment lowering and reruns the XDP
+  count benchmark.
+- `experiments/run_lowering_ablation.py`: generated-C map-update lowering
+  cross-check for the XDP count benchmark.
+- `experiments/patches/`: tracked compiler patch used by the ablation.
 - `experiments/programs/smoke_lo.ks`: minimal smoke-test KernelScript program.
 - `results/`: tracked CSV/JSON summaries and paper macros. Local reruns also
   create ignored build outputs and logs under `results/build/` and
@@ -57,7 +61,13 @@ status `ok`.
 ./experiments/run_microbench.py
 ```
 
-Run the lowering ablation, which also requires `sudo -n`:
+Run the compiler-patch lowering ablation, which also requires `sudo -n`:
+
+```bash
+./experiments/run_compiler_patch_ablation.py
+```
+
+Run the generated-C lowering cross-check, which also requires `sudo -n`:
 
 ```bash
 ./experiments/run_lowering_ablation.py
@@ -85,9 +95,15 @@ The current run evaluates KernelScript commit `6f9e6e8` on Linux
   compiling generated skeleton userspace code against libbpf 1.3.0.
 - Smoke test: `smoke_lo` attaches and detaches an XDP pass program on `lo`.
 - Microbenchmarks: XDP pass has the same median as C/eBPF in this harness
-  at 5ns average runtime and 2 instructions; XDP array-map count is 13ns and 21 instructions for
-  KernelScript versus 9ns and 11 instructions for hand-written C/eBPF.
-- Lowering ablation: patching the generated count program to use in-place
-  atomic add reduces it from 21 to 11 instructions and from 12ns to 9ns median,
-  matching the hand-written C/eBPF baseline in this harness. Each trial resets
-  and reads the `counts` map to verify the expected 100000 increments.
+  at 5ns average runtime and 2 instructions. XDP array-map count is 13ns and 21
+  instructions for KernelScript versus 9ns and 11 instructions for
+  hand-written C/eBPF.
+- Compiler-patch lowering ablation: applying
+  `experiments/patches/kernelscript-map-increment-lowering.patch` to a copied
+  KernelScript compiler tree reduces the count object from 21 to 11
+  instructions and from 12ns to 9ns median, matching the hand-written C/eBPF
+  baseline in this harness. Each trial resets and reads the `counts` map to
+  verify the expected 100000 increments.
+- The 13ns count value comes from the standalone `run_microbench.py` baseline
+  run. The paper's count rows come from the compiler-patch ablation rerun so
+  current, patched, and C objects share one timing run.

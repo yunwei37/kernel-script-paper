@@ -18,7 +18,7 @@ by program type and language feature.
 RQ2. How much low-level generated project structure does the language centralize?
 
 Evidence: compare KernelScript source SLOC with generated userspace C, eBPF C,
-kernel-module C, and Makefile SLOC. This is not a hand-written C baseline; it is
+kernel-module C, and Makefile SLOC. This is not a hand-written C baseline. It is
 a conservative expansion-factor measurement showing the amount of generated
 artifact a developer does not have to maintain by hand.
 
@@ -43,11 +43,13 @@ interface.
 RQ6. Is the XDP map-update gap caused by the unified source model or by a
 specific lowering choice?
 
-Evidence: patch the generated count eBPF C from lookup-plus-update lowering to
-in-place atomic add, rebuild the object, and rerun the same BPF_PROG_TEST_RUN
-harness against the unpatched generated object and hand-written C/eBPF. The
-harness resets and reads the `counts` map on every trial to verify that all
-variants perform the same 100000 increments.
+Evidence: apply a tracked compiler-source patch to a copied KernelScript
+compiler tree, rebuild the patched compiler, compile the same XDP count
+benchmark, and rerun the same BPF_PROG_TEST_RUN harness against the current
+compiler object and hand-written C/eBPF. The patch lowers constant increments
+on integer array maps from lookup-plus-update to checked lookup plus in-place
+atomic add. The harness resets and reads the `counts` map on every trial to
+verify that all variants perform the same 100000 increments.
 
 ## Implemented Experiments
 
@@ -82,7 +84,20 @@ variants perform the same 100000 increments.
    - Writes `results/microbench_summary.csv` and
      `results/microbench_summary.json`.
 
-5. `experiments/run_lowering_ablation.py`
+5. `experiments/run_compiler_patch_ablation.py`
+   - Copies the KernelScript compiler source tree into `results/build`.
+   - Applies `experiments/patches/kernelscript-map-increment-lowering.patch`.
+   - Builds the patched compiler with `dune build`.
+   - Compiles the KernelScript XDP count benchmark with both the current and
+     patched compilers.
+   - Rebuilds the generated eBPF objects and compares them with hand-written
+     C/eBPF using BPF_PROG_TEST_RUN.
+   - Resets and reads the pinned `counts` map on every trial as a correctness
+     oracle.
+   - Writes `results/compiler_patch_ablation_summary.csv` and
+     `results/compiler_patch_ablation_summary.json`.
+
+6. `experiments/run_lowering_ablation.py`
    - Compiles the KernelScript XDP count benchmark.
    - Copies the generated project and patches the map update lowering from
      lookup plus update helper to in-place atomic add.
@@ -93,9 +108,9 @@ variants perform the same 100000 increments.
    - Writes `results/lowering_ablation_summary.csv` and
      `results/lowering_ablation_summary.json`.
 
-6. `experiments/update_paper_numbers.py`
+7. `experiments/update_paper_numbers.py`
    - Checks that unit tests, static checks, smoke test, microbenchmarks, and
-     lowering ablation have successful summaries.
+     both lowering ablations have successful summaries.
    - Writes `results/paper_numbers.tex` for the LaTeX paper.
 
 ## Current Results
@@ -119,19 +134,21 @@ At commit `6f9e6e8`, on Linux `6.15.11-061511-generic`:
   compared with hand-written C/eBPF, and 4ns median overhead for an array-map
   counter because the generated code emits a lookup plus update helper rather
   than an in-place atomic add.
-- The lowering ablation reduces the generated count object from 21 to 11
-  instructions and from 12ns to 9ns median, matching the hand-written C/eBPF
-  baseline in this harness while preserving the expected 100000 count updates
-  in every trial.
+- The compiler-patch lowering ablation reduces the generated count object from
+  21 to 11 instructions and from 12ns to 9ns median, matching the hand-written
+  C/eBPF baseline in this harness while preserving the expected 100000 count
+  updates in every trial.
 
 ## Threats and Next Experiments
 
 The current runtime evaluation is a microbenchmark study, not a packet-rate
 performance study. A full runtime comparison should add matched hand-written
-C/libbpf baselines for XDP, TC, perf_event, ring buffer, and struct_ops programs;
-run traffic with `pktgen` or `xdp-bench`; and report throughput, tail latency,
-verifier log size, and CPU utilization. The lowering ablation should also be
-implemented in the compiler rather than only patching generated C. The current
-artifact is still useful as a systems prototype study because it grounds claims
-about expressiveness, generated structure, compatibility, small-program runtime
-overhead, and one concrete lowering optimization in reproducible evidence.
+C/libbpf baselines for XDP, TC, perf_event, ring buffer, and struct_ops
+programs. It should run traffic with `pktgen` or `xdp-bench` and report
+throughput, tail latency, verifier log size, and CPU utilization. The current compiler-source patch
+should be upstreamed or otherwise integrated, semantically generalized beyond
+constant array-map increments where safe, and retested across hash, per-CPU, and
+structured map values. The current artifact is still useful as a systems
+prototype study because it grounds claims about example marker coverage,
+generated structure, compatibility, small-program runtime overhead, and one
+concrete lowering optimization in reproducible evidence.

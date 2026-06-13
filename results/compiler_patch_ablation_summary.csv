@@ -1,0 +1,4 @@
+name,object,object_bytes,instructions,repeat,trials,expected_count,observed_counts,median_avg_ns,min_avg_ns,max_avg_ns,samples_avg_ns
+ks_count_current,results/build/compiler_patch_ablation/ks_count_current/perf_count.ebpf.o,7560,21,100000,7,100000,100000 100000 100000 100000 100000 100000 100000,12.0,12.0,13.0,12.0 12.0 12.0 12.0 12.0 12.0 13.0
+ks_count_compiler_patch,results/build/compiler_patch_ablation/ks_count_compiler_patch/perf_count.ebpf.o,6640,11,100000,7,100000,100000 100000 100000 100000 100000 100000 100000,9.0,8.0,10.0,9.0 10.0 9.0 9.0 8.0 9.0 8.0
+c_count,results/build/compiler_patch_ablation/handwritten/c_count.o,6496,11,100000,7,100000,100000 100000 100000 100000 100000 100000 100000,9.0,8.0,10.0,10.0 9.0 9.0 9.0 8.0 9.0 9.0

@@ -51,8 +51,9 @@ into generated C/eBPF projects.  Successful examples have median
 \KSMedianKSSloc{} lines of \tool{} source and median \KSMedianGeneratedSloc{}
 lines of generated C and build logic, an \KSMedianGeneratedRatio{} expansion
 factor.  The results show that the compiler centralizes recurring project
-structure and exposes two current limits: struct\_ops skeleton compatibility with the installed libbpf
-headers, and a map-update lowering choice whose ablation closes the count
+structure and exposes two current limits: struct\_ops skeleton compatibility
+with the installed libbpf headers, and a map-update lowering choice.  An
+experimental compiler-source patch for that lowering closes the count
 microbenchmark gap with hand-written C/eBPF in this harness.
 \end{abstract}
 
@@ -91,9 +92,9 @@ descriptor, and possibly a BPF link.  In C/libbpf, these relationships are
 implicit naming conventions and generated-header dependencies.  In \tool{},
 they can be first-class language values.
 
-This observation motivates the paper's main scientific question: can an eBPF
-DSL reduce accidental complexity without reducing the programmer's ability to
-target the real Linux BPF stack?  A tracing-only language such as
+This observation motivates the paper's main scientific question: can a typed
+unified-source model make cross-boundary eBPF application structure explicit to
+the compiler while preserving the ordinary Linux BPF toolchain path?  A tracing-only language such as
 bpftrace~\cite{bpftrace} can be concise by excluding XDP, TC, struct\_ops, and
 kfunc workflows.  A host-language binding can be ergonomic by focusing on
 userspace loading.  \tool{} attempts a harder point in the design space:
@@ -110,17 +111,18 @@ and bpftool path can produce objects, skeletons, and binaries.  Because
 a prototype for studying the design space rather than as a production-ready
 replacement for libbpf.
 
-This paper makes three contributions.  First, we identify the central
-scientific contribution of \tool{} as a typed, compiler-checked unified-source
-model for multi-artifact eBPF applications.  Second, we describe how this model
-organizes programs, maps, lifecycle operations, and kernel extension code so
-that selected cross-boundary constraints, including program-handle use,
-perf-event context signatures, and stack-limit violations, can be checked
-before load or attach time.
-Third, we implement and run a reproducible artifact evaluation that measures
-test coverage, example buildability, generated-code expansion, feature
-coverage, static rejection cases, an attach/detach smoke test, and XDP
-microbenchmarks.  The artifact is designed so that a
+This paper makes three contributions.  First, it formulates \tool{}'s central
+systems idea as a typed unified-source model for multi-artifact eBPF
+applications, where programs, maps, loaders, pinning choices, and optional
+kernel-extension code are represented before artifact boundaries are split.
+Second, it analyzes how the public compiler uses that model to check selected
+cross-boundary invariants, including program-handle use, perf-event context
+signatures, and stack-limit violations before load or attach time.  Third, it
+implements a reproducible artifact evaluation of test coverage, example
+buildability, generated-code expansion, example marker coverage, static
+rejection cases, an attach/detach smoke test, XDP microbenchmarks, and a
+compiler-source patch that isolates one map-update lowering mechanism.  The
+artifact is designed so that a
 reviewer can rerun the evaluation without changing the \tool{} source tree:
 all scripts, logs, derived tables, and paper macros are stored outside the
 cloned repository.
@@ -256,11 +258,17 @@ packet-rate performance equivalence in this paper, because the public
 repository does not include matched hand-written C/libbpf baselines or a
 traffic-generation harness.  Instead, we focus on reproducible evidence that
 repository examples exercise multiple eBPF domains, selected errors are
-rejected early, and generated artifacts build against the local toolchain.
+rejected early, generated artifacts build against the local toolchain, and one
+observed runtime gap can be traced to a concrete lowering rule.
 
 The evaluation runs on Linux \KSKernelVersion{} using clang 18, bpftool 7.7,
-libbpf 1.3.0, OCaml 4.14, and dune 3.14.  The evaluated commit is
-\KSCommitShort{}.  The artifact contains five scripts under
+libbpf 1.3.0, OCaml 4.14, and dune 3.14.  The host CPU is a
+\KSCPUModel{} with \KSCPUCount{} CPUs, CPU0 governor \KSCPUGovernor{}, turbo
+\KSTurboState{}, and virtualization reported as \KSVirtualization{}.  The
+microbenchmarks do not pin CPUs or change the governor, so their nanosecond
+values should be read as local BPF\_PROG\_TEST\_RUN comparisons rather than
+packet-rate performance claims.  The evaluated commit is \KSCommitShort{}.
+The artifact contains six measurement scripts under
 \texttt{experiments/}.  \texttt{run\_evaluation.py} builds the compiler, runs
 \texttt{dune runtest --force}, compiles every \texttt{examples/*.ks} file, runs
 \texttt{make} in each generated project, and records CSV/JSON results.
@@ -271,13 +279,16 @@ program and uses \texttt{sudo -n} to run the generated loader.
 \texttt{run\_microbench.py} compares two KernelScript-generated XDP objects
 with equivalent hand-written C/eBPF objects using bpftool's
 BPF\_PROG\_TEST\_RUN path.  \texttt{run\_lowering\_ablation.py} patches the
-generated count program from lookup-plus-update lowering to in-place atomic add
-and reruns the same object-level benchmark.
+generated count program as an object-level cross-check.  The main mechanism
+isolation script, \texttt{run\_compiler\_patch\_ablation.py}, copies the
+\tool{} compiler source, applies a tracked compiler-source patch for array-map
+increment lowering, builds the patched compiler, compiles the same count
+benchmark, and reruns the object-level benchmark.
 
 We measure six outcomes.  \textbf{Compiler regression coverage} is
 approximated by the repository test suite.  \textbf{Early rejection} is
 measured by static cases whose expected diagnostics are checked by the harness.
-\textbf{Expressiveness} is
+\textbf{Example marker coverage} is
 approximated by whether examples for XDP, TC, probes, tracepoints, perf events,
 maps, ring buffers, dynptrs, tail calls, kfuncs, and struct\_ops pass through
 the compiler and generated build.  Feature labels are derived from lexical
@@ -370,7 +381,7 @@ compatibility gap explicit.
 
 \begin{table}[t]
 \centering
-\caption{Feature coverage in repository examples. A = attempted, KS = \tool{} compiler success, B = generated project build success.}
+\caption{Example marker coverage in repository examples. A = attempted, KS = \tool{} compiler success, B = generated project build success.}
 \label{tab:features}
 \scriptsize
 \begin{tabular}{lrrr@{\hspace{0.8em}}lrrr}
@@ -419,23 +430,23 @@ kernel program itself.
 \textbf{Runtime microbenchmarks and lowering ablation.}
 Table~\ref{tab:micro} uses BPF\_PROG\_TEST\_RUN for 100000 repetitions over
 seven trials and reports median average nanoseconds with min--max ranges.  The
-pass rows come from \texttt{run\_microbench.py}; the count rows come from
-\texttt{run\_lowering\_ablation.py}, which resets the pinned \texttt{counts} map
-before each trial and requires key 0 to equal \KSAblExpectedCount{} afterward.  The
+pass rows come from \texttt{run\_microbench.py}, and the count rows come from
+\texttt{run\_compiler\_patch\_ablation.py}.  The count harness resets the
+pinned \texttt{counts} map before each trial and requires key 0 to equal
+\KSCPExpectedCount{} afterward.  The
 minimal pass program has the same median in this harness: 2 instructions and
 \KSMicroKsPassNs{} for \tool{} versus \KSMicroCPassNs{} for C.  The map counter
 isolates a lowering choice.  The current compiler emits lookup plus update,
-which produces \KSAblCurrentInstr{} instructions and \KSAblCurrentNs{}.  Patching
-only the generated eBPF C to use in-place atomic add reduces the object by
-\KSAblInstrReduction{} instructions (\KSAblInstrReductionPct{}) and
-\KSAblNsReduction{}ns median (\KSAblNsReductionPct{}), matching the hand-written
-C/eBPF baseline in this harness.  This ablation does not show that the compiler
-already implements the optimization, but it identifies a concrete lowering
-change that would remove the observed count gap.
+which produces \KSCPCurrentInstr{} instructions and \KSCPCurrentNs{}.  Applying
+a compiler-source patch that lowers constant array-map increments to a checked
+lookup plus \texttt{\_\_sync\_fetch\_and\_add} reduces the object by
+\KSCPInstrReduction{} instructions (\KSCPInstrReductionPct{}) and
+\KSCPNsReduction{}ns median (\KSCPNsReductionPct{}), matching the hand-written
+C/eBPF baseline in this harness.
 
 \begin{table}[t]
 \centering
-\caption{XDP microbenchmarks and lowering ablation. Patched atomic lowering removes the count gap in this harness.}
+\caption{XDP microbenchmarks and compiler-patch lowering ablation. The experimental compiler patch removes the count gap in this harness.}
 \label{tab:micro}
 \scriptsize
 \begin{tabular}{@{}llrr@{}}
@@ -444,9 +455,9 @@ Bench. & Impl. & Instr. & ns (range) \\
 \midrule
 pass & \tool{} & \KSMicroKsPassInstr{} & \KSMicroKsPassNs{} \\
 pass & C/eBPF & \KSMicroCPassInstr{} & \KSMicroCPassNs{} \\
-count & \tool{} & \KSAblCurrentInstr{} & \KSAblCurrentNs{} \\
-count & \tool{} patched & \KSAblAtomicInstr{} & \KSAblAtomicNs{} \\
-count & C/eBPF & \KSAblCInstr{} & \KSAblCNs{} \\
+count & \tool{} & \KSCPCurrentInstr{} & \KSCPCurrentNs{} \\
+count & \tool{} compiler patch & \KSCPCompilerPatchInstr{} & \KSCPCompilerPatchNs{} \\
+count & C/eBPF & \KSCPCInstr{} & \KSCPCNs{} \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -477,8 +488,9 @@ corpus, and safety demo support a narrower checking claim: the current compiler
 rejects selected lifecycle, context-signature, and stack-limit errors before
 kernel loading.  The runtime evidence is deliberately smaller.  It establishes
 parity for a minimal pass program and shows that the map-update gap is caused
-by a specific lowering choice, not by the unified source model alone.  It still
-does not establish broad runtime performance parity with hand-written C/libbpf.
+by a specific lowering choice, not by the unified source model alone.  The
+compiler-source patch result strengthens that mechanism claim, but it still does
+not establish broad runtime performance parity with hand-written C/libbpf.
 
 The struct\_ops failures are instructive.  A DSL can hide coordination code, but it
 cannot hide all ABI and API drift.  When bpftool-generated skeletons and
@@ -521,12 +533,14 @@ memory safety.  It strengthens the paper by making early-rejection claims
 executable, but it does not cover all invalid attach orders, map types, helper
 contracts, or verifier failures.
 
-\textbf{The lowering ablation is not a compiler implementation.}  The ablation
-patches generated eBPF C after compilation, so it isolates a code-generation
-choice without proving that the optimization is integrated into \tool{} or
-applies to all map update forms.  A compiler change should implement the same
-lowering rule and rerun verifier, instruction-count, and runtime checks across
-more map types.
+\textbf{The compiler patch is narrow and experimental.}  The patch used in the
+ablation is a tracked compiler-source patch applied to a copied compiler tree,
+not an upstream change in the evaluated \tool{} commit.  It is intentionally
+limited to constant increments on integer array maps, where lookup followed by
+in-place atomic add preserves the count benchmark's behavior.  Broader claims
+would require upstreaming or otherwise integrating the rule and rerunning
+verifier, instruction-count, and runtime checks across hash, per-CPU, and
+structured map values.
 
 \textbf{Build success is not verifier success for every runtime path.}  The
 harness compiles eBPF objects and links userspace loaders.  The smoke test
@@ -553,8 +567,9 @@ limiters against hand-written C/libbpf versions using \texttt{xdp-bench} or
 pktgen.  For TC, the benchmark should use network namespaces and veth pairs to
 avoid host-network disruption.  For perf events and ring buffers, the benchmark
 should measure event throughput and userspace loss under controlled producer
-rates.  The map-update ablation should be implemented in the compiler and
-retested across array, hash, and per-CPU maps.  For struct\_ops, the study must first pin a compatible
+rates.  The map-update patch should be integrated into the compiler proper,
+generalized where semantics permit, and retested across array, hash, and
+per-CPU maps.  For struct\_ops, the study must first pin a compatible
 kernel/libbpf/bpftool stack so that failures are about \tool{} design rather
 than dependency skew.
 
@@ -589,8 +604,8 @@ example expands from \KSMedianKSSloc{} lines of \tool{} to
 \KSMedianGeneratedSloc{} lines of generated C and build logic, giving concrete
 evidence that the model centralizes recurring project structure.  The remaining gaps
 are equally clear: struct\_ops compatibility needs version-aware handling, and
-the map-update optimization shown by the ablation needs compiler integration
-and broader runtime tests.  Taken together,
+the experimental map-update compiler patch needs upstream integration,
+semantic generalization, and broader runtime tests.  Taken together,
 the results frame \tool{}'s scientific contribution as an exploration of a
 compiler-checked unified programming model for eBPF, with a reproducible path for
 evaluating whether that model reduces complexity without abandoning the kernel
