@@ -59,10 +59,12 @@ skeleton generation, ref-counted object ownership, and kernel-BTF-dependent
 symbols.  An experimental compiler-source patch for one map-update lowering
 choice closes the count microbenchmark gap with hand-written C/eBPF in this
 harness.  Local veth/TCP traffic runs cover both XDP and TC ingress count
-programs; the TC count run reports \KSTCTrafficKsCountGbps{} Gb/s for generated
+programs.  The TC count run reports \KSTCTrafficKsCountGbps{} Gb/s for generated
 code versus \KSTCTrafficCCountGbps{} Gb/s for hand-written C/eBPF.  A separate
 perf-event generated-loader smoke test completes \KSPerfLoaderTrials{} runs
-against a hand-written C/libbpf loader baseline.
+against a hand-written C/libbpf loader baseline, and a perf-event page-fault
+counter workload reports \KSPerfCounterKsMps{} and \KSPerfCounterCMps{} million
+events/s for generated and C/eBPF objects.
 \end{abstract}
 
 \section{Introduction}
@@ -281,35 +283,17 @@ libbpf 1.3.0, OCaml 4.14, and dune 3.14.  The host CPU is a
 microbenchmarks do not pin CPUs or change the governor, so their nanosecond
 values should be read as local BPF\_PROG\_TEST\_RUN comparisons rather than
 packet-rate performance claims.  The evaluated commit is \KSCommitShort{}.
-The artifact contains eleven measurement scripts under
-\texttt{experiments/}.  \texttt{run\_evaluation.py} builds the compiler, runs
-\texttt{dune runtest --force}, compiles every \texttt{examples/*.ks} file, runs
-\texttt{make} in each generated project, and records CSV/JSON results.
-\texttt{run\_verifier\_matrix.py} attempts \texttt{bpftool prog loadall} on
-each generated eBPF object, requires that at least one program is actually
-pinned, and removes all pins after each attempt.
-\texttt{run\_attach\_matrix.py} filters the verifier-clean single-section XDP
-objects, creates a fresh network namespace and veth pair for each object,
-attaches with iproute2, confirms \texttt{prog/xdp}, detaches, and cleans up the
-namespace.
-\texttt{run\_static\_checks.py} compiles a small corpus with expected success
-or expected failure outcomes for lifecycle API use, context signatures, and
-stack-limit analysis.  \texttt{run\_smoke.sh} compiles a minimal loopback XDP
-program and uses \texttt{sudo -n} to run the generated loader.
-\texttt{run\_microbench.py} compares two KernelScript-generated XDP objects
-with equivalent hand-written C/eBPF objects using bpftool's
-BPF\_PROG\_TEST\_RUN path.  \texttt{run\_xdp\_traffic.py} and
-\texttt{run\_tc\_traffic.py} attach matched XDP and TC ingress pass/count
-objects to receiver-side veth devices in fresh network namespaces and drive TCP
-traffic with iperf3.  \texttt{run\_perf\_event\_loader.py} compiles a generated
-\tool{} perf-event loader and a matched hand-written C/libbpf loader, then runs
-both through attach, counter-read, and detach checks.
-\texttt{run\_lowering\_ablation.py} patches the
-generated count program as an object-level cross-check.  The main mechanism
-isolation script, \texttt{run\_compiler\_patch\_ablation.py}, copies the
-\tool{} compiler source, applies a tracked compiler-source patch for array-map
-increment lowering, builds the patched compiler, compiles the same count
-benchmark, and reruns the object-level benchmark.
+The artifact contains twelve measurement scripts under
+\texttt{experiments/}.  They cover compiler tests and example builds,
+static-check cases, strict verifier loading, isolated XDP attach/detach, XDP and
+TC traffic over fresh veth/netns pairs, perf-event loader and counter workloads,
+and two map-update lowering ablations.  The traffic scripts compare generated
+objects with matched hand-written C/eBPF baselines.  The perf-event counter
+script uses one libbpf runner for both objects and checks BPF map counts against
+perf counter reads.  The main mechanism-isolation script copies the \tool{}
+compiler source, applies a tracked compiler-source patch for array-map
+increment lowering, rebuilds the patched compiler, and reruns the same count
+benchmark.
 
 We measure eight outcomes.  \textbf{Compiler regression coverage} is
 approximated by the repository test suite.  \textbf{Early rejection} is
@@ -326,7 +310,8 @@ by generated build successes, failures, verifier-load outcomes, and isolated
 XDP attach/detach outcomes against the local kernel toolchain.
 \textbf{Mechanism isolation} is measured by the map-update lowering ablation.
 \textbf{Traffic-driven runtime sanity} is measured by iperf3 over veth/netns
-for matched XDP and TC pass/count objects.  \textbf{Generated-loader lifecycle}
+for matched XDP and TC pass/count objects and by a perf-event page-fault
+counter workload.  \textbf{Generated-loader lifecycle}
 is measured by a perf-event loader smoke test that requires successful
 load/attach, positive page-fault counter reads, and clean detach for generated
 and hand-written loaders.
@@ -536,7 +521,7 @@ client for \KSTrafficSeconds{}s.  The count variants additionally read the
 \tool{} and \KSTrafficCPassGbps{} Gb/s for hand-written C/eBPF.  The count
 medians are \KSTrafficKsCountGbps{} Gb/s for \tool{} and
 \KSTrafficCCountGbps{} Gb/s for C/eBPF, a \KSTrafficCountOverheadPct{} local
-throughput gap; the corresponding XDP count-map invocation rates are
+throughput gap.  The corresponding XDP count-map invocation rates are
 \KSTrafficKsCountMpps{} and \KSTrafficCCountMpps{} Mpps.  These numbers are
 local veth/TCP measurements,
 not NIC-rate claims, and the pass ranges include local run-to-run noise.  The
@@ -557,16 +542,21 @@ respectively, and all TC trials have zero retransmits in the checked-in run.
 This result is still local-host evidence, but it directly addresses the
 XDP-only limitation of the earlier runtime checks.
 
-\textbf{Generated perf-event loader smoke.}  To check generated userspace
+\textbf{Perf-event loader and counter workloads.}  To check generated userspace
 coordination beyond XDP attachment, the perf-event loader script compiles
 \texttt{perf\_page\_fault.ks}, compiles a matched hand-written C/libbpf loader,
-and runs each binary with \texttt{sudo -n}.  The oracle requires the loader to
-attach two perf-event programs, read a positive page-fault counter, read the
-branch-miss counter, and detach cleanly.  Over
-\KSPerfLoaderTrials{} trials, both loaders pass all checks.  The median
-page-fault counts are \KSPerfLoaderKsPageFaults{} for the generated loader and
-\KSPerfLoaderCPageFaults{} for the C/libbpf loader.  This is lifecycle evidence
-for generated loader code, not an event-throughput benchmark.
+and runs each binary with \texttt{sudo -n}.  Over \KSPerfLoaderTrials{} trials,
+both loaders attach two perf-event programs, read page-fault and branch-miss
+counters, and detach cleanly.  To add a sustained non-XDP object workload,
+\texttt{run\_perf\_event\_counter.py} compiles matched page-fault counter
+objects and runs both with one libbpf runner.  Each trial faults
+\KSPerfCounterPages{} pages for \KSPerfCounterRounds{} rounds, then requires the
+BPF map count to equal the perf counter read.  Over \KSPerfCounterTrials{}
+trials, both variants report a median \KSPerfCounterKsEvents{} counted events.
+The generated object reaches \KSPerfCounterKsMps{} million events/s, while the
+C/eBPF object reaches \KSPerfCounterCMps{} million events/s, a
+\KSPerfCounterOverheadPct{} local gap.  These results are lifecycle and
+page-fault counter evidence, not a broad perf-event throughput study.
 
 \textbf{Generated code size.}  Among successful repository examples where
 disassembly is available, the median generated eBPF object contains
@@ -598,9 +588,9 @@ minimal pass program has no measurable BPF\_PROG\_TEST\_RUN overhead in this
 harness and that the map-update gap is caused by a specific lowering choice,
 not by the unified source model alone.  The
 compiler-source patch result strengthens that mechanism claim.  The XDP attach
-matrix plus XDP, TC, and perf-event smoke runs strengthen the deployment
-evidence across three program classes, but the artifact still does not establish
-broad runtime equivalence with hand-written C/libbpf.
+matrix plus XDP, TC, and perf-event runs strengthen the deployment evidence
+across three program classes, but the artifact still does not establish broad
+runtime equivalence with hand-written C/libbpf.
 
 The struct\_ops failures are instructive.  A DSL can hide coordination code, but it
 cannot hide all ABI and API drift.  When bpftool-generated skeletons and
@@ -659,9 +649,12 @@ XDP objects by installing and removing them on isolated veth devices, and the
 traffic benchmarks send TCP through matched XDP and TC pass/count programs.
 The generated perf-event smoke test adds one repository-example loader that
 opens perf events, attaches BPF programs, reads counters, and detaches cleanly.
+The perf-event counter benchmark adds a sustained page-fault workload, but it
+uses a shared libbpf runner and therefore does not measure generated-loader
+throughput.
 However, the traffic runs are local-host veth evidence, not NIC-rate
 performance, and the generated-loader evidence still does not cover ring
-buffers, struct\_ops, or sustained perf-event throughput.  A complete
+buffers or struct\_ops.  A complete
 deployment study would run each example in a VM with known kernel configuration,
 representative workloads, and explicit cleanup checks after detach.
 
@@ -672,22 +665,6 @@ programming is tightly coupled to kernel versions.  A production \tool{}
 compiler should record the target kernel ABI, check libbpf feature support
 before generation, and fail early with a dependency diagnostic when a generated
 feature cannot be compiled locally.
-
-\section{Toward Broader Runtime Evaluation}
-
-The current XDP, TC, and perf-event smoke runs should be extended into a broader
-matched runtime study.  For XDP, the next step is longer stress runs for packet
-counters, drop/pass filters, and map-based rate limiters against hand-written
-C/libbpf versions using \texttt{xdp-bench} or pktgen.  For TC, the current
-veth benchmark should be expanded beyond pass/count to shaping and drop
-policies with packet-behavior checks.  For perf events, the current
-generated-loader smoke test should become an event-throughput benchmark.  For
-ring buffers, the benchmark should measure userspace loss under controlled
-producer rates.  The map-update patch should be integrated into the compiler
-proper, generalized where semantics permit, and retested across array, hash,
-and per-CPU maps.  For struct\_ops, the study must first pin a compatible
-kernel/libbpf/bpftool stack so that failures are about \tool{} design rather
-than dependency skew.
 
 \section{Related Work}
 
@@ -718,8 +695,9 @@ generated projects, verifier-loads \KSVerifierBuildLoadOK{} build-success
 objects, attaches and detaches \KSAttachOK{} verifier-clean single-section XDP
 objects in isolated namespaces, runs matched XDP and TC traffic baselines,
 rejects an eBPF stack-limit violation before C generation, runs a minimal XDP
-attach/detach smoke test, and runs a generated perf-event loader through
-attach, counter-read, and detach checks.  The median successful
+attach/detach smoke test, runs a generated perf-event loader through attach,
+counter-read, and detach checks, and exercises a sustained perf-event page-fault
+counter workload.  The median successful
 example expands from \KSMedianKSSloc{} lines of \tool{} to
 \KSMedianGeneratedSloc{} lines of generated C and build logic, giving concrete
 evidence that the model centralizes recurring project structure.  The remaining gaps

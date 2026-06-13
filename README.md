@@ -21,6 +21,8 @@ evaluation scripts, generated results, and a paper draft.
   traffic benchmark against hand-written C/eBPF baselines.
 - `experiments/run_perf_event_loader.py`: generated perf_event loader lifecycle
   check against a hand-written C/libbpf loader baseline.
+- `experiments/run_perf_event_counter.py`: perf_event page-fault map-counter
+  workload against a hand-written C/eBPF baseline.
 - `experiments/run_compiler_patch_ablation.py`: applies a tracked
   compiler-source patch for array-map increment lowering and reruns the XDP
   count benchmark.
@@ -106,6 +108,13 @@ Run the optional perf_event generated-loader lifecycle check, which requires
 ./experiments/run_perf_event_loader.py
 ```
 
+Run the optional perf_event page-fault counter workload, which also requires
+`sudo -n`:
+
+```bash
+./experiments/run_perf_event_counter.py
+```
+
 Run the compiler-patch lowering ablation, which also requires `sudo -n`:
 
 ```bash
@@ -165,6 +174,10 @@ The current run evaluates KernelScript commit `ccb15b4` on Linux
   generated `perf_page_fault` loader and a hand-written C/libbpf loader attach
   two perf_event programs, read positive page-fault counters, read branch-miss
   counters, and detach cleanly.
+- Perf_event page-fault counter workload: over ten privileged trials, both
+  KernelScript and C/eBPF objects report median 262147 BPF map updates matching
+  perf counter reads. Median event rates are 1.13 and 1.13 million events/s,
+  respectively.
 - Compiler-patch lowering ablation: applying
   `experiments/patches/kernelscript-map-increment-lowering.patch` to a copied
   KernelScript compiler tree reduces the count object from 21 to 11

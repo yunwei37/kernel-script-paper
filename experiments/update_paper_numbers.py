@@ -54,6 +54,13 @@ def mpps(value: int | float) -> str:
     return f"{value:.2f}"
 
 
+def mps_range(row) -> str:
+    return (
+        f"{row['median_event_rate_mps']:.2f} "
+        f"({row['min_event_rate_mps']:.2f}--{row['max_event_rate_mps']:.2f})"
+    )
+
+
 def integer(value: int | float) -> str:
     return f"{value:.0f}"
 
@@ -81,6 +88,7 @@ def main() -> int:
     xdp_traffic = load_json("xdp_traffic_summary.json")
     tc_traffic = load_json("tc_traffic_summary.json")
     perf_loader = load_json("perf_event_loader_summary.json")
+    perf_counter = load_json("perf_event_counter_summary.json")
 
     if unit.get("returncode") != 0 or unit.get("reported_failures") != 0:
         raise SystemExit("unit tests are not clean; refusing to generate paper numbers")
@@ -104,6 +112,8 @@ def main() -> int:
         raise SystemExit("TC traffic benchmark did not complete successfully")
     if perf_loader.get("status") != "ok":
         raise SystemExit("perf_event generated-loader smoke test did not complete successfully")
+    if perf_counter.get("status") != "ok":
+        raise SystemExit("perf_event counter benchmark did not complete successfully")
 
     content = ""
     content += macro("KSCommitShort", str(env["kernelscript_git_head"])[:7])
@@ -248,6 +258,18 @@ def main() -> int:
     content += macro("KSPerfLoaderCPageFaults", integer(perf_rows["c_libbpf"]["median_page_fault_count"]))
     content += macro("KSPerfLoaderKsBranchMisses", integer(perf_rows["ks_generated"]["median_branch_miss_count"]))
     content += macro("KSPerfLoaderCBranchMisses", integer(perf_rows["c_libbpf"]["median_branch_miss_count"]))
+
+    perf_counter_rows = {row["name"]: row for row in perf_counter["rows"]}
+    perf_counter_comparison = perf_counter["comparison"]
+    content += macro("KSPerfCounterTrials", perf_counter["trials"])
+    content += macro("KSPerfCounterPages", perf_counter["pages"])
+    content += macro("KSPerfCounterRounds", perf_counter["rounds"])
+    content += macro("KSPerfCounterKsEvents", integer(perf_counter_rows["ks_generated"]["median_bpf_count"]))
+    content += macro("KSPerfCounterCEvents", integer(perf_counter_rows["c_libbpf"]["median_bpf_count"]))
+    content += macro("KSPerfCounterKsMps", mps_range(perf_counter_rows["ks_generated"]))
+    content += macro("KSPerfCounterCMps", mps_range(perf_counter_rows["c_libbpf"]))
+    content += macro("KSPerfCounterRatio", f"{perf_counter_comparison['ks_over_c_ratio']:.2f}x")
+    content += macro("KSPerfCounterOverheadPct", f"{perf_counter_comparison['overhead_pct']:.1f}\\%")
 
     OUT.write_text(content, encoding="utf-8")
     return 0
