@@ -1,6 +1,6 @@
-Current stage: supplement/execute
+Current stage: audit/paper-integration
 Last updated: 2026-06-13
 Active claim(s): C1, C2, C3, C4
-Latest artifact: results/traffic_stress_summary.json
-Blocking gate: Runtime evidence now includes matched perf_event/ringbuf object workloads, a broader static negative corpus, direct tcp-congestion struct_ops load/attach/detach compatibility, and a longer XDP/TC local traffic stress rerun. The main remaining gates are generated skeleton version-aware handling, scheduler-extension struct_ops evidence, generated-loader throughput checks beyond one perf_event lifecycle smoke test, and non-local or longer-duration deployment evidence.
-Next action: Add a generated-loader throughput benchmark, scheduler-extension struct_ops workload, non-local deployment run, or whole-paper logic audit before strengthening general runtime claims.
+Latest artifact: research/EXPERIMENT_AUDIT.md
+Blocking gate: Result-integrity audit passes with accepted warnings. The next submission-polish gate is a whole-paper logic review with no must-fix claim/evidence gaps; remaining evidence limits are generated skeleton version-aware handling, scheduler-extension struct_ops evidence, generated-loader throughput beyond one perf_event lifecycle smoke test, and non-local or longer-duration deployment evidence.
+Next action: Run whole-paper logic review and fix any must-fix claim/evidence gaps before strengthening paper claims.
