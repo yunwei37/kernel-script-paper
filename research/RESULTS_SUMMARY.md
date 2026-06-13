@@ -9,7 +9,9 @@ Source/command: `./experiments/run_xdp_traffic.py`, `./experiments/run_tc_traffi
 The artifact now has a broader 23-case static rejection corpus, local
 traffic-driven XDP and TC checks, one generated perf_event loader lifecycle
 check, one perf_event page-fault counter workload, and one ringbuf
-event-emission workload in addition to BPF_PROG_TEST_RUN microbenchmarks. On
+event-emission workload, plus direct tcp-congestion struct_ops
+load/attach/detach compatibility in addition to BPF_PROG_TEST_RUN
+microbenchmarks. On
 fresh veth/netns
 pairs with iperf3 TCP, KernelScript and hand-written C/eBPF pass/count objects
 all pass the traffic oracles. XDP count medians are 17.4Gb/s for KernelScript
@@ -19,7 +21,9 @@ C/libbpf loader both pass 5/5 attach, counter-read, and detach trials. The
 perf_event counter workload reports 1.13 million events/s for both generated
 and hand-written objects with exact BPF/perf counter agreement. The ringbuf
 workload reports 2.08 versus 2.14 million events/s with exact
-submitted/received agreement and zero drops.
+submitted/received agreement and zero drops. The struct_ops compatibility
+check loads, attaches, and detaches both generated and C/eBPF tcp-congestion
+objects in 3/3 privileged trials without using generated skeletons.
 
 ## Completed Runs
 
@@ -33,6 +37,7 @@ submitted/received agreement and zero drops.
 | R005 | `results/perf_event_loader_summary.json` | ok | Generated perf_event loader and C/libbpf baseline both pass 5/5 lifecycle trials with positive page-fault counters. |
 | R006 | `results/perf_event_counter_summary.json` | ok | Perf_event page-fault counter objects both pass 10/10 trials; median BPF map counts exactly match perf counts at 262147 events. |
 | R007 | `results/ringbuf_workload_summary.json` | ok | Ringbuf event-emission objects both pass 10/10 trials; submitted and received counts match at 50000 events with zero drops. |
+| R008 | `results/struct_ops_compat_summary.json` | ok | Generated and C/eBPF tcp-congestion struct_ops objects both load, attach, and detach in 3/3 trials through one direct libbpf runner. |
 
 ## Anomalies And Negative Results
 
@@ -42,16 +47,19 @@ submitted/received agreement and zero drops.
 - The XDP traffic pass result includes one low KernelScript outlier
   (4.7Gb/s), so the pass range is a noise indicator rather than a performance
   comparison claim.
-- The traffic experiments do not exercise struct_ops. The perf_event counter
-  and ringbuf runs are object workloads through a shared libbpf runner, not
+- The struct_ops compatibility experiment does not exercise scheduler-extension
+  struct_ops, a TCP workload through the attached congestion-control object, or
+  generated skeleton userspace code. The perf_event counter, ringbuf, and
+  struct_ops runs are object checks through a shared libbpf runner, not
   generated-loader throughput evidence.
 
 ## Figure/Table Candidates
 
 - Keep the current microbenchmark table for instruction-level mechanism
   isolation.
-- Add a compact runtime paragraph for ringbuf rather than a full table unless
-  the paper later adds struct_ops results; the draft remains space-bound.
+- Add compact runtime paragraphs for ringbuf and struct_ops rather than full
+  tables unless the paper later adds workload-level struct_ops results; the
+  draft remains space-bound.
 
 ## Result Files Used
 
@@ -66,3 +74,4 @@ submitted/received agreement and zero drops.
 - `results/perf_event_loader_summary.json`
 - `results/perf_event_counter_summary.json`
 - `results/ringbuf_workload_summary.json`
+- `results/struct_ops_compat_summary.json`

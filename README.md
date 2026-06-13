@@ -25,6 +25,8 @@ evaluation scripts, generated results, and a paper draft.
   workload against a hand-written C/eBPF baseline.
 - `experiments/run_ringbuf_workload.py`: XDP ring-buffer event-emission
   workload against a hand-written C/eBPF baseline.
+- `experiments/run_struct_ops_compat.py`: direct struct_ops load/attach/detach
+  compatibility check against a hand-written C/eBPF baseline.
 - `experiments/run_compiler_patch_ablation.py`: applies a tracked
   compiler-source patch for array-map increment lowering and reruns the XDP
   count benchmark.
@@ -124,6 +126,13 @@ Run the optional ring-buffer event-emission workload, which also requires
 ./experiments/run_ringbuf_workload.py
 ```
 
+Run the optional struct_ops compatibility check, which also requires
+`sudo -n`:
+
+```bash
+./experiments/run_struct_ops_compat.py
+```
+
 Run the compiler-patch lowering ablation, which also requires `sudo -n`:
 
 ```bash
@@ -191,6 +200,11 @@ The current run evaluates KernelScript commit `ccb15b4` on Linux
   KernelScript and C/eBPF objects submit and receive 50000 events per trial with
   zero drops. Median event rates are 2.08 and 2.14 million events/s,
   respectively.
+- Struct_ops compatibility: over three privileged trials, one direct libbpf
+  runner loads, attaches, and detaches both the generated tcp-congestion
+  struct_ops object and a minimal C/eBPF object with the same function set. The
+  generated skeleton build still fails because bpftool v7.7 skeletons require
+  map-link fields absent from libbpf-dev 1.3.0.
 - Compiler-patch lowering ablation: applying
   `experiments/patches/kernelscript-map-increment-lowering.patch` to a copied
   KernelScript compiler tree reduces the count object from 21 to 11

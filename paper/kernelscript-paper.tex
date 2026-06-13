@@ -51,14 +51,19 @@ libbpf-compatible artifacts.  At commit \KSCommitShort{}, \KSKSCompileOK{} of
 the build-success objects verifier-load under a strict pinned-program
 criterion, and \KSAttachOK{} of \KSAttachEligible{} verifier-clean
 single-section XDP objects attach and detach in isolated namespaces.  Matched
-local workloads cover XDP and TC traffic, perf-event counters, and ring-buffer
-event emission; the ring-buffer workload submits and receives
-\KSRingbufEvents{} events per trial with zero drops and reports
-\KSRingbufKsMps{} versus \KSRingbufCMps{} million events/s for generated and
-C/eBPF objects.  The results support an artifact/prototype claim:
-\tool{} centralizes recurring project structure for this repository corpus and
-exposes concrete compatibility limits, but it does not yet establish broad
-runtime equivalence or struct\_ops portability.
+local checks cover XDP and TC traffic, perf-event counters, ring-buffer event
+emission, and direct struct\_ops load/attach/detach compatibility.  The
+ring-buffer workload submits and receives \KSRingbufEvents{} events per trial
+with zero drops and reports \KSRingbufKsMps{} versus \KSRingbufCMps{} million
+events/s for generated and C/eBPF objects.  A direct struct\_ops compatibility check
+loads, attaches, and detaches both the generated tcp-congestion object and a
+minimal C/eBPF tcp-congestion object in
+\KSStructOpsTrials{}/\KSStructOpsTrials{} trials, separating object
+compatibility from a remaining skeleton-header version mismatch.  The
+results support an artifact/prototype claim: \tool{} centralizes recurring
+project structure for this repository corpus and exposes concrete
+compatibility limits, but it does not yet establish broad runtime equivalence
+or scheduler-extension struct\_ops portability.
 \end{minipage}
 \vspace{1.0em}
 \end{center}
@@ -130,9 +135,10 @@ implements a reproducible artifact evaluation of test coverage, example
 buildability, generated-code expansion, example marker coverage, static
 rejection cases, strict verifier loading, isolated XDP attachment, matched XDP
 and TC traffic runs, perf-event loader and counter workloads, a ring-buffer
-event-emission workload, and a compiler-source patch that isolates one
-map-update lowering mechanism.  The scientific contribution is not a new BPF
-verifier or a broad performance-equivalence result; it is an executable case
+event-emission workload, a direct struct\_ops object-compatibility check, and
+a compiler-source patch that isolates one map-update lowering mechanism.  The
+scientific contribution is not a new BPF verifier or a broad
+performance-equivalence result.  Instead, it is an executable case
 study of which cross-boundary eBPF invariants a unified source model can expose
 and which compatibility limits still leak through the Linux BPF toolchain.  The
 artifact is designed so that a
@@ -276,8 +282,9 @@ focus on reproducible evidence that
 repository examples exercise multiple eBPF domains, selected errors are
 rejected early, generated artifacts are classified by build and verifier-load
 outcomes against the local toolchain, matched local workloads cover several
-program classes, and one observed runtime gap can be traced to a concrete
-lowering rule.
+program classes, a direct struct\_ops check separates object compatibility
+from generated-skeleton compatibility, and one observed runtime gap can be
+traced to a concrete lowering rule.
 
 The evaluation runs on Linux \KSKernelVersion{} using clang 18, bpftool 7.7,
 libbpf 1.3.0, OCaml 4.14, and dune 3.14.  The host CPU is a
@@ -286,20 +293,22 @@ libbpf 1.3.0, OCaml 4.14, and dune 3.14.  The host CPU is a
 microbenchmarks and object workloads do not pin CPUs or change the governor, so
 their nanosecond and event-rate values should be read as local comparisons
 rather than general performance claims.  The evaluated commit is
-\KSCommitShort{}.  The artifact contains thirteen measurement scripts under
+\KSCommitShort{}.  The artifact contains fourteen measurement scripts under
 \texttt{experiments/}.  They cover compiler tests and example builds,
 static-check cases, strict verifier loading, isolated XDP attach/detach, XDP and
 TC traffic over fresh veth/netns pairs, perf-event loader and counter workloads,
-ring-buffer event emission, and two map-update lowering ablations.  The traffic
-scripts compare generated objects with matched hand-written C/eBPF baselines.
-The perf-event counter and ring-buffer scripts use one libbpf runner for both
-objects and check BPF map counts or submitted/received event counts.  The main
+ring-buffer event emission, direct struct\_ops load/attach/detach
+compatibility, and two map-update lowering ablations.  The traffic scripts compare generated
+objects with matched hand-written C/eBPF baselines.  The perf-event counter,
+ring-buffer, and struct\_ops scripts use one libbpf runner for both objects and
+check BPF map counts, submitted/received event counts, or load/attach/detach
+outcomes.  The main
 mechanism-isolation script copies the \tool{}
 compiler source, applies a tracked compiler-source patch for array-map
 increment lowering, rebuilds the patched compiler, and reruns the same count
 benchmark.
 
-We measure eight outcomes.  \textbf{Compiler regression coverage} is
+We measure nine outcomes.  \textbf{Compiler regression coverage} is
 approximated by the repository test suite.  \textbf{Early rejection} is
 measured by static cases whose expected diagnostics are checked by the harness.
 \textbf{Example marker coverage} is
@@ -316,6 +325,10 @@ XDP attach/detach outcomes against the local kernel toolchain.
 \textbf{Runtime sanity} is measured by iperf3 over veth/netns for matched XDP
 and TC pass/count objects, by a perf-event page-fault counter workload, and by
 a ring-buffer event-emission workload with a submitted/received/drop oracle.
+\textbf{Struct\_ops object compatibility} is measured by a direct libbpf
+runner that loads, attaches, and detaches the generated
+tcp-congestion-control struct\_ops object and a minimal C/eBPF object with the
+same function set, avoiding generated skeleton code.
 \textbf{Generated-loader lifecycle}
 is measured by a perf-event loader smoke test that requires successful
 load/attach, positive page-fault counter reads, and clean detach for generated
@@ -333,7 +346,8 @@ Claim & Evidence & Boundary \\
 Project generation & Example builds, feature markers, generated SLOC & Repository corpus only \\
 Early checks & Unit tests and static rejection cases & Selected cases, not soundness \\
 Compatibility & Verifier-load, XDP attach, perf loader & Local kernel/toolchain \\
-Runtime sanity & XDP/TC traffic, perf counter, ringbuf & Local workloads, no struct\_ops \\
+Runtime sanity & XDP/TC traffic, perf counter, ringbuf & Local workloads only \\
+Struct\_ops compatibility & Direct tcp-congestion load/attach/detach & Object compatibility only, no TCP or scheduler workload \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -410,10 +424,29 @@ The two generated build failures are \texttt{sched\_ext\_simple.ks} and
 \texttt{struct\_ops\_simple.ks}.  Both compile to eBPF objects and generate
 skeletons, but the generated userspace skeleton code references a
 \texttt{struct bpf\_map\_skeleton.link} field not available in the installed
-libbpf 1.3.0 headers.  The observed failure is a compatibility issue in the fast-moving
-struct\_ops path, not a parser or type-checking failure, and it shows that a
+libbpf 1.3.0 headers.  The fast-moving struct\_ops path therefore exposes a
+compatibility issue, not a parser or type-checking failure, and it shows that a
 unified-source language still inherits version skew across
 bpftool, libbpf, and kernel headers.
+
+\textbf{Struct\_ops object compatibility.}  To separate that skeleton-header
+failure from object compatibility, \texttt{run\_struct\_ops\_compat.py}
+compiles \texttt{struct\_ops\_simple.ks} with \texttt{make ebpf-only},
+compiles a hand-written C/eBPF object with the same minimal tcp-congestion
+function set, and loads both with one libbpf runner.  The runner finds the
+struct\_ops map, calls \texttt{bpf\_map\_\_attach\_struct\_ops}, destroys the
+returned link, and records detach success.  On
+this host, \texttt{bpftool} is \KSStructOpsBpftoolVersion{} but
+\texttt{libbpf-dev} is \KSStructOpsLibbpfVersion{}, and the local
+\texttt{struct bpf\_map\_skeleton} header reports skeleton map-link support as
+\KSStructOpsSkeletonLinkSupported{}.  Without generated skeletons, both the
+generated object and the C/eBPF object load, attach, and detach in
+\KSStructOpsKsDetachOK{}/\KSStructOpsTrials{} and
+\KSStructOpsCDetachOK{}/\KSStructOpsTrials{} trials, respectively.  This check
+does not validate scheduler-extension struct\_ops, full struct\_ops signature
+modeling, or workload performance, but it narrows the
+\texttt{struct\_ops\_simple.ks} generated userspace build failure to a
+skeleton compatibility problem for this host.
 
 \textbf{Verifier-load matrix.}  Build success is still weaker than kernel
 acceptance, so \texttt{run\_verifier\_matrix.py} loads generated objects with
@@ -596,7 +629,7 @@ of \KSRingbufEvents{} events, both variants report
 with \KSRingbufKsDropped{} drops.  The generated object reaches
 \KSRingbufKsMps{} million events/s, while the C/eBPF object reaches
 \KSRingbufCMps{} million events/s, a \KSRingbufOverheadPct{} local gap.  This
-is object-level ring-buffer evidence; it does not measure generated userspace
+is object-level ring-buffer evidence, and it does not measure generated userspace
 dispatch-loop throughput.
 
 \textbf{Generated code size.}  Among successful repository examples where
@@ -630,18 +663,22 @@ minimal pass program has no measurable BPF\_PROG\_TEST\_RUN overhead in this
 harness and that the map-update gap is caused by a specific lowering choice,
 not by the unified source model alone.  The
 compiler-source patch result strengthens that mechanism claim.  The XDP attach
-matrix plus XDP, TC, perf-event, and ring-buffer runs strengthen the local
-deployment and object-workload evidence across four program classes, but the
+matrix plus XDP, TC, perf-event, ring-buffer, and direct struct\_ops checks
+strengthen the local deployment, object-workload, and object-compatibility
+evidence across five program classes, but the
 artifact still does not establish broad runtime equivalence with hand-written
 C/libbpf.
 
 The struct\_ops failures are instructive.  A DSL can hide coordination code, but it
 cannot hide all ABI and API drift.  When bpftool-generated skeletons and
 installed libbpf headers disagree, the generated userspace C fails.  A
-production compiler would need version-aware generation, dependency checks, or
-containerized toolchains.  From a systems-research perspective, this is part of
-the contribution: the artifact exposes where a unified model centralizes
-structure and where the underlying Linux BPF stack still leaks through.
+direct libbpf runner can load, attach, and detach the generated
+tcp-congestion struct\_ops object on this host, so the measured failure is not
+simply an invalid object.  A production compiler would still need version-aware
+generation, dependency checks, or containerized toolchains.  From a
+systems-research perspective, this is part of the contribution: the artifact
+exposes where a unified model centralizes structure and where the underlying
+Linux BPF stack still leaks through.
 
 The expansion-factor metric should also be interpreted carefully.  Generated
 C is not automatically better than hand-written C.  It can be verbose,
@@ -697,9 +734,12 @@ opens perf events, attaches BPF programs, reads counters, and detaches cleanly.
 The perf-event counter and ring-buffer benchmarks add sustained object
 workloads, but they use a shared libbpf runner and therefore do not measure
 generated-loader or generated-dispatch-loop throughput.
+The struct\_ops compatibility check also uses a shared libbpf runner and
+covers only load/attach/detach of a tcp-congestion object.  It does not run a
+TCP workload through the attached congestion-control implementation, cover
+scheduler-extension struct\_ops, or measure generated-loader behavior.
 However, the traffic runs are local-host veth evidence, not NIC-rate
-performance, and the generated-loader evidence still does not cover
-struct\_ops.  A complete
+performance.  A complete
 deployment study would run each example in a VM with known kernel configuration,
 representative workloads, and explicit cleanup checks after detach.
 
@@ -744,13 +784,16 @@ corpus, runs a minimal XDP attach/detach smoke test, runs a generated
 perf-event loader through attach, counter-read, and detach checks, exercises a
 sustained perf-event page-fault counter workload, and delivers
 \KSRingbufEvents{} ring-buffer events per trial with zero drops in a matched
-object workload.  The median successful
+object workload.  The direct struct\_ops compatibility check also loads,
+attaches, and detaches a generated tcp-congestion struct\_ops object in
+\KSStructOpsKsDetachOK{}/\KSStructOpsTrials{} trials.  The median successful
 example expands from \KSMedianKSSloc{} lines of \tool{} to
 \KSMedianGeneratedSloc{} lines of generated C and build logic, giving concrete
 evidence that the model centralizes recurring project structure.  The remaining gaps
-are equally clear: struct\_ops compatibility needs version-aware handling, and
-the experimental map-update compiler patch needs upstream integration,
-semantic generalization, and broader runtime tests.  Taken together,
+are equally clear: generated skeleton compatibility needs version-aware
+handling, scheduler-extension struct\_ops remains untested, and the
+experimental map-update compiler patch needs upstream integration, semantic
+generalization, and broader runtime tests.  Taken together,
 the results frame \tool{}'s scientific contribution as an exploration of a
 compiler-checked unified programming model for eBPF, with a reproducible path for
 evaluating whether that model reduces complexity without abandoning the kernel

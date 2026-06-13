@@ -7,10 +7,13 @@ Date: 2026-06-13
 The artifact is stronger after adding strict verifier-load accounting, the
 isolated XDP attach matrix, local XDP and TC traffic benchmarks, one generated
 perf_event loader lifecycle smoke test, a perf_event page-fault counter
-workload, a ringbuf event-emission workload, and a broader 23-case static
-negative corpus. It is still not yet a top-systems weak accept. The main
-remaining gap is representative runtime evidence across struct_ops workloads,
-generated-loader throughput, and stronger traffic/stress methodology.
+workload, a ringbuf event-emission workload, a direct tcp-congestion struct_ops
+load/attach/detach compatibility check, and a broader 23-case static negative
+corpus.
+It is still not yet a top-systems weak accept. The main remaining gap is
+representative runtime evidence across scheduler-extension or workload-level
+struct_ops, generated-loader throughput, and stronger traffic/stress
+methodology.
 
 ## Completed In This Iteration
 
@@ -34,18 +37,22 @@ generated-loader throughput, and stronger traffic/stress methodology.
 - Added `experiments/run_ringbuf_workload.py`, which compares generated and
   hand-written XDP ringbuf event-emission objects under a shared libbpf runner
   and requires submitted events to equal received events with zero drops.
+- Added `experiments/run_struct_ops_compat.py`, which compares generated and
+  hand-written tcp-congestion struct_ops objects under a shared libbpf runner
+  and requires load, attach, and detach success without generated skeletons.
 - Expanded `experiments/run_static_checks.py` to 23 deterministic cases,
   including 22 expected rejections across lifecycle, signature, map, type,
   symbol, config, ringbuf, and safety categories.
 - Updated the paper-number generator, paper, README, and research plan so the
   new verifier, attach, XDP traffic, TC traffic, perf_event loader, and
-  perf_event counter/ringbuf/static-check results are generated from checked-in
-  JSON summaries.
+  perf_event counter/ringbuf/struct_ops/static-check results are generated from
+  checked-in JSON summaries.
 
 ## Remaining Experiments For Weak-Accept Bar
 
-1. Sustained matched C/libbpf runtime baselines for struct_ops programs, plus
-   broader perf_event event types and generated-loader throughput.
+1. Sustained matched C/libbpf runtime baselines for scheduler-extension or
+   workload-level struct_ops programs, plus broader perf_event event types and
+   generated-loader throughput.
 2. Longer XDP and TC stress runs using isolated network
    namespaces, `xdp-bench`, `pktgen`, or a controlled packet generator.
 3. Packet-behavior checks for the XDP attach-matrix objects, not only

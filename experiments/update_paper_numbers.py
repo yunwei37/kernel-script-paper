@@ -65,6 +65,10 @@ def integer(value: int | float) -> str:
     return f"{value:.0f}"
 
 
+def yes_no(value: bool) -> str:
+    return "yes" if value else "no"
+
+
 def turbo_state(no_turbo: str) -> str:
     if no_turbo == "0":
         return "enabled"
@@ -90,6 +94,7 @@ def main() -> int:
     perf_loader = load_json("perf_event_loader_summary.json")
     perf_counter = load_json("perf_event_counter_summary.json")
     ringbuf = load_json("ringbuf_workload_summary.json")
+    struct_ops = load_json("struct_ops_compat_summary.json")
 
     if unit.get("returncode") != 0 or unit.get("reported_failures") != 0:
         raise SystemExit("unit tests are not clean; refusing to generate paper numbers")
@@ -117,6 +122,8 @@ def main() -> int:
         raise SystemExit("perf_event counter benchmark did not complete successfully")
     if ringbuf.get("status") != "ok":
         raise SystemExit("ringbuf workload benchmark did not complete successfully")
+    if struct_ops.get("status") != "ok":
+        raise SystemExit("struct_ops compatibility check did not complete successfully")
 
     content = ""
     content += macro("KSCommitShort", str(env["kernelscript_git_head"])[:7])
@@ -295,6 +302,18 @@ def main() -> int:
     content += macro("KSRingbufCMps", mps_range(ringbuf_rows["c_libbpf"]))
     content += macro("KSRingbufRatio", f"{ringbuf_comparison['ks_over_c_ratio']:.2f}x")
     content += macro("KSRingbufOverheadPct", f"{ringbuf_comparison['overhead_pct']:.1f}\\%")
+
+    struct_ops_rows = {row["name"]: row for row in struct_ops["rows"]}
+    content += macro("KSStructOpsTrials", struct_ops["trials"])
+    content += macro("KSStructOpsLibbpfVersion", struct_ops["libbpf_version"])
+    content += macro("KSStructOpsBpftoolVersion", struct_ops["bpftool_version"].replace("bpftool ", ""))
+    content += macro("KSStructOpsSkeletonLinkSupported", yes_no(bool(struct_ops["skeleton_map_link_field_supported"])))
+    content += macro("KSStructOpsKsLoadOK", sum(struct_ops_rows["ks_generated"]["load_ok_samples"]))
+    content += macro("KSStructOpsKsAttachOK", sum(struct_ops_rows["ks_generated"]["attach_ok_samples"]))
+    content += macro("KSStructOpsKsDetachOK", sum(struct_ops_rows["ks_generated"]["detach_ok_samples"]))
+    content += macro("KSStructOpsCLoadOK", sum(struct_ops_rows["c_libbpf"]["load_ok_samples"]))
+    content += macro("KSStructOpsCAttachOK", sum(struct_ops_rows["c_libbpf"]["attach_ok_samples"]))
+    content += macro("KSStructOpsCDetachOK", sum(struct_ops_rows["c_libbpf"]["detach_ok_samples"]))
 
     OUT.write_text(content, encoding="utf-8")
     return 0

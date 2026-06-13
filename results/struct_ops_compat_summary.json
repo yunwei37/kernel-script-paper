@@ -1,0 +1,76 @@
+{
+  "bpftool_version": "bpftool v7.7.0",
+  "description": "struct_ops load/attach/detach compatibility using one libbpf runner and no generated skeleton",
+  "libbpf_version": "1.3.0",
+  "rows": [
+    {
+      "attach_ok_samples": [
+        1,
+        1,
+        1
+      ],
+      "detach_ok_samples": [
+        1,
+        1,
+        1
+      ],
+      "elapsed_sec_samples": [
+        0.031711,
+        0.051105,
+        0.040005
+      ],
+      "implementation": "kernelscript",
+      "load_ok_samples": [
+        1,
+        1,
+        1
+      ],
+      "map_name": "minimal_congestion_control",
+      "name": "ks_generated",
+      "object": "results/build/struct_ops_compat/kernelscript/struct_ops_simple.ebpf.o",
+      "oracle_passed": true,
+      "returncodes": [
+        0,
+        0,
+        0
+      ],
+      "trials": 3
+    },
+    {
+      "attach_ok_samples": [
+        1,
+        1,
+        1
+      ],
+      "detach_ok_samples": [
+        1,
+        1,
+        1
+      ],
+      "elapsed_sec_samples": [
+        0.033703,
+        0.038823,
+        0.031676
+      ],
+      "implementation": "handwritten_c",
+      "load_ok_samples": [
+        1,
+        1,
+        1
+      ],
+      "map_name": "ks_paper_cc",
+      "name": "c_libbpf",
+      "object": "results/build/struct_ops_compat/handwritten/struct_ops_tcp_cc.o",
+      "oracle_passed": true,
+      "returncodes": [
+        0,
+        0,
+        0
+      ],
+      "trials": 3
+    }
+  ],
+  "skeleton_map_link_field_supported": false,
+  "status": "ok",
+  "trials": 3
+}

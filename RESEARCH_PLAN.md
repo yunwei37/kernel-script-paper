@@ -53,6 +53,10 @@ loader baseline with an attach, counter-read, and detach oracle.
 map-counter workload for generated and hand-written eBPF objects.
 `experiments/run_ringbuf_workload.py` adds a matched XDP ring-buffer
 event-emission workload with submitted/received/drop oracles.
+`experiments/run_struct_ops_compat.py` adds a direct libbpf load/attach/detach
+check for the generated tcp-congestion struct_ops object and a hand-written
+C/eBPF object with the same minimal function set, without relying on generated
+skeleton code.
 
 RQ6. Is the XDP map-update gap caused by the unified source model or by a
 specific lowering choice?
@@ -185,7 +189,20 @@ through one libbpf runner.
    - Writes `results/ringbuf_workload_summary.csv` and
      `results/ringbuf_workload_summary.json`.
 
-13. `experiments/run_lowering_ablation.py`
+13. `experiments/run_struct_ops_compat.py`
+   - Compiles `kernelscript/examples/struct_ops_simple.ks` with `make
+     ebpf-only`.
+   - Compiles a hand-written tcp-congestion struct_ops C/eBPF object with the
+     same minimal function set.
+   - Uses one libbpf runner to load each object, find the struct_ops map,
+     attach it with `bpf_map__attach_struct_ops`, and destroy the returned
+     link.
+   - Records the bpftool/libbpf version skew and whether the installed
+     `struct bpf_map_skeleton` header supports map-link fields.
+   - Writes `results/struct_ops_compat_summary.csv` and
+     `results/struct_ops_compat_summary.json`.
+
+14. `experiments/run_lowering_ablation.py`
    - Compiles the KernelScript XDP count benchmark.
    - Copies the generated project and patches the map update lowering from
      lookup plus update helper to in-place atomic add.
@@ -196,11 +213,11 @@ through one libbpf runner.
    - Writes `results/lowering_ablation_summary.csv` and
      `results/lowering_ablation_summary.json`.
 
-14. `experiments/update_paper_numbers.py`
+15. `experiments/update_paper_numbers.py`
    - Checks that unit tests, static checks, smoke test, microbenchmarks, and
      XDP traffic, TC traffic, perf_event loader smoke, perf_event counter,
-     ringbuf workload, verifier matrix, attach matrix, and both lowering
-     ablations have successful summaries.
+     ringbuf workload, struct_ops compatibility, verifier matrix, attach
+     matrix, and both lowering ablations have successful summaries.
    - Writes `results/paper_numbers.tex` for the LaTeX paper.
 
 ## Current Results
@@ -225,6 +242,10 @@ At commit `ccb15b4`, on Linux `6.15.11-061511-generic`:
 - The two generated build failures are struct_ops examples whose generated
   skeletons expect a `struct bpf_map_skeleton.link` field unavailable in the
   installed libbpf 1.3.0 headers.
+- The direct struct_ops compatibility check loads, attaches, and detaches both
+  the generated tcp-congestion object and a minimal C/eBPF object in 3 of 3
+  privileged trials, separating object compatibility from the generated
+  skeleton/header mismatch on this host.
 - Successful examples have median 31 KernelScript SLOC and median 472 generated
   source/build SLOC, a median expansion factor of 11.3x.
 - The smoke test successfully attaches and detaches an XDP program on `lo`.
