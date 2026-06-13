@@ -45,7 +45,9 @@ project, and uses `sudo -n` to attach/detach an XDP pass program on the loopback
 interface. `experiments/run_attach_matrix.py` then filters the verifier-clean
 single-section XDP objects, creates a fresh network namespace and veth pair for
 each object, attaches it with iproute2, confirms `prog/xdp` in `ip -d link
-show`, detaches it, and removes the namespace.
+show`, detaches it, and removes the namespace. `experiments/run_perf_event_loader.py`
+also checks one generated perf_event loader against a hand-written C/libbpf
+loader baseline with an attach, counter-read, and detach oracle.
 
 RQ6. Is the XDP map-update gap caused by the unified source model or by a
 specific lowering choice?
@@ -57,8 +59,8 @@ compiler object and hand-written C/eBPF. The patch lowers constant increments
 on integer array maps from lookup-plus-update to checked lookup plus in-place
 atomic add. The harness resets and reads the `counts` map on every trial to
 verify that all variants perform the same 100000 increments. Then run matched
-KernelScript and hand-written C/eBPF XDP pass/count objects over iperf3 TCP
-traffic on isolated veth pairs.
+KernelScript and hand-written C/eBPF XDP and TC pass/count objects over iperf3
+TCP traffic on isolated veth pairs.
 
 ## Implemented Experiments
 
@@ -136,7 +138,26 @@ traffic on isolated veth pairs.
    - Writes `results/xdp_traffic_summary.csv` and
      `results/xdp_traffic_summary.json`.
 
-9. `experiments/run_lowering_ablation.py`
+9. `experiments/run_tc_traffic.py`
+   - Compiles KernelScript TC ingress pass/count programs and hand-written
+     C/eBPF baselines.
+   - Creates a fresh network namespace and veth pair for each trial.
+   - Attaches each object with `tc qdisc clsact` and a direct-action BPF filter.
+   - Reads the `counts` map for count variants as a positive execution oracle.
+   - Writes `results/tc_traffic_summary.csv` and
+     `results/tc_traffic_summary.json`.
+
+10. `experiments/run_perf_event_loader.py`
+   - Compiles `kernelscript/examples/perf_page_fault.ks` into a generated
+     loader.
+   - Compiles a matched hand-written C/libbpf perf_event loader baseline.
+   - Runs both binaries with `sudo -n` for five trials.
+   - Requires two perf_event attaches, a positive page-fault counter, a
+     branch-miss counter read, and clean detach.
+   - Writes `results/perf_event_loader_summary.csv` and
+     `results/perf_event_loader_summary.json`.
+
+11. `experiments/run_lowering_ablation.py`
    - Compiles the KernelScript XDP count benchmark.
    - Copies the generated project and patches the map update lowering from
      lookup plus update helper to in-place atomic add.
@@ -147,10 +168,10 @@ traffic on isolated veth pairs.
    - Writes `results/lowering_ablation_summary.csv` and
      `results/lowering_ablation_summary.json`.
 
-10. `experiments/update_paper_numbers.py`
+12. `experiments/update_paper_numbers.py`
    - Checks that unit tests, static checks, smoke test, microbenchmarks, and
-     XDP traffic, verifier matrix, attach matrix, and both lowering ablations
-     have successful summaries.
+     XDP traffic, TC traffic, perf_event loader smoke, verifier matrix, attach
+     matrix, and both lowering ablations have successful summaries.
    - Writes `results/paper_numbers.tex` for the LaTeX paper.
 
 ## Current Results
@@ -185,8 +206,16 @@ At commit `ccb15b4`, on Linux `6.15.11-061511-generic`:
 - The XDP traffic benchmark runs matched KernelScript and hand-written C/eBPF
   pass/count objects over iperf3 TCP on fresh veth/netns pairs. Pass medians are
   17.8Gb/s for KernelScript and 18.1Gb/s for C/eBPF. Count medians are 17.4Gb/s
-  for KernelScript and 17.5Gb/s for C/eBPF, with positive count-map rates of
-  1.51 and 1.52 Mpps respectively.
+  for KernelScript and 17.5Gb/s for C/eBPF, with positive count-map invocation
+  rates of 1.51 and 1.52 Mpps respectively.
+- The TC traffic benchmark runs matched KernelScript and hand-written C/eBPF
+  ingress pass/count objects over iperf3 TCP on fresh veth/netns pairs. Pass
+  medians are 86.7Gb/s for KernelScript and 87.4Gb/s for C/eBPF. Count medians
+  are 87.0Gb/s for KernelScript and 90.6Gb/s for C/eBPF, with positive
+  count-map invocation rates of 0.25 and 0.26 Mpps respectively.
+- The perf_event loader smoke test runs a generated KernelScript loader and a
+  hand-written C/libbpf loader for 5 privileged trials. Both attach two
+  perf_event programs, read counters, and detach cleanly in every trial.
 - The compiler-patch lowering ablation reduces the generated count object from
   21 to 11 instructions and from 12ns to 9ns median, matching the hand-written
   C/eBPF baseline in this harness while preserving the expected 100000 count
@@ -195,20 +224,23 @@ At commit `ccb15b4`, on Linux `6.15.11-061511-generic`:
 ## Threats and Next Experiments
 
 The current runtime evaluation combines attach/detach checks,
-BPF_PROG_TEST_RUN microbenchmarks, and one local veth/TCP traffic benchmark.
+BPF_PROG_TEST_RUN microbenchmarks, local veth/TCP traffic benchmarks for XDP and
+TC, and one generated perf_event loader lifecycle smoke test.
 The attach matrix confirms that verifier-clean single-section XDP objects can
 be installed and removed on isolated veth devices, and the traffic benchmark
-checks matched pass/count objects under real TCP traffic. It still does not
-validate generated-loader correctness for the repository examples, NIC-rate
-throughput, TC, perf_event, ring buffer, or struct_ops programs. A full runtime
-comparison should add matched hand-written C/libbpf baselines for TC,
-perf_event, ring buffer, and struct_ops programs, plus longer XDP stress runs
-with `pktgen` or `xdp-bench` that report throughput, tail latency, verifier log
-size, and CPU utilization. The current compiler-source patch should be
+checks matched XDP and TC pass/count objects under real TCP traffic. The
+perf_event smoke test checks one generated repository-example loader against a
+matched C/libbpf loader, but it does not measure sustained event throughput.
+The evaluation still does not validate NIC-rate throughput, ring buffer, or
+struct_ops runtime behavior. A full runtime comparison should add matched
+hand-written C/libbpf baselines for sustained perf_event, ring buffer, and
+struct_ops programs, plus longer XDP/TC stress runs with `pktgen` or `xdp-bench`
+that report throughput, tail latency, verifier log size, and CPU utilization.
+The current compiler-source patch should be
 upstreamed or otherwise integrated, semantically generalized beyond constant
 array-map increments where safe, and retested across hash, per-CPU, and
 structured map values. The current artifact is still useful as a systems
 prototype study because it grounds claims about example marker coverage,
 generated structure, compatibility, attachability for an XDP subset,
-small-program runtime overhead, local XDP traffic behavior, and one concrete
+small-program runtime overhead, local XDP/TC traffic behavior, and one concrete
 lowering optimization in reproducible evidence.

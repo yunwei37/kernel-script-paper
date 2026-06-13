@@ -17,6 +17,10 @@ evaluation scripts, generated results, and a paper draft.
   against hand-written C/eBPF baselines.
 - `experiments/run_xdp_traffic.py`: iperf3-over-veth XDP pass/count traffic
   benchmark against hand-written C/eBPF baselines.
+- `experiments/run_tc_traffic.py`: iperf3-over-veth TC ingress pass/count
+  traffic benchmark against hand-written C/eBPF baselines.
+- `experiments/run_perf_event_loader.py`: generated perf_event loader lifecycle
+  check against a hand-written C/libbpf loader baseline.
 - `experiments/run_compiler_patch_ablation.py`: applies a tracked
   compiler-source patch for array-map increment lowering and reruns the XDP
   count benchmark.
@@ -88,6 +92,20 @@ Run the optional traffic-driven XDP benchmark, which requires `sudo -n`,
 ./experiments/run_xdp_traffic.py
 ```
 
+Run the optional traffic-driven TC ingress benchmark, which has the same
+requirements and uses `tc qdisc clsact` plus direct-action BPF filters:
+
+```bash
+./experiments/run_tc_traffic.py
+```
+
+Run the optional perf_event generated-loader lifecycle check, which requires
+`sudo -n`:
+
+```bash
+./experiments/run_perf_event_loader.py
+```
+
 Run the compiler-patch lowering ablation, which also requires `sudo -n`:
 
 ```bash
@@ -136,8 +154,17 @@ The current run evaluates KernelScript commit `ccb15b4` on Linux
 - Traffic-driven XDP benchmark: over ten 1s iperf3 TCP trials on fresh
   veth/netns pairs, pass medians are 17.8Gb/s for KernelScript and 18.1Gb/s for
   hand-written C/eBPF. Count medians are 17.4Gb/s for KernelScript and 17.5Gb/s
-  for C/eBPF, with positive `counts` map updates at 1.51 and 1.52 Mpps
+  for C/eBPF, with positive `counts` map invocation rates at 1.51 and 1.52 Mpps
   respectively.
+- Traffic-driven TC benchmark: over ten 1s iperf3 TCP trials on fresh
+  veth/netns pairs, pass medians are 86.7Gb/s for KernelScript and 87.4Gb/s for
+  C/eBPF. Count medians are 87.0Gb/s for KernelScript and 90.6Gb/s for C/eBPF,
+  with positive `counts` map invocation rates at 0.25 and 0.26 Mpps
+  respectively.
+- Perf_event generated-loader lifecycle: over five privileged trials, both the
+  generated `perf_page_fault` loader and a hand-written C/libbpf loader attach
+  two perf_event programs, read positive page-fault counters, read branch-miss
+  counters, and detach cleanly.
 - Compiler-patch lowering ablation: applying
   `experiments/patches/kernelscript-map-increment-lowering.patch` to a copied
   KernelScript compiler tree reduces the count object from 21 to 11

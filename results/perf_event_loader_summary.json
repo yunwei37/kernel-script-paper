@@ -1,0 +1,111 @@
+{
+  "description": "privileged perf_event generated-loader lifecycle check with a hand-written C/libbpf loader baseline",
+  "rows": [
+    {
+      "attached_samples": [
+        true,
+        true,
+        true,
+        true,
+        true
+      ],
+      "binary": "results/build/perf_event_loader/kernelscript/perf_page_fault",
+      "branch_miss_count_samples": [
+        42,
+        163,
+        173,
+        6,
+        71
+      ],
+      "detached_samples": [
+        true,
+        true,
+        true,
+        true,
+        true
+      ],
+      "elapsed_sec_samples": [
+        0.03159537900137366,
+        0.014808406000156538,
+        0.013295683000251302,
+        0.010299874000338605,
+        0.012117017000491614
+      ],
+      "implementation": "kernelscript",
+      "median_branch_miss_count": 71,
+      "median_elapsed_sec": 0.013295683000251302,
+      "median_page_fault_count": 9,
+      "name": "ks_generated",
+      "oracle_passed": true,
+      "page_fault_count_samples": [
+        9,
+        9,
+        9,
+        9,
+        9
+      ],
+      "returncodes": [
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "trials": 5
+    },
+    {
+      "attached_samples": [
+        true,
+        true,
+        true,
+        true,
+        true
+      ],
+      "binary": "results/build/perf_event_loader/handwritten/perf_event_loader_baseline",
+      "branch_miss_count_samples": [
+        84,
+        67,
+        55,
+        165,
+        219
+      ],
+      "detached_samples": [
+        true,
+        true,
+        true,
+        true,
+        true
+      ],
+      "elapsed_sec_samples": [
+        0.0130031640001107,
+        0.011111693998827832,
+        0.010808708999320515,
+        0.011869104000652442,
+        0.019790231999650132
+      ],
+      "implementation": "handwritten_c",
+      "median_branch_miss_count": 84,
+      "median_elapsed_sec": 0.011869104000652442,
+      "median_page_fault_count": 2,
+      "name": "c_libbpf",
+      "oracle_passed": true,
+      "page_fault_count_samples": [
+        2,
+        2,
+        2,
+        2,
+        2
+      ],
+      "returncodes": [
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "trials": 5
+    }
+  ],
+  "status": "ok",
+  "trials": 5
+}

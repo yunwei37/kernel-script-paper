@@ -36,7 +36,8 @@ runtime behavior.
 - Trust/failure boundaries: kernel verifier, libbpf skeleton API, bpftool, local
   kernel BTF, privileged attach path.
 - Workloads: repository examples, static invalid programs, XDP pass/count
-  microbenchmarks, XDP traffic over veth/netns.
+  microbenchmarks, XDP and TC traffic over veth/netns, perf_event loader
+  lifecycle smoke.
 - Observability: compile logs, verifier logs, iproute2 attach state, bpftool map
   lookups, iperf3 JSON.
 - Assumptions: local host is a valid reproducibility target but not a general
@@ -50,8 +51,10 @@ runtime behavior.
 | B2 | C2 | Static rejection corpus | Expected pass/fail cases | matched diagnostics | expected outcome matcher | Static paragraph | done |
 | B3 | C3 | Verifier and XDP attach matrices | Generated eBPF objects | load ok, attach ok | pinned program check, `prog/xdp` state | Compatibility paragraph | done |
 | B4 | C4 | BPF_PROG_TEST_RUN microbench and compiler patch ablation | KS current, KS patched, C/eBPF | ns/op, instructions, map counts | exact map-count oracle | Microbench table | done |
-| B5 | C4 | Traffic-driven XDP pass/count | KS current vs hand-written C/eBPF | receiver Gb/s, map Mpps, retransmits | iperf3 JSON plus positive map count | Runtime table/paragraph | next |
-| B6 | C3/C4 | TC traffic and ringbuf/perf matched workloads | KS vs C/libbpf | throughput, loss, event rate | workload-specific checker | Future table | planned |
+| B5 | C4 | Traffic-driven XDP pass/count | KS current vs hand-written C/eBPF | receiver Gb/s, count-map Mpps, retransmits | iperf3 JSON plus positive map count | Runtime paragraph | done |
+| B6 | C3/C4 | Traffic-driven TC ingress pass/count | KS current vs hand-written C/eBPF | receiver Gb/s, count-map Mpps, retransmits | iperf3 JSON plus positive map count | Runtime paragraph | done |
+| B7 | C3 | Generated perf_event loader lifecycle | KS generated loader vs C/libbpf | attach/read/detach success, perf counter reads | positive page-fault counter and clean detach | Runtime paragraph | done |
+| B8 | C3/C4 | Ringbuf/perf throughput workloads | KS vs C/libbpf | event rate, loss | workload-specific checker | Future table | planned |
 
 ## Run Order
 
@@ -60,7 +63,9 @@ runtime behavior.
 | R001 | sanity | Strict verifier matrix | `./experiments/run_verifier_matrix.py` | full corpus | no empty program false positives | low | done |
 | R002 | sanity | XDP attach matrix | `./experiments/run_attach_matrix.py` | full eligible subset | all eligible attach/detach | low | done |
 | R003 | main | XDP traffic baseline | `./experiments/run_xdp_traffic.py` | 10 trials, 1s TCP by default | KS and C pass traffic; count maps increase | low | done |
-| R004 | supplement | TC traffic baseline | to be implemented | 3 trials | matched C/libbpf exists | medium | planned |
+| R004 | supplement | TC traffic baseline | `./experiments/run_tc_traffic.py` | 10 trials, 1s TCP by default | KS and C pass traffic; count maps increase | medium | done |
+| R005 | supplement | Perf_event loader lifecycle | `./experiments/run_perf_event_loader.py` | 5 trials | generated and C loaders attach, read counters, detach | low | done |
+| R006 | supplement | Ringbuf/perf throughput baseline | to be implemented | 10 trials | matched C/libbpf exists | medium | planned |
 
 ## Tracker Handoff
 
@@ -87,7 +92,8 @@ runtime behavior.
 - Hardware/software versions: recorded in `results/environment.json`.
 - Seeds/repetitions: deterministic scripts; traffic scripts record trial count
   and seconds.
-- Workload generation: iperf3 TCP over isolated veth/netns for traffic runs.
+- Workload generation: iperf3 TCP over isolated veth/netns for XDP and TC
+  traffic runs; perf_event software and hardware counters for loader lifecycle.
 - Data/traces: JSON/CSV summaries plus raw logs under `results/logs/`.
 - Scripts/configs: all paper-number inputs are checked into the repository.
 - Result file paths: generated under `results/` and referenced by paper macros.
@@ -96,8 +102,10 @@ runtime behavior.
 
 - The plan still does not test broad production eBPF applications or developer
   effort.
-- The XDP traffic experiment is local-host evidence, not a NIC-rate benchmark.
-- Non-XDP workloads remain necessary before claiming general runtime parity.
+- The XDP and TC traffic experiments are local-host evidence, not NIC-rate
+  benchmarks.
+- Sustained perf_event, ringbuf, and struct_ops workloads remain necessary
+  before claiming general runtime equivalence.
 
 ## Claim Gate After Results
 
@@ -105,5 +113,5 @@ runtime behavior.
 |-------|------------------|---------|-------------------|
 | C1 | `results/evaluation_summary.json`, `results/examples_summary.csv` | partial | Centralizes generated project structure for repository examples. |
 | C2 | `results/static_checks_summary.json` | partial | Rejects selected covered invalid programs before load/attach. |
-| C3 | `results/verifier_matrix_summary.json`, `results/attach_matrix_summary.json` | partial | Most generated build-success objects load; verifier-clean single-section XDP objects attach. |
-| C4 | `results/compiler_patch_ablation_summary.json`, `results/xdp_traffic_summary.json` | partial | XDP count gap is tied to map-update lowering; local traffic count gap is 1.9%, but broader runtime parity remains unproven. |
+| C3 | `results/verifier_matrix_summary.json`, `results/attach_matrix_summary.json`, `results/perf_event_loader_summary.json` | partial | Most generated build-success objects load; verifier-clean single-section XDP objects attach; one generated perf_event loader completes attach/read/detach. |
+| C4 | `results/compiler_patch_ablation_summary.json`, `results/xdp_traffic_summary.json`, `results/tc_traffic_summary.json` | partial | XDP count gap is tied to map-update lowering; local traffic covers XDP and TC pass/count, but broader runtime equivalence remains unproven. |

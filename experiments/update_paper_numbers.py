@@ -54,6 +54,10 @@ def mpps(value: int | float) -> str:
     return f"{value:.2f}"
 
 
+def integer(value: int | float) -> str:
+    return f"{value:.0f}"
+
+
 def turbo_state(no_turbo: str) -> str:
     if no_turbo == "0":
         return "enabled"
@@ -75,6 +79,8 @@ def main() -> int:
     verifier = load_json("verifier_matrix_summary.json")
     attach = load_json("attach_matrix_summary.json")
     xdp_traffic = load_json("xdp_traffic_summary.json")
+    tc_traffic = load_json("tc_traffic_summary.json")
+    perf_loader = load_json("perf_event_loader_summary.json")
 
     if unit.get("returncode") != 0 or unit.get("reported_failures") != 0:
         raise SystemExit("unit tests are not clean; refusing to generate paper numbers")
@@ -94,6 +100,10 @@ def main() -> int:
         raise SystemExit("attach matrix did not complete successfully")
     if xdp_traffic.get("status") != "ok":
         raise SystemExit("XDP traffic benchmark did not complete successfully")
+    if tc_traffic.get("status") != "ok":
+        raise SystemExit("TC traffic benchmark did not complete successfully")
+    if perf_loader.get("status") != "ok":
+        raise SystemExit("perf_event generated-loader smoke test did not complete successfully")
 
     content = ""
     content += macro("KSCommitShort", str(env["kernelscript_git_head"])[:7])
@@ -217,6 +227,27 @@ def main() -> int:
     content += macro("KSTrafficPassRatio", f"{traffic_comparisons['pass']['ks_over_c_ratio']:.2f}x")
     content += macro("KSTrafficCountRatio", f"{traffic_comparisons['count']['ks_over_c_ratio']:.2f}x")
     content += macro("KSTrafficCountOverheadPct", f"{traffic_comparisons['count']['overhead_pct']:.1f}\\%")
+
+    tc_rows = {row["name"]: row for row in tc_traffic["rows"]}
+    tc_comparisons = tc_traffic["comparisons"]
+    content += macro("KSTCTrafficTrials", tc_traffic["trials"])
+    content += macro("KSTCTrafficSeconds", tc_traffic["seconds_per_trial"])
+    content += macro("KSTCTrafficKsPassGbps", gbps_range(tc_rows["ks_pass"]))
+    content += macro("KSTCTrafficCPassGbps", gbps_range(tc_rows["c_pass"]))
+    content += macro("KSTCTrafficKsCountGbps", gbps_range(tc_rows["ks_count"]))
+    content += macro("KSTCTrafficCCountGbps", gbps_range(tc_rows["c_count"]))
+    content += macro("KSTCTrafficKsCountMpps", mpps(tc_rows["ks_count"]["median_tc_map_mpps"]))
+    content += macro("KSTCTrafficCCountMpps", mpps(tc_rows["c_count"]["median_tc_map_mpps"]))
+    content += macro("KSTCTrafficPassRatio", f"{tc_comparisons['pass']['ks_over_c_ratio']:.2f}x")
+    content += macro("KSTCTrafficCountRatio", f"{tc_comparisons['count']['ks_over_c_ratio']:.2f}x")
+    content += macro("KSTCTrafficCountOverheadPct", f"{tc_comparisons['count']['overhead_pct']:.1f}\\%")
+
+    perf_rows = {row["name"]: row for row in perf_loader["rows"]}
+    content += macro("KSPerfLoaderTrials", perf_loader["trials"])
+    content += macro("KSPerfLoaderKsPageFaults", integer(perf_rows["ks_generated"]["median_page_fault_count"]))
+    content += macro("KSPerfLoaderCPageFaults", integer(perf_rows["c_libbpf"]["median_page_fault_count"]))
+    content += macro("KSPerfLoaderKsBranchMisses", integer(perf_rows["ks_generated"]["median_branch_miss_count"]))
+    content += macro("KSPerfLoaderCBranchMisses", integer(perf_rows["c_libbpf"]["median_branch_miss_count"]))
 
     OUT.write_text(content, encoding="utf-8")
     return 0
