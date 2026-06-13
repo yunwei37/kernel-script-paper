@@ -52,10 +52,11 @@ into generated C/eBPF projects.  A verifier-load matrix then loads
 Successful examples have median \KSMedianKSSloc{} lines of \tool{} source and median \KSMedianGeneratedSloc{}
 lines of generated C and build logic, an \KSMedianGeneratedRatio{} expansion
 factor.  The results show that the compiler centralizes recurring project
-structure and exposes two current limits: struct\_ops skeleton compatibility
-with the installed libbpf headers, and a map-update lowering choice.  An
-experimental compiler-source patch for that lowering closes the count
-microbenchmark gap with hand-written C/eBPF in this harness.
+structure while exposing remaining compatibility limits in struct\_ops
+skeleton generation, ref-counted object ownership, and kernel-BTF-dependent
+symbols.  An experimental compiler-source patch for one map-update lowering
+choice closes the count microbenchmark gap with hand-written C/eBPF in this
+harness.
 \end{abstract}
 
 \section{Introduction}
@@ -384,13 +385,13 @@ objects present after evaluation, \KSVerifierLoadOK{} load successfully.  Among
 the \KSVerifierBuildObjects{} objects from fully built generated projects,
 \KSVerifierBuildLoadOK{} load successfully (\KSVerifierBuildLoadOKPct{}) and
 \KSVerifierBuildLoadFailed{} fail.  The failures are informative rather than
-hidden: \KSVerifierReferenceLeak{} expose dynptr/reference leaks,
-\KSVerifierRejected{} are other verifier rejections, \KSVerifierMapCreateFailed{}
-is a map creation failure, \KSVerifierMissingBTF{} is a missing kfunc symbol in
-kernel BTF, and \KSVerifierStructOpsArg{} is a struct\_ops argument-type
-rejection.  This result narrows the compatibility claim from ``builds'' to a
-measured split between verifier-clean objects and generated objects that still
-need backend fixes.
+hidden: \KSVerifierReferenceLeak{} is a remaining reference-ownership failure,
+\KSVerifierMapCreateFailed{} is a map creation failure, \KSVerifierMissingBTF{}
+is a missing kfunc symbol in kernel BTF, and \KSVerifierStructOpsArg{} is a
+struct\_ops argument-type rejection.  The current run has \KSVerifierRejected{}
+other verifier rejections.  This result narrows the compatibility claim from
+``builds'' to a measured split between verifier-clean objects and generated
+objects that still need backend fixes.
 
 \textbf{Example marker coverage.}  The examples exercise many eBPF domains.
 Table~\ref{tab:features} reports attempted examples, examples that pass the

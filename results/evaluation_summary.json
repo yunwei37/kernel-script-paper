@@ -23,7 +23,7 @@
   "make_failed_after_ks": 2,
   "make_ok": 41,
   "max_generated_to_ks_ratio_success": 41.26,
-  "median_ebpf_instructions_success": 18.5,
+  "median_ebpf_instructions_success": 14.5,
   "median_generated_sloc_success": 472.0,
   "median_generated_to_ks_ratio_success": 11.33,
   "median_ks_sloc_success": 31.0,

@@ -90,16 +90,16 @@ make -C paper
 
 ## Current Result Snapshot
 
-The current run evaluates KernelScript commit `6f9e6e8` on Linux
+The current run evaluates KernelScript commit `ccb15b4` on Linux
 `6.15.11-061511-generic`.
 
-- Unit tests: 85 suites, 1092 tests, 0 reported failures.
+- Unit tests: 85 suites, 1095 tests, 0 reported failures.
 - Examples: 44 total, 43 KernelScript compile successes, 41 full generated
   C/eBPF build successes.
-- Verifier-load matrix: 33 of 43 generated eBPF objects load with
+- Verifier-load matrix: 39 of 43 generated eBPF objects load with
   `bpftool prog loadall`. Among the 41 objects from full generated-project
-  build successes, 32 load successfully and 9 fail with recorded verifier,
-  map-creation, or local BTF-symbol diagnostics.
+  build successes, 38 load successfully and 3 fail with recorded reference
+  ownership, map-creation, or local BTF-symbol diagnostics.
 - Static checks: 6 total cases, including 5 expected compiler rejections and
   1 positive control, all matching expected outcomes.
 - Safety: `safety_demo.ks` is rejected before C generation for 608 bytes of

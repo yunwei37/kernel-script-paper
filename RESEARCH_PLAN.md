@@ -126,14 +126,14 @@ verify that all variants perform the same 100000 increments.
 
 ## Current Results
 
-At commit `6f9e6e8`, on Linux `6.15.11-061511-generic`:
+At commit `ccb15b4`, on Linux `6.15.11-061511-generic`:
 
-- 85 unit test suites and 1092 unit tests pass.
+- 85 unit test suites and 1095 unit tests pass.
 - 43 of 44 examples compile from KernelScript.
 - 41 examples build fully into generated C/eBPF artifacts.
-- The verifier-load matrix loads 33 of 43 generated eBPF objects. Among the 41
-  objects from full generated-project build successes, 32 load successfully and
-  9 expose verifier, map-creation, or local BTF-symbol failures.
+- The verifier-load matrix loads 39 of 43 generated eBPF objects. Among the 41
+  objects from full generated-project build successes, 38 load successfully and
+  3 expose reference-ownership, map-creation, or local BTF-symbol failures.
 - The one KernelScript rejection is an intentional safety rejection for stack
   usage above the eBPF limit.
 - The static-check corpus has 6 cases, including 5 expected compiler

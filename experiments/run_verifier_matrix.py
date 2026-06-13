@@ -185,7 +185,7 @@ def main() -> int:
         "failure_excerpt",
     ]
     with (RESULTS / "verifier_matrix_summary.csv").open("w", newline="", encoding="utf-8") as f:
-        writer = csv.DictWriter(f, fieldnames=fields)
+        writer = csv.DictWriter(f, fieldnames=fields, lineterminator="\n")
         writer.writeheader()
         for row in object_rows:
             writer.writerow({k: row[k] for k in fields})
