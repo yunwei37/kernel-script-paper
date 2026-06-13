@@ -218,8 +218,9 @@ keeps these domains separate internally.
 \textbf{Move verifier-relevant checks earlier.}  The compiler performs safety
 analysis before code generation.  In our run, \texttt{safety\_demo.ks} is
 rejected because the compiler estimates 608 bytes of stack use, above the
-512-byte eBPF limit.  The check does not make the verifier redundant, but it reduces
-the number of late failures that require inspecting verifier logs.
+512-byte eBPF limit.  The check does not make the verifier redundant, but it
+can reduce late failures for covered cases that would otherwise require
+inspecting verifier logs.
 
 \textbf{Expose low-level escape hatches.}  eBPF users often need new helpers,
 kernel functions, or BTF-specific types before high-level libraries expose
@@ -384,12 +385,13 @@ acceptance, so \texttt{run\_verifier\_matrix.py} loads generated objects with
 objects present after evaluation, \KSVerifierLoadOK{} load successfully.  Among
 the \KSVerifierBuildObjects{} objects from fully built generated projects,
 \KSVerifierBuildLoadOK{} load successfully (\KSVerifierBuildLoadOKPct{}) and
-\KSVerifierBuildLoadFailed{} fail.  The failures are informative rather than
-hidden: \KSVerifierReferenceLeak{} is a remaining reference-ownership failure,
-\KSVerifierMapCreateFailed{} is a map creation failure, \KSVerifierMissingBTF{}
-is a missing kfunc symbol in kernel BTF, and \KSVerifierStructOpsArg{} is a
-struct\_ops argument-type rejection.  The current run has \KSVerifierRejected{}
-other verifier rejections.  This result narrows the compatibility claim from
+\KSVerifierBuildLoadFailed{} fail: \KSVerifierReferenceLeak{} remaining
+reference-ownership failure, \KSVerifierMapCreateFailed{} map creation failure,
+and \KSVerifierMissingBTF{} missing kfunc symbol in kernel BTF.  Across all
+generated objects, including those from generated projects that did not fully
+build, the matrix also records \KSVerifierStructOpsArg{} struct\_ops
+argument-type rejection.  The current run has \KSVerifierRejected{} other
+verifier rejections.  This result narrows the compatibility claim from
 ``builds'' to a measured split between verifier-clean objects and generated
 objects that still need backend fixes.
 
@@ -452,9 +454,10 @@ kernel program itself.
 Table~\ref{tab:micro} uses BPF\_PROG\_TEST\_RUN for 100000 repetitions over
 seven trials and reports median average nanoseconds with min--max ranges.  The
 pass rows come from \texttt{run\_microbench.py}, and the count rows come from
-\texttt{run\_compiler\_patch\_ablation.py}.  The count harness resets the
-pinned \texttt{counts} map before each trial and requires key 0 to equal
-\KSCPExpectedCount{} afterward.  The
+\texttt{run\_compiler\_patch\_ablation.py}.  We intentionally use this single
+ablation run for all count rows so the current, patched, and C objects share
+one timing run.  The count harness resets the pinned \texttt{counts} map before
+each trial and requires key 0 to equal \KSCPExpectedCount{} afterward.  The
 minimal pass program has the same median in this harness: 2 instructions and
 \KSMicroKsPassNs{} for \tool{} versus \KSMicroCPassNs{} for C.  The map counter
 isolates a lowering choice.  The current compiler emits lookup plus update,
