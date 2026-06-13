@@ -25,9 +25,10 @@ artifact a developer does not have to maintain by hand.
 
 RQ3. Which classes of errors are rejected before load/attach time?
 
-Evidence: run the full compiler test suite and a small static-check corpus. The
-corpus includes lifecycle API misuse, a perf_event context-signature mismatch,
-an eBPF stack-limit violation, and one positive control.
+Evidence: run the full compiler test suite and a targeted static-check corpus.
+The corpus includes lifecycle API misuse, program-signature violations, map
+type and symbol errors, general type errors, config-boundary violations,
+ring-buffer API misuse, an eBPF stack-limit violation, and one positive control.
 
 RQ4. Do generated artifacts remain compatible with the local kernel toolchain?
 
@@ -82,7 +83,9 @@ through one libbpf runner.
 2. `experiments/run_static_checks.py`
    - Compiles a static-check corpus with expected success or expected failure
      outcomes.
-   - Verifies lifecycle API, context signature, and stack-limit diagnostics.
+   - Verifies lifecycle API, program signature, map type/symbol, type-system,
+     config-boundary, ringbuf API, symbol-validation, and stack-limit
+     diagnostics.
    - Writes `results/static_checks_summary.csv` and
      `results/static_checks_summary.json`.
 
@@ -217,7 +220,7 @@ At commit `ccb15b4`, on Linux `6.15.11-061511-generic`:
   single-section XDP objects on fresh veth devices inside network namespaces.
 - The one KernelScript rejection is an intentional safety rejection for stack
   usage above the eBPF limit.
-- The static-check corpus has 6 cases, including 5 expected compiler
+- The static-check corpus has 23 cases, including 22 expected compiler
   rejections and 1 positive control, all matching expected outcomes.
 - The two generated build failures are struct_ops examples whose generated
   skeletons expect a `struct bpf_map_skeleton.link` field unavailable in the

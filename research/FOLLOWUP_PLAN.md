@@ -5,9 +5,10 @@ Date: 2026-06-13
 ## Current Verdict
 
 The artifact is stronger after adding strict verifier-load accounting, the
-isolated XDP attach matrix, local XDP and TC traffic benchmarks, and one
-generated perf_event loader lifecycle smoke test plus a perf_event page-fault
-counter workload, but it is not yet a top-systems weak accept. The main
+isolated XDP attach matrix, local XDP and TC traffic benchmarks, one generated
+perf_event loader lifecycle smoke test, a perf_event page-fault counter
+workload, a ringbuf event-emission workload, and a broader 23-case static
+negative corpus. It is still not yet a top-systems weak accept. The main
 remaining gap is representative runtime evidence across struct_ops workloads,
 generated-loader throughput, and stronger traffic/stress methodology.
 
@@ -33,10 +34,13 @@ generated-loader throughput, and stronger traffic/stress methodology.
 - Added `experiments/run_ringbuf_workload.py`, which compares generated and
   hand-written XDP ringbuf event-emission objects under a shared libbpf runner
   and requires submitted events to equal received events with zero drops.
+- Expanded `experiments/run_static_checks.py` to 23 deterministic cases,
+  including 22 expected rejections across lifecycle, signature, map, type,
+  symbol, config, ringbuf, and safety categories.
 - Updated the paper-number generator, paper, README, and research plan so the
   new verifier, attach, XDP traffic, TC traffic, perf_event loader, and
-  perf_event counter/ringbuf results are generated from checked-in JSON
-  summaries.
+  perf_event counter/ringbuf/static-check results are generated from checked-in
+  JSON summaries.
 
 ## Remaining Experiments For Weak-Accept Bar
 
@@ -46,8 +50,9 @@ generated-loader throughput, and stronger traffic/stress methodology.
    namespaces, `xdp-bench`, `pktgen`, or a controlled packet generator.
 3. Packet-behavior checks for the XDP attach-matrix objects, not only
    attach/detach.
-4. Expanded static negative corpus for map type mismatch, invalid helper
-   contexts, bad detach ordering, ringbuf misuse, and kfunc signature mismatch.
+4. Expanded static negative corpus beyond the current targeted 23-case suite,
+   especially invalid helper contracts, kfunc signature mismatch, and more
+   attach/detach ordering variants.
 5. Non-XDP workload balance beyond TC pass/count, perf_event lifecycle smoke,
    and page-fault counters so benchmark claims do not rest mostly on XDP
    programs.

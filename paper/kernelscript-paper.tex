@@ -123,8 +123,9 @@ systems idea as a typed unified-source model for multi-artifact eBPF
 applications, where programs, maps, loaders, pinning choices, and optional
 kernel-extension code are represented before artifact boundaries are split.
 Second, it analyzes how the public compiler uses that model to check selected
-cross-boundary invariants, including program-handle use, perf-event context
-signatures, and stack-limit violations before load or attach time.  Third, it
+cross-boundary invariants, including program-handle use, program signatures,
+map access types, ring-buffer API use, config mutability, and stack-limit
+violations before load or attach time.  Third, it
 implements a reproducible artifact evaluation of test coverage, example
 buildability, generated-code expansion, example marker coverage, static
 rejection cases, strict verifier loading, isolated XDP attachment, matched XDP
@@ -367,11 +368,15 @@ the evaluation of a DSL depends on whether the implementation actually encodes
 domain concepts rather than only accepting example syntax.
 
 \textbf{Static rejection corpus.}  The static-check harness compiles
-\KSStaticTotal{} small programs and verifies that every observed outcome
+\KSStaticTotal{} targeted programs and verifies that every observed outcome
 matches the expected result.  The corpus includes one positive control and
 \KSStaticExpectedFailures{} expected compiler rejections:
-\KSStaticLifecycle{} lifecycle API misuses, \KSStaticContext{} context-signature
-mismatch, and \KSStaticSafety{} stack-limit violation.  These cases are not a
+\KSStaticLifecycle{} lifecycle API misuses, \KSStaticProgramSignature{}
+program-signature violations, \KSStaticMapType{} map type or symbol errors,
+\KSStaticTypeSystem{} general type-system errors, \KSStaticSymbolValidation{}
+symbol-validation errors, \KSStaticConfigBoundary{} config-boundary violation,
+\KSStaticRingbuf{} ring-buffer API misuse, and \KSStaticSafety{} stack-limit
+violation.  These cases are not a
 soundness proof, but they make the early-rejection claim falsifiable: a future
 compiler change that accepts one of these invalid programs or changes the
 diagnostic contract will fail the paper-number generation path.
@@ -616,10 +621,11 @@ object-level attach matrix.
 The evaluation supports \tool{}'s central research direction, but it also
 clarifies what remains unproven.  The strongest supported claim is a
 generated-structure claim: one source model can generate the multi-file project
-structure needed by several eBPF example classes.  The test suite, static
-corpus, and safety demo support a narrower checking claim: the current compiler
-rejects selected lifecycle, context-signature, and stack-limit errors before
-kernel loading.  The runtime evidence is deliberately smaller.  It shows that a
+structure needed by several eBPF example classes.  The test suite, expanded
+static corpus, and safety demo support a narrower checking claim: the current
+compiler rejects selected lifecycle, program-signature, map-type,
+ring-buffer-API, config-boundary, symbol, and stack-limit errors before kernel
+loading.  The runtime evidence is deliberately smaller.  It shows that a
 minimal pass program has no measurable BPF\_PROG\_TEST\_RUN overhead in this
 harness and that the map-update gap is caused by a specific lowering choice,
 not by the unified source model alone.  The
@@ -664,11 +670,13 @@ of all eBPF applications.  A stronger corpus would include programs from
 Cilium, bcc/libbpf-tools, production XDP filters, scheduler extensions, and
 observability agents, then reimplement each in \tool{} and C/libbpf.
 
-\textbf{Static checks are narrow.}  The static rejection corpus is a regression
-test for selected compiler checks, not a formal proof of lifecycle soundness or
-memory safety.  It strengthens the paper by making early-rejection claims
-executable, but it does not cover all invalid attach orders, map types, helper
-contracts, or verifier failures.
+\textbf{Static checks are targeted, not complete.}  The static rejection
+corpus is a regression test for selected compiler checks, not a formal proof of
+lifecycle soundness or memory safety.  It strengthens the paper by making
+early-rejection claims executable across \KSStaticExpectedFailures{} invalid
+programs, but it does not cover all invalid attach orders, helper contracts,
+context-dependent verifier failures, or semantic equivalence with hand-written
+C/libbpf.
 
 \textbf{The compiler patch is narrow and experimental.}  The patch used in the
 ablation is a tracked compiler-source patch applied to a copied compiler tree,
@@ -731,11 +739,12 @@ passes a broad test suite, compiles most repository examples, builds most
 generated projects, verifier-loads \KSVerifierBuildLoadOK{} build-success
 objects, attaches and detaches \KSAttachOK{} verifier-clean single-section XDP
 objects in isolated namespaces, runs matched XDP and TC traffic baselines,
-rejects an eBPF stack-limit violation before C generation, runs a minimal XDP
-attach/detach smoke test, runs a generated perf-event loader through attach,
-counter-read, and detach checks, exercises a sustained perf-event page-fault
-counter workload, and delivers \KSRingbufEvents{} ring-buffer events per trial
-with zero drops in a matched object workload.  The median successful
+rejects \KSStaticExpectedFailures{} invalid programs in a targeted static
+corpus, runs a minimal XDP attach/detach smoke test, runs a generated
+perf-event loader through attach, counter-read, and detach checks, exercises a
+sustained perf-event page-fault counter workload, and delivers
+\KSRingbufEvents{} ring-buffer events per trial with zero drops in a matched
+object workload.  The median successful
 example expands from \KSMedianKSSloc{} lines of \tool{} to
 \KSMedianGeneratedSloc{} lines of generated C and build logic, giving concrete
 evidence that the model centralizes recurring project structure.  The remaining gaps

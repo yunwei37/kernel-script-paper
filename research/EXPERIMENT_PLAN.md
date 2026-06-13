@@ -49,7 +49,7 @@ runtime behavior.
 | Block | Claim | Experiment | Baselines/variants | Metric(s) | Oracle | Figure/table | Priority |
 |-------|-------|------------|--------------------|-----------|--------|--------------|----------|
 | B1 | C1 | Example build and expansion matrix | Generated KernelScript artifacts | compile/build success, SLOC, feature markers | successful scripts and result files | Table build/features | done |
-| B2 | C2 | Static rejection corpus | Expected pass/fail cases | matched diagnostics | expected outcome matcher | Static paragraph | done |
+| B2 | C2 | Static rejection corpus | Expected pass/fail cases | matched diagnostics by category | expected outcome matcher | Static paragraph | done |
 | B3 | C3 | Verifier and XDP attach matrices | Generated eBPF objects | load ok, attach ok | pinned program check, `prog/xdp` state | Compatibility paragraph | done |
 | B4 | C4 | BPF_PROG_TEST_RUN microbench and compiler patch ablation | KS current, KS patched, C/eBPF | ns/op, instructions, map counts | exact map-count oracle | Microbench table | done |
 | B5 | C4 | Traffic-driven XDP pass/count | KS current vs hand-written C/eBPF | receiver Gb/s, count-map Mpps, retransmits | iperf3 JSON plus positive map count | Runtime paragraph | done |
@@ -63,6 +63,7 @@ runtime behavior.
 
 | Run ID | Stage | Purpose | Config | Seed/reps | Decision gate | Cost | Risk |
 |--------|-------|---------|--------|-----------|---------------|------|------|
+| R000 | sanity | Static rejection corpus | `./experiments/run_static_checks.py` | 23 cases | all expected diagnostics match | low | done |
 | R001 | sanity | Strict verifier matrix | `./experiments/run_verifier_matrix.py` | full corpus | no empty program false positives | low | done |
 | R002 | sanity | XDP attach matrix | `./experiments/run_attach_matrix.py` | full eligible subset | all eligible attach/detach | low | done |
 | R003 | main | XDP traffic baseline | `./experiments/run_xdp_traffic.py` | 10 trials, 1s TCP by default | KS and C pass traffic; count maps increase | low | done |
@@ -120,6 +121,6 @@ runtime behavior.
 | Claim | Evidence file(s) | Verdict | Supported wording |
 |-------|------------------|---------|-------------------|
 | C1 | `results/evaluation_summary.json`, `results/examples_summary.csv` | partial | Centralizes generated project structure for repository examples. |
-| C2 | `results/static_checks_summary.json` | partial | Rejects selected covered invalid programs before load/attach. |
+| C2 | `results/static_checks_summary.json` | partial | Rejects 22 selected invalid programs before load/attach across lifecycle, signature, map, type, symbol, config, ringbuf, and safety categories. |
 | C3 | `results/verifier_matrix_summary.json`, `results/attach_matrix_summary.json`, `results/perf_event_loader_summary.json`, `results/perf_event_counter_summary.json`, `results/ringbuf_workload_summary.json` | partial | Most generated build-success objects load; verifier-clean single-section XDP objects attach; one generated perf_event loader completes attach/read/detach; perf_event counter objects run a page-fault workload; ringbuf objects deliver 50000 events/trial with zero drops. |
 | C4 | `results/compiler_patch_ablation_summary.json`, `results/xdp_traffic_summary.json`, `results/tc_traffic_summary.json`, `results/perf_event_counter_summary.json`, `results/ringbuf_workload_summary.json` | partial | XDP count gap is tied to map-update lowering; local workloads cover XDP and TC pass/count, a perf_event counter workload, and ringbuf event emission, but broader runtime equivalence remains unproven. |

@@ -33,10 +33,28 @@ class Case:
 CASES = [
     Case("valid_pass", "positive_control", True),
     Case(
+        "arith_bool",
+        "type_system",
+        False,
+        ("Cannot unify types for arithmetic operation",),
+    ),
+    Case(
         "attach_without_load",
         "lifecycle_api",
         False,
         ("attach() requires (handle, target, flags)",),
+    ),
+    Case(
+        "attach_integer_handle",
+        "lifecycle_api",
+        False,
+        ("attach() requires (handle, target, flags)",),
+    ),
+    Case(
+        "config_write_ebpf",
+        "config_boundary",
+        False,
+        ("Config field assignments are not allowed in eBPF programs",),
     ),
     Case(
         "detach_string",
@@ -45,22 +63,106 @@ CASES = [
         ("detach() requires a ProgramHandle or PerfAttachment",),
     ),
     Case(
+        "detach_integer",
+        "lifecycle_api",
+        False,
+        ("detach() requires a ProgramHandle or PerfAttachment",),
+    ),
+    Case(
+        "duplicate_main",
+        "symbol_validation",
+        False,
+        ("Duplicate main function",),
+    ),
+    Case(
+        "fn_wrong_arg_type",
+        "type_system",
+        False,
+        ("Type mismatch in function call: add_one",),
+    ),
+    Case(
         "load_string",
         "lifecycle_api",
         False,
         ("Type mismatch in function call: load",),
     ),
     Case(
+        "map_string_key",
+        "map_type",
+        False,
+        ("Map key type mismatch",),
+    ),
+    Case(
+        "map_string_value",
+        "map_type",
+        False,
+        ("Map value type mismatch",),
+    ),
+    Case(
+        "map_undefined",
+        "map_type",
+        False,
+        ("Undefined symbol: missing_map",),
+    ),
+    Case(
         "perf_wrong_context",
-        "context_signature",
+        "program_signature",
         False,
         ("@perf_event attributed function parameter must be ctx: *bpf_perf_event_data",),
+    ),
+    Case(
+        "probe_wrong_return",
+        "program_signature",
+        False,
+        ("@fprobe attributed function must return i32",),
+    ),
+    Case(
+        "ringbuf_submit_integer",
+        "ringbuf_api",
+        False,
+        ("Type mismatch: expected pointer to Event",),
     ),
     Case(
         "stack_overflow",
         "safety_analysis",
         False,
         ("Stack overflow detected", "exceeds eBPF limit of 512 bytes"),
+    ),
+    Case(
+        "struct_bad_field",
+        "type_system",
+        False,
+        ("Field not found: missing_field in struct Config",),
+    ),
+    Case(
+        "tc_wrong_context",
+        "program_signature",
+        False,
+        ("@tc attributed function must have signature",),
+    ),
+    Case(
+        "undefined_struct",
+        "type_system",
+        False,
+        ("Undefined struct: MissingStruct",),
+    ),
+    Case(
+        "xdp_main",
+        "symbol_validation",
+        False,
+        ("main function cannot have attributes",),
+    ),
+    Case(
+        "xdp_wrong_context",
+        "program_signature",
+        False,
+        ("@xdp attributed function must have signature",),
+    ),
+    Case(
+        "xdp_wrong_return",
+        "program_signature",
+        False,
+        ("@xdp attributed function must have signature",),
     ),
 ]
 
@@ -99,7 +201,7 @@ def ascii_text(text: str) -> str:
 
 
 def excerpt(text: str, max_lines: int = 8) -> str:
-    lines = [line for line in ascii_text(text).splitlines() if line.strip()]
+    lines = [line.rstrip() for line in ascii_text(text).splitlines() if line.strip()]
     for idx, line in enumerate(lines):
         low = line.lower()
         if "error:" in low or "type error" in low or "stack overflow" in low:
@@ -145,7 +247,7 @@ def run_case(case: Case) -> dict[str, object]:
 def write_csv(path: Path, rows: list[dict[str, object]]) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     with path.open("w", newline="", encoding="utf-8") as f:
-        writer = csv.DictWriter(f, fieldnames=list(rows[0].keys()))
+        writer = csv.DictWriter(f, fieldnames=list(rows[0].keys()), lineterminator="\n")
         writer.writeheader()
         writer.writerows(rows)
 

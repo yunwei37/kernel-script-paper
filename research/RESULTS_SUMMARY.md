@@ -6,10 +6,11 @@ Source/command: `./experiments/run_xdp_traffic.py`, `./experiments/run_tc_traffi
 
 ## Headline Result
 
-The artifact now has local traffic-driven XDP and TC checks, one generated
-perf_event loader lifecycle check, one perf_event page-fault counter workload,
-and one ringbuf event-emission workload in addition to BPF_PROG_TEST_RUN
-microbenchmarks. On fresh veth/netns
+The artifact now has a broader 23-case static rejection corpus, local
+traffic-driven XDP and TC checks, one generated perf_event loader lifecycle
+check, one perf_event page-fault counter workload, and one ringbuf
+event-emission workload in addition to BPF_PROG_TEST_RUN microbenchmarks. On
+fresh veth/netns
 pairs with iperf3 TCP, KernelScript and hand-written C/eBPF pass/count objects
 all pass the traffic oracles. XDP count medians are 17.4Gb/s for KernelScript
 and 17.5Gb/s for C/eBPF. TC count medians are 87.0Gb/s for KernelScript and
@@ -24,6 +25,7 @@ submitted/received agreement and zero drops.
 
 | Run ID | Result file | Status | Key result |
 |--------|-------------|--------|------------|
+| R000 | `results/static_checks_summary.json` | ok | 23/23 static cases match expectation, including 22 expected rejections across lifecycle, signature, map, type, symbol, config, ringbuf, and safety categories. |
 | R001 | `results/verifier_matrix_summary.json` | ok | 38/43 generated objects load and pin at least one program; build-success subset is 37/41. |
 | R002 | `results/attach_matrix_summary.json` | ok | 27/27 verifier-clean single-section XDP objects attach/detach in isolated namespaces. |
 | R003 | `results/xdp_traffic_summary.json` | ok | XDP pass/count KS and C baselines all pass iperf3 traffic; count gap is 0.6% in this local setup. |

@@ -1,20 +1,86 @@
 name,source,category,expected,observed,matched,returncode,elapsed_sec,expected_substrings,diagnostic_excerpt
-valid_pass,experiments/static_checks/valid_pass.ks,positive_control,success,success,True,0,0.0024,,
-attach_without_load,experiments/static_checks/attach_without_load.ks,lifecycle_api,failure,failure,True,1,0.0019,"attach() requires (handle, target, flags)"," Found 0 config declarations
+valid_pass,experiments/static_checks/valid_pass.ks,positive_control,success,success,True,0,0.004,,
+arith_bool,experiments/static_checks/arith_bool.ks,type_system,failure,failure,True,1,0.0018,Cannot unify types for arithmetic operation," Found 0 config declarations
+Phase 4: Type Checking
+ Type error in phase Type Checking at :0:-1: Cannot unify types for arithmetic operation"
+attach_without_load,experiments/static_checks/attach_without_load.ks,lifecycle_api,failure,failure,True,1,0.0022,"attach() requires (handle, target, flags)"," Found 0 config declarations
 Phase 4: Type Checking
  Type error in phase Type Checking at :0:-1: attach() requires (handle, target, flags) - target is a string or perf_options { ... }"
-detach_string,experiments/static_checks/detach_string.ks,lifecycle_api,failure,failure,True,1,0.0017,detach() requires a ProgramHandle or PerfAttachment," Found 0 config declarations
+attach_integer_handle,experiments/static_checks/attach_integer_handle.ks,lifecycle_api,failure,failure,True,1,0.0019,"attach() requires (handle, target, flags)"," Found 0 config declarations
+Phase 4: Type Checking
+ Type error in phase Type Checking at :0:-1: attach() requires (handle, target, flags) - target is a string or perf_options { ... }"
+config_write_ebpf,experiments/static_checks/config_write_ebpf.ks,config_boundary,failure,failure,True,1,0.0017,Config field assignments are not allowed in eBPF programs," Found 1 config declarations
+Phase 4: Type Checking
+ Type error in phase Type Checking at :0:-1: Config field assignments are not allowed in eBPF programs. Config fields can only be modified from userspace code."
+detach_string,experiments/static_checks/detach_string.ks,lifecycle_api,failure,failure,True,1,0.0016,detach() requires a ProgramHandle or PerfAttachment," Found 0 config declarations
 Phase 4: Type Checking
  Type error in phase Type Checking at :0:-1: detach() requires a ProgramHandle or PerfAttachment"
-load_string,experiments/static_checks/load_string.ks,lifecycle_api,failure,failure,True,1,0.0017,Type mismatch in function call: load," Found 0 config declarations
+detach_integer,experiments/static_checks/detach_integer.ks,lifecycle_api,failure,failure,True,1,0.0016,detach() requires a ProgramHandle or PerfAttachment," Found 0 config declarations
+Phase 4: Type Checking
+ Type error in phase Type Checking at :0:-1: detach() requires a ProgramHandle or PerfAttachment"
+duplicate_main,experiments/static_checks/duplicate_main.ks,symbol_validation,failure,failure,True,1,0.0016,Duplicate main function," KernelScript Compiler
+========================
+ Source: /home/yunwei37/workspace/kernel-script-paper/experiments/static_checks/duplicate_main.ks
+Phase 1: Parsing
+ Successfully parsed 2 declarations
+Phase 1.5: Import Resolution
+ Resolved 0 imports
+Phase 1.6: Include Processing"
+fn_wrong_arg_type,experiments/static_checks/fn_wrong_arg_type.ks,type_system,failure,failure,True,1,0.0013,Type mismatch in function call: add_one," Found 0 config declarations
+Phase 4: Type Checking
+ Type error in phase Type Checking at :0:-1: Type mismatch in function call: add_one"
+load_string,experiments/static_checks/load_string.ks,lifecycle_api,failure,failure,True,1,0.0018,Type mismatch in function call: load," Found 0 config declarations
 Phase 4: Type Checking
  Type error in phase Type Checking at :0:-1: Type mismatch in function call: load"
-perf_wrong_context,experiments/static_checks/perf_wrong_context.ks,context_signature,failure,failure,True,1,0.0019,@perf_event attributed function parameter must be ctx: *bpf_perf_event_data," Found 0 config declarations
+map_string_key,experiments/static_checks/map_string_key.ks,map_type,failure,failure,True,1,0.0015,Map key type mismatch," Found 0 config declarations
+Phase 4: Type Checking
+ Type error in phase Type Checking at :0:-1: Map key type mismatch"
+map_string_value,experiments/static_checks/map_string_value.ks,map_type,failure,failure,True,1,0.0015,Map value type mismatch," Found 0 config declarations
+Phase 4: Type Checking
+ Type error in phase Type Checking at :0:-1: Map value type mismatch"
+map_undefined,experiments/static_checks/map_undefined.ks,map_type,failure,failure,True,1,0.0014,Undefined symbol: missing_map," KernelScript Compiler
+========================
+ Source: /home/yunwei37/workspace/kernel-script-paper/experiments/static_checks/map_undefined.ks
+Phase 1: Parsing
+ Successfully parsed 2 declarations
+Phase 1.5: Import Resolution
+ Resolved 0 imports
+Phase 1.6: Include Processing"
+perf_wrong_context,experiments/static_checks/perf_wrong_context.ks,program_signature,failure,failure,True,1,0.0015,@perf_event attributed function parameter must be ctx: *bpf_perf_event_data," Found 0 config declarations
 Phase 4: Type Checking
  Type error in phase Type Checking at :0:-1: @perf_event attributed function parameter must be ctx: *bpf_perf_event_data"
-stack_overflow,experiments/static_checks/stack_overflow.ks,safety_analysis,failure,failure,True,1,0.0017,Stack overflow detected | exceeds eBPF limit of 512 bytes,"Phase 4.5: Safety Analysis
+probe_wrong_return,experiments/static_checks/probe_wrong_return.ks,program_signature,failure,failure,True,1,0.0014,@fprobe attributed function must return i32," Found 0 config declarations
+Phase 4: Type Checking
+ Type error in phase Type Checking at :0:-1: @fprobe attributed function must return i32"
+ringbuf_submit_integer,experiments/static_checks/ringbuf_submit_integer.ks,ringbuf_api,failure,failure,True,1,0.0014,Type mismatch: expected pointer to Event," Found 0 config declarations
+Phase 4: Type Checking
+ Type error in phase Type Checking at :0:-1: Type mismatch: expected pointer to Event"
+stack_overflow,experiments/static_checks/stack_overflow.ks,safety_analysis,failure,failure,True,1,0.0015,Stack overflow detected | exceeds eBPF limit of 512 bytes,"Phase 4.5: Safety Analysis
   Safety Analysis Issues:
  Stack overflow detected: 608 bytes exceeds eBPF limit of 512 bytes
    Stack usage 608 exceeds eBPF limit 512
    Suggestion: Use BPF per-cpu array maps for large data structures
  Compilation halted due to safety violations"
+struct_bad_field,experiments/static_checks/struct_bad_field.ks,type_system,failure,failure,True,1,0.0015,Field not found: missing_field in struct Config," Found 0 config declarations
+Phase 4: Type Checking
+ Type error in phase Type Checking at :0:-1: Field not found: missing_field in struct Config"
+tc_wrong_context,experiments/static_checks/tc_wrong_context.ks,program_signature,failure,failure,True,1,0.0016,@tc attributed function must have signature," Found 0 config declarations
+Phase 4: Type Checking
+ Type error in phase Type Checking at :0:-1: @tc attributed function must have signature (ctx: *__sk_buff) -> int"
+undefined_struct,experiments/static_checks/undefined_struct.ks,type_system,failure,failure,True,1,0.0015,Undefined struct: MissingStruct," Found 0 config declarations
+Phase 4: Type Checking
+ Type error in phase Type Checking at :0:-1: Undefined struct: MissingStruct"
+xdp_main,experiments/static_checks/xdp_main.ks,symbol_validation,failure,failure,True,1,0.0015,main function cannot have attributes," KernelScript Compiler
+========================
+ Source: /home/yunwei37/workspace/kernel-script-paper/experiments/static_checks/xdp_main.ks
+Phase 1: Parsing
+ Successfully parsed 2 declarations
+Phase 1.5: Import Resolution
+ Resolved 0 imports
+Phase 1.6: Include Processing"
+xdp_wrong_context,experiments/static_checks/xdp_wrong_context.ks,program_signature,failure,failure,True,1,0.0014,@xdp attributed function must have signature," Found 0 config declarations
+Phase 4: Type Checking
+ Type error in phase Type Checking at :0:-1: @xdp attributed function must have signature (ctx: *xdp_md) -> xdp_action"
+xdp_wrong_return,experiments/static_checks/xdp_wrong_return.ks,program_signature,failure,failure,True,1,0.0014,@xdp attributed function must have signature," Found 0 config declarations
+Phase 4: Type Checking
+ Type error in phase Type Checking at :0:-1: @xdp attributed function must have signature (ctx: *xdp_md) -> xdp_action"

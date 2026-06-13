@@ -1,18 +1,23 @@
 {
-  "expected_failures": 5,
+  "expected_failures": 22,
   "expected_successes": 1,
   "matched_by_category": {
-    "context_signature": 1,
-    "lifecycle_api": 3,
+    "config_boundary": 1,
+    "lifecycle_api": 5,
+    "map_type": 3,
     "positive_control": 1,
-    "safety_analysis": 1
+    "program_signature": 5,
+    "ringbuf_api": 1,
+    "safety_analysis": 1,
+    "symbol_validation": 2,
+    "type_system": 4
   },
-  "matched_cases": 6,
+  "matched_cases": 23,
   "rows": [
     {
       "category": "positive_control",
       "diagnostic_excerpt": "",
-      "elapsed_sec": 0.0024,
+      "elapsed_sec": 0.004,
       "expected": "success",
       "expected_substrings": "",
       "matched": true,
@@ -22,9 +27,21 @@
       "source": "experiments/static_checks/valid_pass.ks"
     },
     {
+      "category": "type_system",
+      "diagnostic_excerpt": " Found 0 config declarations\nPhase 4: Type Checking\n Type error in phase Type Checking at :0:-1: Cannot unify types for arithmetic operation",
+      "elapsed_sec": 0.0018,
+      "expected": "failure",
+      "expected_substrings": "Cannot unify types for arithmetic operation",
+      "matched": true,
+      "name": "arith_bool",
+      "observed": "failure",
+      "returncode": 1,
+      "source": "experiments/static_checks/arith_bool.ks"
+    },
+    {
       "category": "lifecycle_api",
       "diagnostic_excerpt": " Found 0 config declarations\nPhase 4: Type Checking\n Type error in phase Type Checking at :0:-1: attach() requires (handle, target, flags) - target is a string or perf_options { ... }",
-      "elapsed_sec": 0.0019,
+      "elapsed_sec": 0.0022,
       "expected": "failure",
       "expected_substrings": "attach() requires (handle, target, flags)",
       "matched": true,
@@ -35,8 +52,32 @@
     },
     {
       "category": "lifecycle_api",
-      "diagnostic_excerpt": " Found 0 config declarations\nPhase 4: Type Checking\n Type error in phase Type Checking at :0:-1: detach() requires a ProgramHandle or PerfAttachment",
+      "diagnostic_excerpt": " Found 0 config declarations\nPhase 4: Type Checking\n Type error in phase Type Checking at :0:-1: attach() requires (handle, target, flags) - target is a string or perf_options { ... }",
+      "elapsed_sec": 0.0019,
+      "expected": "failure",
+      "expected_substrings": "attach() requires (handle, target, flags)",
+      "matched": true,
+      "name": "attach_integer_handle",
+      "observed": "failure",
+      "returncode": 1,
+      "source": "experiments/static_checks/attach_integer_handle.ks"
+    },
+    {
+      "category": "config_boundary",
+      "diagnostic_excerpt": " Found 1 config declarations\nPhase 4: Type Checking\n Type error in phase Type Checking at :0:-1: Config field assignments are not allowed in eBPF programs. Config fields can only be modified from userspace code.",
       "elapsed_sec": 0.0017,
+      "expected": "failure",
+      "expected_substrings": "Config field assignments are not allowed in eBPF programs",
+      "matched": true,
+      "name": "config_write_ebpf",
+      "observed": "failure",
+      "returncode": 1,
+      "source": "experiments/static_checks/config_write_ebpf.ks"
+    },
+    {
+      "category": "lifecycle_api",
+      "diagnostic_excerpt": " Found 0 config declarations\nPhase 4: Type Checking\n Type error in phase Type Checking at :0:-1: detach() requires a ProgramHandle or PerfAttachment",
+      "elapsed_sec": 0.0016,
       "expected": "failure",
       "expected_substrings": "detach() requires a ProgramHandle or PerfAttachment",
       "matched": true,
@@ -47,8 +88,44 @@
     },
     {
       "category": "lifecycle_api",
+      "diagnostic_excerpt": " Found 0 config declarations\nPhase 4: Type Checking\n Type error in phase Type Checking at :0:-1: detach() requires a ProgramHandle or PerfAttachment",
+      "elapsed_sec": 0.0016,
+      "expected": "failure",
+      "expected_substrings": "detach() requires a ProgramHandle or PerfAttachment",
+      "matched": true,
+      "name": "detach_integer",
+      "observed": "failure",
+      "returncode": 1,
+      "source": "experiments/static_checks/detach_integer.ks"
+    },
+    {
+      "category": "symbol_validation",
+      "diagnostic_excerpt": " KernelScript Compiler\n========================\n Source: /home/yunwei37/workspace/kernel-script-paper/experiments/static_checks/duplicate_main.ks\nPhase 1: Parsing\n Successfully parsed 2 declarations\nPhase 1.5: Import Resolution\n Resolved 0 imports\nPhase 1.6: Include Processing",
+      "elapsed_sec": 0.0016,
+      "expected": "failure",
+      "expected_substrings": "Duplicate main function",
+      "matched": true,
+      "name": "duplicate_main",
+      "observed": "failure",
+      "returncode": 1,
+      "source": "experiments/static_checks/duplicate_main.ks"
+    },
+    {
+      "category": "type_system",
+      "diagnostic_excerpt": " Found 0 config declarations\nPhase 4: Type Checking\n Type error in phase Type Checking at :0:-1: Type mismatch in function call: add_one",
+      "elapsed_sec": 0.0013,
+      "expected": "failure",
+      "expected_substrings": "Type mismatch in function call: add_one",
+      "matched": true,
+      "name": "fn_wrong_arg_type",
+      "observed": "failure",
+      "returncode": 1,
+      "source": "experiments/static_checks/fn_wrong_arg_type.ks"
+    },
+    {
+      "category": "lifecycle_api",
       "diagnostic_excerpt": " Found 0 config declarations\nPhase 4: Type Checking\n Type error in phase Type Checking at :0:-1: Type mismatch in function call: load",
-      "elapsed_sec": 0.0017,
+      "elapsed_sec": 0.0018,
       "expected": "failure",
       "expected_substrings": "Type mismatch in function call: load",
       "matched": true,
@@ -58,9 +135,45 @@
       "source": "experiments/static_checks/load_string.ks"
     },
     {
-      "category": "context_signature",
+      "category": "map_type",
+      "diagnostic_excerpt": " Found 0 config declarations\nPhase 4: Type Checking\n Type error in phase Type Checking at :0:-1: Map key type mismatch",
+      "elapsed_sec": 0.0015,
+      "expected": "failure",
+      "expected_substrings": "Map key type mismatch",
+      "matched": true,
+      "name": "map_string_key",
+      "observed": "failure",
+      "returncode": 1,
+      "source": "experiments/static_checks/map_string_key.ks"
+    },
+    {
+      "category": "map_type",
+      "diagnostic_excerpt": " Found 0 config declarations\nPhase 4: Type Checking\n Type error in phase Type Checking at :0:-1: Map value type mismatch",
+      "elapsed_sec": 0.0015,
+      "expected": "failure",
+      "expected_substrings": "Map value type mismatch",
+      "matched": true,
+      "name": "map_string_value",
+      "observed": "failure",
+      "returncode": 1,
+      "source": "experiments/static_checks/map_string_value.ks"
+    },
+    {
+      "category": "map_type",
+      "diagnostic_excerpt": " KernelScript Compiler\n========================\n Source: /home/yunwei37/workspace/kernel-script-paper/experiments/static_checks/map_undefined.ks\nPhase 1: Parsing\n Successfully parsed 2 declarations\nPhase 1.5: Import Resolution\n Resolved 0 imports\nPhase 1.6: Include Processing",
+      "elapsed_sec": 0.0014,
+      "expected": "failure",
+      "expected_substrings": "Undefined symbol: missing_map",
+      "matched": true,
+      "name": "map_undefined",
+      "observed": "failure",
+      "returncode": 1,
+      "source": "experiments/static_checks/map_undefined.ks"
+    },
+    {
+      "category": "program_signature",
       "diagnostic_excerpt": " Found 0 config declarations\nPhase 4: Type Checking\n Type error in phase Type Checking at :0:-1: @perf_event attributed function parameter must be ctx: *bpf_perf_event_data",
-      "elapsed_sec": 0.0019,
+      "elapsed_sec": 0.0015,
       "expected": "failure",
       "expected_substrings": "@perf_event attributed function parameter must be ctx: *bpf_perf_event_data",
       "matched": true,
@@ -70,9 +183,33 @@
       "source": "experiments/static_checks/perf_wrong_context.ks"
     },
     {
+      "category": "program_signature",
+      "diagnostic_excerpt": " Found 0 config declarations\nPhase 4: Type Checking\n Type error in phase Type Checking at :0:-1: @fprobe attributed function must return i32",
+      "elapsed_sec": 0.0014,
+      "expected": "failure",
+      "expected_substrings": "@fprobe attributed function must return i32",
+      "matched": true,
+      "name": "probe_wrong_return",
+      "observed": "failure",
+      "returncode": 1,
+      "source": "experiments/static_checks/probe_wrong_return.ks"
+    },
+    {
+      "category": "ringbuf_api",
+      "diagnostic_excerpt": " Found 0 config declarations\nPhase 4: Type Checking\n Type error in phase Type Checking at :0:-1: Type mismatch: expected pointer to Event",
+      "elapsed_sec": 0.0014,
+      "expected": "failure",
+      "expected_substrings": "Type mismatch: expected pointer to Event",
+      "matched": true,
+      "name": "ringbuf_submit_integer",
+      "observed": "failure",
+      "returncode": 1,
+      "source": "experiments/static_checks/ringbuf_submit_integer.ks"
+    },
+    {
       "category": "safety_analysis",
       "diagnostic_excerpt": "Phase 4.5: Safety Analysis\n  Safety Analysis Issues:\n Stack overflow detected: 608 bytes exceeds eBPF limit of 512 bytes\n   Stack usage 608 exceeds eBPF limit 512\n   Suggestion: Use BPF per-cpu array maps for large data structures\n Compilation halted due to safety violations",
-      "elapsed_sec": 0.0017,
+      "elapsed_sec": 0.0015,
       "expected": "failure",
       "expected_substrings": "Stack overflow detected | exceeds eBPF limit of 512 bytes",
       "matched": true,
@@ -80,8 +217,80 @@
       "observed": "failure",
       "returncode": 1,
       "source": "experiments/static_checks/stack_overflow.ks"
+    },
+    {
+      "category": "type_system",
+      "diagnostic_excerpt": " Found 0 config declarations\nPhase 4: Type Checking\n Type error in phase Type Checking at :0:-1: Field not found: missing_field in struct Config",
+      "elapsed_sec": 0.0015,
+      "expected": "failure",
+      "expected_substrings": "Field not found: missing_field in struct Config",
+      "matched": true,
+      "name": "struct_bad_field",
+      "observed": "failure",
+      "returncode": 1,
+      "source": "experiments/static_checks/struct_bad_field.ks"
+    },
+    {
+      "category": "program_signature",
+      "diagnostic_excerpt": " Found 0 config declarations\nPhase 4: Type Checking\n Type error in phase Type Checking at :0:-1: @tc attributed function must have signature (ctx: *__sk_buff) -> int",
+      "elapsed_sec": 0.0016,
+      "expected": "failure",
+      "expected_substrings": "@tc attributed function must have signature",
+      "matched": true,
+      "name": "tc_wrong_context",
+      "observed": "failure",
+      "returncode": 1,
+      "source": "experiments/static_checks/tc_wrong_context.ks"
+    },
+    {
+      "category": "type_system",
+      "diagnostic_excerpt": " Found 0 config declarations\nPhase 4: Type Checking\n Type error in phase Type Checking at :0:-1: Undefined struct: MissingStruct",
+      "elapsed_sec": 0.0015,
+      "expected": "failure",
+      "expected_substrings": "Undefined struct: MissingStruct",
+      "matched": true,
+      "name": "undefined_struct",
+      "observed": "failure",
+      "returncode": 1,
+      "source": "experiments/static_checks/undefined_struct.ks"
+    },
+    {
+      "category": "symbol_validation",
+      "diagnostic_excerpt": " KernelScript Compiler\n========================\n Source: /home/yunwei37/workspace/kernel-script-paper/experiments/static_checks/xdp_main.ks\nPhase 1: Parsing\n Successfully parsed 2 declarations\nPhase 1.5: Import Resolution\n Resolved 0 imports\nPhase 1.6: Include Processing",
+      "elapsed_sec": 0.0015,
+      "expected": "failure",
+      "expected_substrings": "main function cannot have attributes",
+      "matched": true,
+      "name": "xdp_main",
+      "observed": "failure",
+      "returncode": 1,
+      "source": "experiments/static_checks/xdp_main.ks"
+    },
+    {
+      "category": "program_signature",
+      "diagnostic_excerpt": " Found 0 config declarations\nPhase 4: Type Checking\n Type error in phase Type Checking at :0:-1: @xdp attributed function must have signature (ctx: *xdp_md) -> xdp_action",
+      "elapsed_sec": 0.0014,
+      "expected": "failure",
+      "expected_substrings": "@xdp attributed function must have signature",
+      "matched": true,
+      "name": "xdp_wrong_context",
+      "observed": "failure",
+      "returncode": 1,
+      "source": "experiments/static_checks/xdp_wrong_context.ks"
+    },
+    {
+      "category": "program_signature",
+      "diagnostic_excerpt": " Found 0 config declarations\nPhase 4: Type Checking\n Type error in phase Type Checking at :0:-1: @xdp attributed function must have signature (ctx: *xdp_md) -> xdp_action",
+      "elapsed_sec": 0.0014,
+      "expected": "failure",
+      "expected_substrings": "@xdp attributed function must have signature",
+      "matched": true,
+      "name": "xdp_wrong_return",
+      "observed": "failure",
+      "returncode": 1,
+      "source": "experiments/static_checks/xdp_wrong_return.ks"
     }
   ],
   "status": "ok",
-  "total_cases": 6
+  "total_cases": 23
 }
