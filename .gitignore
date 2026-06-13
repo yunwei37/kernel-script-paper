@@ -5,7 +5,7 @@ kernelscript/_build/
 results/build/
 results/logs/
 
-# LaTeX generated files; keep paper/kernelscript-osdi.pdf
+# LaTeX generated files; keep paper/kernelscript-paper.pdf
 paper/*.aux
 paper/*.bbl
 paper/*.blg
@@ -15,5 +15,6 @@ paper/*.log
 paper/*.out
 
 # Local editor/cache files
+__pycache__/
 .DS_Store
 *.swp

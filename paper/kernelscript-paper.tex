@@ -50,8 +50,8 @@ examples, \KSKSCompileOK{} compile from \tool{} source and \KSMakeOK{} build
 into generated C/eBPF projects.  Successful examples have median
 \KSMedianKSSloc{} lines of \tool{} source and median \KSMedianGeneratedSloc{}
 lines of generated C and build logic, an \KSMedianGeneratedRatio{} expansion
-factor.  The results show that the compiler centralizes recurring project structure and expose two
-current limits: struct\_ops skeleton compatibility with the installed libbpf
+factor.  The results show that the compiler centralizes recurring project
+structure and exposes two current limits: struct\_ops skeleton compatibility with the installed libbpf
 headers, and a map-update microbenchmark where generated code uses more
 instructions than an idiomatic hand-written baseline.
 \end{abstract}
@@ -76,7 +76,8 @@ controller.  Tracing languages such as bpftrace provide a higher-level
 experience, but intentionally narrow the target domain.  The systems question
 is therefore not whether eBPF needs another surface syntax.  The question is
 whether a language can encode cross-boundary eBPF application structure in a
-way that is both safer and still compatible with the existing kernel toolchain.
+compiler-checkable way that remains compatible with the existing kernel
+toolchain.
 
 \subsection{Why a Unified Source Model?}
 
@@ -113,10 +114,13 @@ This paper makes three contributions.  First, we identify the central
 scientific contribution of \tool{} as a typed, compiler-checked unified-source
 model for multi-artifact eBPF applications.  Second, we describe how this model
 organizes programs, maps, lifecycle operations, and kernel extension code so
-that cross-boundary constraints can be checked before load or attach time.
+that selected cross-boundary constraints, including program-handle use,
+perf-event context signatures, and stack-limit violations, can be checked
+before load or attach time.
 Third, we implement and run a reproducible artifact evaluation that measures
 test coverage, example buildability, generated-code expansion, feature
-coverage, and an attach/detach smoke test.  The artifact is designed so that a
+coverage, static rejection cases, an attach/detach smoke test, and XDP
+microbenchmarks.  The artifact is designed so that a
 reviewer can rerun the evaluation without changing the \tool{} source tree:
 all scripts, logs, derived tables, and paper macros are stored outside the
 cloned repository.
@@ -145,9 +149,9 @@ developer may write code, compile it, generate skeletons, link a loader, and
 only then receive a verifier rejection or an attach-time failure.  A DSL can
 help if it moves some of these checks earlier without hiding the underlying
 eBPF execution model.  For example, a language can know that a function marked
-\texttt{@xdp} expects an \texttt{xdp\_md} context and returns an XDP action; it
-can model maps as typed global variables; and it can distinguish userspace
-functions from eBPF functions and kfunc definitions.
+\texttt{@xdp} expects an \texttt{xdp\_md} context and returns an XDP action,
+model maps as typed global variables, and distinguish userspace functions from
+eBPF functions and kfunc definitions.
 
 \section{\tool{} Overview}
 
@@ -185,8 +189,9 @@ the generated code performs the required libbpf calls.
 The language also experiments with lifecycle typing.  In the source model,
 \texttt{load} returns a program value and \texttt{attach} consumes a compatible
 loaded program and target.  The repository contains tests for detach API
-generation and type errors around program references.  This is not a proof of
-full typestate soundness, but it shows the research direction: lifecycle
+generation and type errors around program references.  The implementation is
+not a proof of full typestate soundness, but it shows the research direction:
+lifecycle
 ordering can be treated as a language-level property rather than only as a
 runtime convention.
 
@@ -202,21 +207,21 @@ measurable.
 \textbf{Make domains explicit.}  The attribute system separates userspace,
 eBPF, helper, and kernel-module code.  This matters because the same surface
 syntax cannot mean the same thing in every domain.  Userspace can allocate and
-print freely; eBPF code must obey stack and helper restrictions; kfunc code
+print freely, eBPF code must obey stack and helper restrictions, and kfunc code
 targets a module build.  A unified source model is useful only if the compiler
 keeps these domains separate internally.
 
 \textbf{Move verifier-relevant checks earlier.}  The compiler performs safety
 analysis before code generation.  In our run, \texttt{safety\_demo.ks} is
 rejected because the compiler estimates 608 bytes of stack use, above the
-512-byte eBPF limit.  This does not make the verifier redundant, but it reduces
+512-byte eBPF limit.  The check does not make the verifier redundant, but it reduces
 the number of late failures that require inspecting verifier logs.
 
 \textbf{Expose low-level escape hatches.}  eBPF users often need new helpers,
 kernel functions, or BTF-specific types before high-level libraries expose
 them.  \tool{} supports includes and extern declarations so that a program can
-refer to generated header declarations.  This is important for a research
-prototype because the Linux BPF API surface changes faster than a DSL can
+refer to generated header declarations.  For a research prototype, this escape
+hatch matters because the Linux BPF API surface changes faster than a DSL can
 stabilize.
 
 \section{Implementation}
@@ -244,34 +249,41 @@ API generation.
 \section{Evaluation Methodology}
 
 We evaluate \tool{} as a compiler and systems artifact.  The goal is to test
-the scientific claim that the unified-source model reduces development
-complexity while preserving a path to ordinary eBPF artifacts.  We do not claim
+whether the unified-source model centralizes recurring eBPF project structure,
+preserves a compile/build path to ordinary libbpf artifacts on our host, and
+rejects selected pre-load errors.  We do not claim
 packet-rate performance equivalence in this paper, because the public
 repository does not include matched hand-written C/libbpf baselines or a
 traffic-generation harness.  Instead, we focus on reproducible evidence that
-the language covers representative domains, rejects some errors early, and
-generates buildable artifacts.
+repository examples exercise multiple eBPF domains, selected errors are
+rejected early, and generated artifacts build against the local toolchain.
 
 The evaluation runs on Linux \KSKernelVersion{} using clang 18, bpftool 7.7,
 libbpf 1.3.0, OCaml 4.14, and dune 3.14.  The evaluated commit is
-\KSCommitShort{}.  The artifact contains two scripts.  First,
-\texttt{experiments/run\_evaluation.py} builds the compiler, runs
-\texttt{dune runtest --force}, compiles every \texttt{examples/*.ks} file,
-runs \texttt{make} in each generated project, and records CSV/JSON results.
-Second, \texttt{experiments/run\_smoke.sh} compiles a minimal loopback XDP
-program and uses \texttt{sudo -n} to run the generated loader.  Third,
-\texttt{experiments/run\_microbench.py} compares two KernelScript-generated
-XDP objects with equivalent hand-written C/eBPF objects using bpftool's
+\KSCommitShort{}.  The artifact contains four scripts under
+\texttt{experiments/}.  \texttt{run\_evaluation.py} builds the compiler, runs
+\texttt{dune runtest --force}, compiles every \texttt{examples/*.ks} file, runs
+\texttt{make} in each generated project, and records CSV/JSON results.
+\texttt{run\_static\_checks.py} compiles a small corpus with expected success
+or expected failure outcomes for lifecycle API use, context signatures, and
+stack-limit analysis.  \texttt{run\_smoke.sh} compiles a minimal loopback XDP
+program and uses \texttt{sudo -n} to run the generated loader.
+\texttt{run\_microbench.py} compares two KernelScript-generated XDP objects
+with equivalent hand-written C/eBPF objects using bpftool's
 BPF\_PROG\_TEST\_RUN path.
 
-We measure four outcomes.  \textbf{Correctness of the implementation} is
-approximated by the repository test suite.  \textbf{Expressiveness} is
+We measure five outcomes.  \textbf{Compiler regression coverage} is
+approximated by the repository test suite.  \textbf{Early rejection} is
+measured by static cases whose expected diagnostics are checked by the harness.
+\textbf{Expressiveness} is
 approximated by whether examples for XDP, TC, probes, tracepoints, perf events,
 maps, ring buffers, dynptrs, tail calls, kfuncs, and struct\_ops pass through
-the compiler and generated build.  \textbf{Complexity reduction} is measured
-as an expansion factor: lines of \tool{} source compared to generated C and
-Makefile lines.  \textbf{Compatibility} is measured by generated build
-successes and failures against the local kernel toolchain.
+the compiler and generated build.  Feature labels are derived from lexical
+markers in the example source, so they are a coarse corpus classifier rather
+than a manual feature-completeness audit.  \textbf{Generated-structure
+centralization} is measured as an expansion factor: lines of \tool{} source
+compared to generated C and Makefile lines.  \textbf{Compatibility} is measured
+by generated build successes and failures against the local kernel toolchain.
 
 The harness treats generated data as first-class evidence.  It writes raw
 stdout and stderr logs for every compiler and make invocation, CSV rows for
@@ -302,12 +314,22 @@ BTF parsing, and other regression cases.  This breadth is important because
 the evaluation of a DSL depends on whether the implementation actually encodes
 domain concepts rather than only accepting example syntax.
 
+\textbf{Static rejection corpus.}  The static-check harness compiles
+\KSStaticTotal{} small programs and verifies that every observed outcome
+matches the expected result.  The corpus includes one positive control and
+\KSStaticExpectedFailures{} expected compiler rejections:
+\KSStaticLifecycle{} lifecycle API misuses, \KSStaticContext{} context-signature
+mismatch, and \KSStaticSafety{} stack-limit violation.  These cases are not a
+soundness proof, but they make the early-rejection claim falsifiable: a future
+compiler change that accepts one of these invalid programs or changes the
+diagnostic contract will fail the paper-number generation path.
+
 \textbf{Example buildability.}  Table~\ref{tab:build} summarizes the example
 build results.  Of \KSTotalExamples{} examples, \KSKSCompileOK{} compile from
 \tool{} source.  \KSMakeOK{} then build into generated C/eBPF artifacts.  The
 single compile-time rejection is \texttt{safety\_demo.ks}, where safety
 analysis detects 608 bytes of stack usage and halts before C generation.  This
-is a positive result for the safety hypothesis: the compiler catches a
+is a positive result for the early-checking hypothesis: the compiler catches a
 verifier-relevant problem early and provides a specific repair suggestion.
 
 \begin{table}[t]
@@ -331,16 +353,16 @@ The two generated build failures are \texttt{sched\_ext\_simple.ks} and
 \texttt{struct\_ops\_simple.ks}.  Both compile to eBPF objects and generate
 skeletons, but the generated userspace skeleton code references a
 \texttt{struct bpf\_map\_skeleton.link} field not available in the installed
-libbpf 1.3.0 headers.  This is a compatibility failure in the fast-moving
-struct\_ops path, not a parser or type-checking failure.  It is also a useful
-systems result: a unified-source language still inherits version skew across
+libbpf 1.3.0 headers.  The observed failure is a compatibility issue in the fast-moving
+struct\_ops path, not a parser or type-checking failure, and it shows that a
+unified-source language still inherits version skew across
 bpftool, libbpf, and kernel headers.
 
 \textbf{Feature coverage.}  The examples exercise many eBPF domains.
 Table~\ref{tab:features} reports attempted examples, examples that pass the
 \tool{} compiler, and examples that fully build against the local toolchain.
-These counts should not be read as a complete language coverage proof; they show
-that the artifact is broader than a tracing-only DSL while making the struct\_ops
+These counts should not be read as a complete language coverage proof.  They
+show that the artifact is broader than a tracing-only DSL while making the struct\_ops
 compatibility gap explicit.
 
 \begin{table}[t]
@@ -380,10 +402,10 @@ programs with comparable hand-written baselines.
 median generated project size, counting userspace C, eBPF C, optional module
 C, and Makefile lines but excluding generated \texttt{vmlinux.h} and skeleton
 headers, is \KSMedianGeneratedSloc{} lines.  The median expansion factor is
-\KSMedianGeneratedRatio{}.  This is evidence that a small unified source file
+\KSMedianGeneratedRatio{}.  These measurements show that a small unified source file
 centralizes hundreds of lines of low-level build and coordination code.
 
-This metric is intentionally conservative.  It does not say that every
+The metric is intentionally conservative.  It does not say that every
 generated line is exactly a hand-written line saved, and it does not compare
 against an expert-written minimal C baseline.  It does show that \tool{}
 centralizes recurring eBPF project structure.  Examples such
@@ -394,7 +416,7 @@ kernel program itself.
 \textbf{Runtime microbenchmarks.}  Table~\ref{tab:micro} compares two generated
 XDP objects with hand-written C/eBPF baselines.  Each program is loaded with
 bpftool and executed through BPF\_PROG\_TEST\_RUN for 100000 repetitions over
-seven trials; the table reports median average nanoseconds with the observed
+seven trials.  The table reports median average nanoseconds with the observed
 min--max range.  The minimal pass program has the same median in this harness:
 2 instructions and \KSMicroKsPassNs{} for \tool{} versus
 \KSMicroCPassNs{} for C.  The map counter is different.
@@ -402,14 +424,14 @@ min--max range.  The minimal pass program has the same median in this harness:
 an in-place atomic add on the array-map value.  The generated version therefore
 has \KSMicroKsCountInstr{} instructions and \KSMicroKsCountNs{} median average
 time versus \KSMicroCCountInstr{} instructions and \KSMicroCCountNs{} for C.
-This result is small in absolute terms but important scientifically:
+The result is small in absolute terms but important scientifically:
 the unified model need not impose overhead for trivial programs, but map
 assignment lowering can miss an optimization that an expert C programmer would
 write manually.
 
 \begin{table}[t]
 \centering
-\caption{XDP BPF\_PROG\_TEST\_RUN microbenchmarks.}
+\caption{XDP BPF\_PROG\_TEST\_RUN microbenchmarks: pass matches C in this harness, while map count is slower due to lookup-plus-update lowering.}
 \label{tab:micro}
 \begin{tabular}{llrr}
 \toprule
@@ -426,7 +448,7 @@ count & C/eBPF & \KSMicroCCountInstr{} & \KSMicroCCountNs{} \\
 \textbf{Generated code size.}  Among successful repository examples where
 disassembly is available, the median generated eBPF object contains
 \KSMedianInstructions{} instructions.  Small examples compile to tiny programs,
-while map-heavy examples generate much larger objects.  This metric helps
+while map-heavy examples generate much larger objects.  The metric helps
 choose where runtime work is needed: examples with many generated map
 operations are the most likely to diverge from hand-written C.
 
@@ -436,31 +458,32 @@ loader with sudo.  The loader successfully attaches an XDP pass program to
 the loopback interface and detaches it:
 \texttt{XDP attached to interface: lo} followed by
 \texttt{XDP detached from interface index: 1}.  This test is not a benchmark,
-but it validates that generated userspace code can complete a real
-load/attach/detach lifecycle on the test host.
+but it validates that this minimal generated XDP loader can complete a real
+load/attach/detach lifecycle on \texttt{lo} on the test host.
 
 \section{Discussion}
 
 The evaluation supports \tool{}'s central research direction, but it also
 clarifies what remains unproven.  The strongest supported claim is a
-complexity claim: one source model can generate the multi-file project
-structure needed for a variety of eBPF programs.  The test suite and safety
-demo support a narrower safety claim: some verifier-relevant errors can be
-detected before kernel loading.  The results establish parity only for a
-minimal pass program; they do not yet establish broad runtime performance
-parity with hand-written C/libbpf.
+generated-structure claim: one source model can generate the multi-file project
+structure needed by several eBPF example classes.  The test suite, static
+corpus, and safety demo support a narrower checking claim: the current compiler
+rejects selected lifecycle, context-signature, and stack-limit errors before
+kernel loading.  The runtime evidence is deliberately smaller.  It establishes
+parity only for a minimal pass program and exposes a map-update gap, so it does
+not yet establish broad runtime performance parity with hand-written C/libbpf.
 
 The struct\_ops failures are instructive.  A DSL can hide coordination code, but it
 cannot hide all ABI and API drift.  When bpftool-generated skeletons and
 installed libbpf headers disagree, the generated userspace C fails.  A
 production compiler would need version-aware generation, dependency checks, or
 containerized toolchains.  From a systems-research perspective, this is part of
-the contribution: the artifact exposes where a unified model reduces
-complexity and where the underlying Linux BPF stack still leaks through.
+the contribution: the artifact exposes where a unified model centralizes
+structure and where the underlying Linux BPF stack still leaks through.
 
 The expansion-factor metric should also be interpreted carefully.  Generated
-C is not automatically better than hand-written C; it can be verbose,
-unidiomatic, or harder to debug.  The practical benefit depends on diagnostic
+C is not automatically better than hand-written C.  It can be verbose,
+unidiomatic, or harder to debug, so the practical benefit depends on diagnostic
 quality and source-level mapping from generated errors back to \tool{} source.
 Future work should therefore measure not only lines of code but time to fix
 injected errors, quality of compiler messages, and whether developers can
@@ -470,7 +493,7 @@ understand generated verifier failures.
 
 \textbf{No expert C baseline.}  The expansion factor compares \tool{} source
 against generated artifacts, not against carefully hand-written C/libbpf
-programs.  This is appropriate for measuring how much project structure the
+programs.  The comparison is appropriate for measuring how much project structure the
 compiler creates, but it is not a direct developer-effort study.  An expert
 could write smaller C for some examples, especially tiny XDP pass/drop
 programs.  Conversely, generated code omits comments and may be denser than
@@ -479,11 +502,17 @@ project structure centralized by the compiler,'' not ``exact lines saved.''
 
 \textbf{Repository examples may be biased.}  The corpus comes from the public
 \tool{} repository, so it naturally reflects the features the implementation
-authors wanted to demonstrate.  It is useful for an artifact study because it
+authors wanted to demonstrate.  The corpus is useful for an artifact study because it
 is reproducible and covers many features, but it is not a representative sample
 of all eBPF applications.  A stronger corpus would include programs from
 Cilium, bcc/libbpf-tools, production XDP filters, scheduler extensions, and
 observability agents, then reimplement each in \tool{} and C/libbpf.
+
+\textbf{Static checks are narrow.}  The static rejection corpus is a regression
+test for selected compiler checks, not a formal proof of lifecycle soundness or
+memory safety.  It strengthens the paper by making early-rejection claims
+executable, but it does not cover all invalid attach orders, map types, helper
+contracts, or verifier failures.
 
 \textbf{Build success is not verifier success for every runtime path.}  The
 harness compiles eBPF objects and links userspace loaders.  The smoke test
@@ -496,7 +525,7 @@ cleanup checks after detach.
 
 \textbf{Kernel version skew matters.}  The struct\_ops failures show that
 results depend on the alignment between kernel headers, bpftool, generated
-skeleton code, and libbpf headers.  This threat is not incidental: eBPF
+skeleton code, and libbpf headers.  The threat is not incidental: eBPF
 programming is tightly coupled to kernel versions.  A production \tool{}
 compiler should record the target kernel ABI, check libbpf feature support
 before generation, and fail early with a dependency diagnostic when a generated
@@ -525,9 +554,9 @@ the controlling application~\cite{aya,cilium-ebpf}.  bpftrace takes the opposite
 a concise high-level language, but focuses on tracing rather than arbitrary
 XDP, TC, struct\_ops, or kfunc-oriented applications~\cite{bpftrace}.
 
-\tool{} occupies a different point in the design space.  It is compiled rather
-than interpreted, broader than tracing-only languages, and more opinionated
-than host-language bindings.  Its closest research question is whether eBPF
+\tool{} occupies a different point in the design space.  The language is
+compiled rather than interpreted, targets more domains than tracing-only
+languages, and is more opinionated than host-language bindings.  Its closest research question is whether eBPF
 application structure can be made explicit enough for a compiler to generate
 the low-level project while preserving compatibility with the Linux BPF
 toolchain.  The public \tool{} repository~\cite{kernelscript} is therefore
@@ -547,7 +576,7 @@ evidence that the model centralizes recurring project structure.  The remaining 
 are equally clear: struct\_ops compatibility needs version-aware handling, and
 runtime performance is mixed beyond trivial XDP pass programs.  Taken together,
 the results frame \tool{}'s scientific contribution as an exploration of a
-safer, unified programming model for eBPF, with a reproducible path for
+compiler-checked unified programming model for eBPF, with a reproducible path for
 evaluating whether that model reduces complexity without abandoning the kernel
 toolchain.
 

@@ -24,9 +24,9 @@ artifact a developer does not have to maintain by hand.
 
 RQ3. Which classes of errors are rejected before load/attach time?
 
-Evidence: run the full compiler test suite and classify negative examples. The
-current reproducible example is `safety_demo.ks`, which the compiler rejects for
-608 bytes of eBPF stack usage against the 512-byte limit.
+Evidence: run the full compiler test suite and a small static-check corpus. The
+corpus includes lifecycle API misuse, a perf_event context-signature mismatch,
+an eBPF stack-limit violation, and one positive control.
 
 RQ4. Do generated artifacts remain compatible with the local kernel toolchain?
 
@@ -50,14 +50,21 @@ interface.
    - Records SLOC, build times, feature flags, eBPF object sizes, and instruction
      counts when `llvm-objdump` is available.
    - Writes `results/evaluation_summary.json`, `results/examples_summary.csv`,
-     `results/unit_tests_summary.json`, and `results/paper_numbers.tex`.
+     and `results/unit_tests_summary.json`.
 
-2. `experiments/run_smoke.sh`
+2. `experiments/run_static_checks.py`
+   - Compiles a static-check corpus with expected success or expected failure
+     outcomes.
+   - Verifies lifecycle API, context signature, and stack-limit diagnostics.
+   - Writes `results/static_checks_summary.csv` and
+     `results/static_checks_summary.json`.
+
+3. `experiments/run_smoke.sh`
    - Compiles and builds `experiments/programs/smoke_lo.ks`.
    - Runs the generated binary with `sudo -n`.
    - Writes `results/smoke_summary.json` and logs under `results/logs/`.
 
-3. `experiments/run_microbench.py`
+4. `experiments/run_microbench.py`
    - Compiles two KernelScript XDP microbenchmarks and two hand-written C/eBPF
      baselines.
    - Loads each object with `bpftool prog load`.
@@ -65,6 +72,11 @@ interface.
      trials.
    - Writes `results/microbench_summary.csv` and
      `results/microbench_summary.json`.
+
+5. `experiments/update_paper_numbers.py`
+   - Checks that unit tests, static checks, smoke test, and microbenchmarks have
+     successful summaries.
+   - Writes `results/paper_numbers.tex` for the LaTeX paper.
 
 ## Current Results
 
@@ -75,6 +87,8 @@ At commit `6f9e6e8`, on Linux `6.15.11-061511-generic`:
 - 41 examples build fully into generated C/eBPF artifacts.
 - The one KernelScript rejection is an intentional safety rejection for stack
   usage above the eBPF limit.
+- The static-check corpus has 6 cases, including 5 expected compiler
+  rejections and 1 positive control, all matching expected outcomes.
 - The two generated build failures are struct_ops examples whose generated
   skeletons expect a `struct bpf_map_skeleton.link` field unavailable in the
   installed libbpf 1.3.0 headers.

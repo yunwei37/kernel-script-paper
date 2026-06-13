@@ -369,25 +369,6 @@ def median(values: list[int | float]) -> float:
     return (float(values[mid - 1]) + float(values[mid])) / 2.0
 
 
-def write_tex_macros(path: Path, env: dict[str, object], unit: dict[str, int], summary: dict[str, object]) -> None:
-    def macro(name: str, value: object) -> str:
-        return f"\\newcommand{{\\{name}}}{{{value}}}\n"
-
-    content = ""
-    content += macro("KSCommitShort", str(env["kernelscript_git_head"])[:7])
-    content += macro("KSKernelVersion", env["kernel"])
-    content += macro("KSTotalUnitSuites", unit["suites_successful"])
-    content += macro("KSTotalUnitTests", unit["tests_successful"])
-    content += macro("KSTotalExamples", summary["total_examples"])
-    content += macro("KSKSCompileOK", summary["ks_compile_ok"])
-    content += macro("KSMakeOK", summary["make_ok"])
-    content += macro("KSMedianKSSloc", f"{summary['median_ks_sloc_success']:.0f}")
-    content += macro("KSMedianGeneratedSloc", f"{summary['median_generated_sloc_success']:.0f}")
-    content += macro("KSMedianGeneratedRatio", f"{summary['median_generated_to_ks_ratio_success']:.1f}x")
-    content += macro("KSMedianInstructions", f"{summary['median_ebpf_instructions_success']:.0f}")
-    write_text(path, content)
-
-
 def main() -> int:
     if not REPO.exists():
         print(f"KernelScript repo not found: {REPO}", file=sys.stderr)
@@ -422,7 +403,6 @@ def main() -> int:
     write_json(RESULTS / "examples_summary.json", rows)
     summary = summarize_examples(examples)
     write_json(RESULTS / "evaluation_summary.json", summary)
-    write_tex_macros(RESULTS / "paper_numbers.tex", env, unit, summary)
 
     print(json.dumps({"unit_tests": unit, "examples": summary}, indent=2, sort_keys=True))
     return 0 if tests.returncode == 0 else tests.returncode

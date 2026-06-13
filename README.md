@@ -7,6 +7,7 @@ evaluation scripts, generated results, and a paper draft.
 
 - `kernelscript/`: cloned upstream repository.
 - `experiments/run_evaluation.py`: compiler/test/example build evaluation.
+- `experiments/run_static_checks.py`: positive and negative static-check corpus.
 - `experiments/run_smoke.sh`: privileged attach/detach smoke test on `lo`.
 - `experiments/run_microbench.py`: XDP BPF_PROG_TEST_RUN microbenchmarks
   against hand-written C/eBPF baselines.
@@ -30,6 +31,12 @@ Run the main evaluation:
 
 ```bash
 ./experiments/run_evaluation.py
+```
+
+Run the static-check corpus:
+
+```bash
+./experiments/run_static_checks.py
 ```
 
 Run the optional smoke test, which requires passwordless sudo or a prior sudo
@@ -62,6 +69,8 @@ The current run evaluates KernelScript commit `6f9e6e8` on Linux
 - Unit tests: 85 suites, 1092 tests, 0 reported failures.
 - Examples: 44 total, 43 KernelScript compile successes, 41 full generated
   C/eBPF build successes.
+- Static checks: 6 total cases, including 5 expected compiler rejections and
+  1 positive control, all matching expected outcomes.
 - Safety: `safety_demo.ks` is rejected before C generation for 608 bytes of
   stack usage against the 512-byte eBPF limit.
 - Compatibility limit: two struct_ops examples build eBPF objects but fail when

@@ -50,6 +50,7 @@ def main() -> int:
     examples = load_json("examples_summary.json")
     smoke = load_json("smoke_summary.json")
     micro = load_json("microbench_summary.json")
+    static = load_json("static_checks_summary.json")
 
     if unit.get("returncode") != 0 or unit.get("reported_failures") != 0:
         raise SystemExit("unit tests are not clean; refusing to generate paper numbers")
@@ -57,6 +58,8 @@ def main() -> int:
         raise SystemExit("smoke test did not complete successfully")
     if micro.get("status") != "ok":
         raise SystemExit("microbenchmarks did not complete successfully")
+    if static.get("status") != "ok":
+        raise SystemExit("static checks did not complete successfully")
 
     content = ""
     content += macro("KSCommitShort", str(env["kernelscript_git_head"])[:7])
@@ -74,6 +77,13 @@ def main() -> int:
     content += macro("KSMedianGeneratedSloc", f"{summary['median_generated_sloc_success']:.0f}")
     content += macro("KSMedianGeneratedRatio", f"{summary['median_generated_to_ks_ratio_success']:.1f}x")
     content += macro("KSMedianInstructions", f"{summary['median_ebpf_instructions_success']:.1f}")
+    content += macro("KSStaticTotal", static["total_cases"])
+    content += macro("KSStaticMatched", static["matched_cases"])
+    content += macro("KSStaticExpectedFailures", static["expected_failures"])
+    content += macro("KSStaticExpectedSuccesses", static["expected_successes"])
+    content += macro("KSStaticLifecycle", static["matched_by_category"].get("lifecycle_api", 0))
+    content += macro("KSStaticContext", static["matched_by_category"].get("context_signature", 0))
+    content += macro("KSStaticSafety", static["matched_by_category"].get("safety_analysis", 0))
 
     features = {
         "XDP": "feature_xdp",
