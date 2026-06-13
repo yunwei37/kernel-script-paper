@@ -43,23 +43,27 @@
 \noindent\textbf{Abstract.}
 Realistic eBPF applications span verifier-constrained kernel programs,
 userspace loaders, shared maps, skeletons, and sometimes kernel-module code.
-This paper studies \tool, a beta DSL that explores whether these pieces can be
-represented in one type-checked source model and lowered to conventional
-libbpf-compatible artifacts.  At commit \KSCommitShort{}, \KSKSCompileOK{} of
-\KSTotalExamples{} repository examples compile from \tool{} source,
-\KSMakeOK{} build into generated C/eBPF projects, \KSVerifierBuildLoadOK{} of
-the build-success objects verifier-load under a strict pinned-program
-criterion, and \KSAttachOK{} of \KSAttachEligible{} verifier-clean
-single-section XDP objects attach and detach in isolated namespaces.  Matched
-local checks cover XDP and TC traffic, perf-event counters, ring-buffer event
-emission, and direct struct\_ops load/attach/detach compatibility.  The
-ring-buffer workload submits and receives \KSRingbufEvents{} events per trial
-with zero drops and reports \KSRingbufKsMps{} versus \KSRingbufCMps{} million
-events/s for generated and C/eBPF objects.  A direct struct\_ops compatibility check
-loads, attaches, and detaches both the generated tcp-congestion object and a
-minimal C/eBPF tcp-congestion object in
-\KSStructOpsTrials{}/\KSStructOpsTrials{} trials, separating object
-compatibility from a remaining skeleton-header version mismatch.  The
+This paper studies \tool, a beta domain-specific language (DSL) that explores
+whether these pieces can be represented in one type-checked source model and
+lowered to conventional libbpf-compatible artifacts.  At commit
+\KSCommitShort{}, \KSKSCompileOK{} of \KSTotalExamples{} repository examples
+compile from \tool{} source, \KSMakeOK{} of \KSTotalExamples{} build into
+generated C/eBPF projects, \KSVerifierBuildLoadOK{} of
+\KSVerifierBuildObjects{} build-success generated objects verifier-load under a
+strict pinned-program criterion, and \KSAttachOK{} of \KSAttachEligible{}
+verifier-clean single-section Express Data Path (XDP) objects attach and detach
+in isolated namespaces.  Matched local checks cover XDP and traffic control
+(TC) traffic, perf-event counters, ring-buffer event emission, and direct
+struct\_ops load/attach/detach compatibility.  Over \KSRingbufTrials{} trials,
+both generated and C/eBPF ring-buffer objects submit and receive
+\KSRingbufEvents{} events per trial, with \KSRingbufKsDropped{} and
+\KSRingbufCDropped{} drops, respectively, and report \KSRingbufKsMps{} versus
+\KSRingbufCMps{} million events/s.  A direct struct\_ops compatibility check
+loads, attaches, and detaches the generated tcp-congestion object in
+\KSStructOpsKsDetachOK{}/\KSStructOpsTrials{} trials and the minimal C/eBPF
+tcp-congestion object in \KSStructOpsCDetachOK{}/\KSStructOpsTrials{} trials,
+separating object compatibility from a remaining skeleton-header version
+mismatch.  The
 results support an artifact/prototype claim: \tool{} centralizes recurring
 project structure for this repository corpus and exposes concrete
 compatibility limits, but it does not yet establish broad runtime equivalence
@@ -77,9 +81,9 @@ traffic control, tracing, profiling, security policy, and scheduler
 experimentation.  The
 programming model remains difficult because the artifact boundary is split:
 an eBPF program is written under verifier constraints, a userspace loader must
-open and attach it, maps provide shared state, BTF describes kernel types, and
-newer interfaces such as kfuncs and struct\_ops require close coordination
-between generated skeleton code and kernel headers.
+open and attach it, maps provide shared state, BPF Type Format (BTF) describes
+kernel types, and newer interfaces such as kfuncs and struct\_ops require close
+coordination between generated skeleton code and kernel headers.
 
 The usual C/libbpf workflow is powerful but verbose~\cite{libbpf}.  The developer writes
 kernel-side C, userspace C, Makefiles, pinning logic, map setup, attachment
@@ -139,7 +143,7 @@ event-emission workload, a direct struct\_ops object-compatibility check, and
 a compiler-source patch that isolates one map-update lowering mechanism.  The
 scientific contribution is not a new BPF verifier or a broad
 performance-equivalence result.  Instead, it is an executable case
-study of which cross-boundary eBPF invariants a unified source model can expose
+study of which selected cross-boundary eBPF invariants this prototype exposes
 and which compatibility limits still leak through the Linux BPF toolchain.  The
 artifact is designed so that a
 reviewer can rerun the evaluation without changing the \tool{} source tree:
@@ -162,8 +166,8 @@ opened, loaded, attached, read, and detached with type-appropriate APIs.
 map or a typed context field, must be represented in source C, generated
 skeleton headers, userspace lookup code, and BTF-derived type declarations.
 \textbf{Compatibility complexity} appears because eBPF features evolve quickly:
-struct\_ops, kfuncs, dynptrs, TCX, and scheduler extensions depend on kernel,
-bpftool, and libbpf versions.
+struct\_ops, kfuncs, dynptrs, TCX (a newer traffic-control attach path), and
+scheduler extensions depend on kernel, bpftool, and libbpf versions.
 
 The verifier is essential, but it is intentionally late in the pipeline.  A
 developer may write code, compile it, generate skeletons, link a loader, and
@@ -217,6 +221,12 @@ ordering can be treated as a language-level property rather than only as a
 runtime convention.
 
 \section{Design Principles}
+
+The design principles map directly to the three complexities above.  Lifecycle
+complexity motivates explicit domains and lifecycle typing, representation
+complexity motivates typed maps, program handles, and generated project
+structure, and compatibility complexity motivates preserving the kernel
+toolchain while exposing escape hatches for fast-moving kernel interfaces.
 
 \textbf{Preserve the kernel toolchain.}  \tool{} does not replace the kernel
 verifier, clang, bpftool, or libbpf.  Instead it generates C and Makefiles that
@@ -299,12 +309,13 @@ static-check cases, strict verifier loading, isolated XDP attach/detach, XDP and
 TC traffic over fresh veth/netns pairs, perf-event loader and counter workloads,
 ring-buffer event emission, direct struct\_ops load/attach/detach
 compatibility, a longer XDP/TC traffic stress rerun, and two map-update
-lowering ablations.  The traffic scripts compare generated objects with
-matched hand-written C/eBPF baselines.  The perf-event counter, ring-buffer,
-and struct\_ops scripts use one libbpf runner for both objects and check BPF
-map counts, submitted/received event counts, or load/attach/detach outcomes.
-The main
-mechanism-isolation script copies the \tool{}
+lowering ablations.  The paper reports the compiler-source patch ablation as
+the canonical mechanism-isolation result because it changes the compiler path
+rather than editing generated output.  The traffic scripts compare generated
+objects with matched hand-written C/eBPF baselines.  The perf-event counter,
+ring-buffer, and struct\_ops scripts use one libbpf runner for both objects and
+check BPF map counts, submitted/received event counts, or load/attach/detach
+outcomes.  The main mechanism-isolation script copies the \tool{}
 compiler source, applies a tracked compiler-source patch for array-map
 increment lowering, rebuilds the patched compiler, and reruns the same count
 benchmark.
@@ -337,23 +348,24 @@ is measured by a perf-event loader smoke test that requires successful
 load/attach, positive page-fault counter reads, and clean detach for generated
 and hand-written loaders.
 
-\begin{table}[t]
+\begin{table*}[t]
 \centering
-\caption{Claim scope used in the evaluation.}
+\caption{Claim scope, actors, and oracles used in the evaluation.}
 \label{tab:claimscope}
 \scriptsize
-\begin{tabular}{@{}p{0.19\columnwidth}p{0.35\columnwidth}p{0.28\columnwidth}@{}}
+\setlength{\tabcolsep}{3pt}
+\begin{tabular}{@{}p{0.12\textwidth}p{0.18\textwidth}p{0.14\textwidth}p{0.25\textwidth}p{0.16\textwidth}@{}}
 \toprule
-Claim & Evidence & Boundary \\
+Claim & Artifact under test & Baseline or actor & Oracle & Boundary \\
 \midrule
-Project generation & Example builds, feature markers, generated SLOC & Repository corpus only \\
-Early checks & Unit tests and static rejection cases & Selected cases, not soundness \\
-Compatibility & Verifier-load, XDP attach, perf loader & Local kernel/toolchain \\
-Runtime sanity & XDP/TC traffic, perf counter, ringbuf & Local workloads only \\
-Struct\_ops compatibility & Direct tcp-congestion load/attach/detach & Object compatibility only, no TCP or scheduler workload \\
+Project generation & Repository examples lowered to generated projects & Compiler and make harness & Build rows, feature markers, generated source lines & Repository corpus only \\
+Early checks & Unit tests and targeted invalid programs & Dune and static-check harnesses & Test success and expected diagnostic categories & Selected cases, not soundness \\
+Compatibility & Generated objects and generated perf loader & Local kernel/toolchain & Pinned-program load criterion, attach state, loader attach/read/detach & Local host only \\
+Runtime sanity & Generated XDP, TC, perf-counter, and ring-buffer objects & Matched C/eBPF objects or shared libbpf runner & iperf3 JSON, positive map counts, perf-counter equality, submitted/received/drop counts & Local workloads only \\
+Struct\_ops compatibility & Generated tcp-congestion object & Minimal C/eBPF object with same function set & Shared libbpf runner load/attach/detach & Object compatibility only, no TCP or scheduler workload \\
 \bottomrule
 \end{tabular}
-\end{table}
+\end{table*}
 
 The harness treats generated data as first-class evidence.  It writes raw
 stdout and stderr logs for every compiler and make invocation, CSV rows for
@@ -365,13 +377,14 @@ number to a row in \texttt{results/examples\_summary.csv}.  We also keep
 temporary build products under \texttt{results/build} so that failures can be
 inspected after the harness exits.
 
-SLOC is counted as nonblank, noncomment lines.  Generated \texttt{vmlinux.h}
-and generated skeleton headers are excluded from the expansion factor because
-they are bpftool outputs rather than \tool{} compiler outputs.  The expansion
-therefore counts only source and build logic produced directly by \tool{}:
-userspace C, eBPF C, optional kernel-module C, and Makefile lines.  This
-definition is conservative for the generated-structure claim because it omits
-the large skeleton header that a low-level build still needs.
+Source lines of code (SLOC) are counted as nonblank, noncomment lines.
+Generated \texttt{vmlinux.h} and generated skeleton headers are excluded from
+the expansion factor because they are bpftool outputs rather than \tool{}
+compiler outputs.  The expansion therefore counts only source and build logic
+produced directly by \tool{}: userspace C, eBPF C, optional kernel-module C, and
+Makefile lines.  This definition is conservative for the generated-structure
+claim because it omits the large skeleton header that a low-level build still
+needs.
 
 \section{Results}
 
@@ -582,8 +595,9 @@ client for \KSTrafficSeconds{}s.  The count variants additionally read the
 \KSTrafficTrials{} trials, the pass medians are \KSTrafficKsPassGbps{} Gb/s for
 \tool{} and \KSTrafficCPassGbps{} Gb/s for hand-written C/eBPF.  The count
 medians are \KSTrafficKsCountGbps{} Gb/s for \tool{} and
-\KSTrafficCCountGbps{} Gb/s for C/eBPF, a \KSTrafficCountOverheadPct{} local
-throughput gap.  The corresponding XDP count-map invocation rates are
+\KSTrafficCCountGbps{} Gb/s for C/eBPF.  In this local run, the count medians
+differ by \KSTrafficCountOverheadPct{} with overlapping ranges.  The
+corresponding XDP count-map invocation rates are
 \KSTrafficKsCountMpps{} and \KSTrafficCCountMpps{} Mpps.  These numbers are
 local veth/TCP measurements,
 not NIC-rate claims, and the pass ranges include local run-to-run noise.  The
@@ -596,9 +610,10 @@ traffic harness runs TC ingress pass and count programs attached with
 \KSTCTrafficTrials{} trials, the TC pass medians are
 \KSTCTrafficKsPassGbps{} Gb/s for \tool{} and \KSTCTrafficCPassGbps{} Gb/s for
 C/eBPF.  The TC count medians are \KSTCTrafficKsCountGbps{} Gb/s for \tool{}
-and \KSTCTrafficCCountGbps{} Gb/s for C/eBPF, a
-\KSTCTrafficCountOverheadPct{} local throughput gap.  The count-map execution
-oracle reports TC BPF-invocation rates of \KSTCTrafficKsCountMpps{} and
+and \KSTCTrafficCCountGbps{} Gb/s for C/eBPF.  In this local run, the count
+medians differ by \KSTCTrafficCountOverheadPct{} with overlapping ranges.  The
+count-map execution oracle reports TC BPF-invocation rates of
+\KSTCTrafficKsCountMpps{} and
 \KSTCTrafficCCountMpps{} Mpps,
 respectively, and all TC trials have zero retransmits in the checked-in run.
 This result is still local-host evidence, but it directly addresses the
@@ -607,13 +622,15 @@ XDP-only limitation of the earlier runtime checks.
 \textbf{Longer traffic stress.}  To check whether the one-second traffic
 trials hide immediate instability, \texttt{run\_traffic\_stress.py} reruns the
 same XDP and TC pass/count objects for \KSTrafficStressTrials{} trials of
-\KSTrafficStressSeconds{}s each.  All stress-run oracles pass.  In the count
-benchmarks, XDP reports \KSTrafficStressXDPKsCountGbps{} Gb/s for \tool{} and
-\KSTrafficStressXDPCCountGbps{} Gb/s for C/eBPF, a
-\KSTrafficStressXDPCountOverheadPct{} local gap, while TC reports
-\KSTrafficStressTCKsCountGbps{} Gb/s and \KSTrafficStressTCCCountGbps{} Gb/s,
-a \KSTrafficStressTCCountOverheadPct{} local gap.  The count-map invocation
-rates remain positive at \KSTrafficStressXDPKsCountMpps{} and
+\KSTrafficStressSeconds{}s each.  The stress harness reports iperf3 success for
+all pass/count runs and positive map-count oracles for all count variants.  In
+the count benchmarks, XDP reports \KSTrafficStressXDPKsCountGbps{} Gb/s for
+\tool{} and \KSTrafficStressXDPCCountGbps{} Gb/s for C/eBPF, while TC reports
+\KSTrafficStressTCKsCountGbps{} Gb/s and \KSTrafficStressTCCCountGbps{} Gb/s.
+In this local run, the XDP and TC count medians differ by
+\KSTrafficStressXDPCountOverheadPct{} and
+\KSTrafficStressTCCountOverheadPct{}, respectively, with overlapping ranges.
+The count-map invocation rates remain positive at \KSTrafficStressXDPKsCountMpps{} and
 \KSTrafficStressXDPCCountMpps{} Mpps for XDP, and
 \KSTrafficStressTCKsCountMpps{} and \KSTrafficStressTCCCountMpps{} Mpps for
 TC.  This is still a short local stress check, but it reduces the risk that the
@@ -631,9 +648,10 @@ objects and runs both with one libbpf runner.  Each trial faults
 BPF map count to equal the perf counter read.  Over \KSPerfCounterTrials{}
 trials, both variants report a median \KSPerfCounterKsEvents{} counted events.
 The generated object reaches \KSPerfCounterKsMps{} million events/s, while the
-C/eBPF object reaches \KSPerfCounterCMps{} million events/s, a
-\KSPerfCounterOverheadPct{} local gap.  These results are lifecycle and
-page-fault counter evidence, not a broad perf-event throughput study.
+C/eBPF object reaches \KSPerfCounterCMps{} million events/s.  In this local
+run, the medians differ by \KSPerfCounterOverheadPct{} with overlapping ranges.
+These results are lifecycle and page-fault counter evidence, not a broad
+perf-event throughput study.
 
 \textbf{Ring-buffer event workload.}  To exercise an event-delivery path that
 uses ref-counted ring-buffer records, \texttt{run\_ringbuf\_workload.py}
@@ -646,8 +664,9 @@ of \KSRingbufEvents{} events, both variants report
 \KSRingbufKsSubmitted{} submitted and \KSRingbufKsReceived{} received events
 with \KSRingbufKsDropped{} drops.  The generated object reaches
 \KSRingbufKsMps{} million events/s, while the C/eBPF object reaches
-\KSRingbufCMps{} million events/s, a \KSRingbufOverheadPct{} local gap.  This
-is object-level ring-buffer evidence, and it does not measure generated userspace
+\KSRingbufCMps{} million events/s.  In this local run, the medians differ by
+\KSRingbufOverheadPct{} with overlapping ranges.  This is object-level
+ring-buffer evidence, and it does not measure generated userspace
 dispatch-loop throughput.
 
 \textbf{Generated code size.}  Among successful repository examples where
@@ -774,7 +793,8 @@ feature cannot be compiled locally.
 \section{Related Work}
 
 C/libbpf remains the reference workflow for general-purpose eBPF development~\cite{libbpf}.
-It exposes the full API surface and integrates with BTF and CO-RE, but it
+It exposes the full API surface and integrates with BTF and Compile Once, Run
+Everywhere (CO-RE), but it
 requires developers to manage multiple artifacts manually.  Go and Rust
 libraries such as cilium/ebpf and Aya improve userspace integration and type
 safety within their host languages, but still separate the eBPF program from
@@ -795,17 +815,21 @@ space.
 
 \tool{} is an early but useful prototype for studying typed unified-source
 eBPF development.  Our artifact evaluation shows that the current compiler
-passes a broad test suite, compiles most repository examples, builds most
-generated projects, verifier-loads \KSVerifierBuildLoadOK{} build-success
-objects, attaches and detaches \KSAttachOK{} verifier-clean single-section XDP
-objects in isolated namespaces, runs matched XDP and TC traffic baselines and a
-longer local traffic stress rerun,
+passes a broad test suite, compiles \KSKSCompileOK{} of \KSTotalExamples{}
+repository examples, builds \KSMakeOK{} of \KSTotalExamples{} generated
+projects, verifier-loads \KSVerifierBuildLoadOK{} of \KSVerifierBuildObjects{}
+build-success objects, attaches and detaches \KSAttachOK{} of
+\KSAttachEligible{} verifier-clean single-section XDP objects in isolated
+namespaces, runs matched XDP and TC traffic baselines and a longer local traffic
+stress rerun,
 rejects \KSStaticExpectedFailures{} invalid programs in a targeted static
 corpus, runs a minimal XDP attach/detach smoke test, runs a generated
 perf-event loader through attach, counter-read, and detach checks, exercises a
 sustained perf-event page-fault counter workload, and delivers
-\KSRingbufEvents{} ring-buffer events per trial with zero drops in a matched
-object workload.  The direct struct\_ops compatibility check also loads,
+\KSRingbufEvents{} ring-buffer events per trial over \KSRingbufTrials{} trials
+in a matched object workload, with \KSRingbufKsDropped{} generated-object drops
+and \KSRingbufCDropped{} C/eBPF-object drops.  The direct struct\_ops
+compatibility check also loads,
 attaches, and detaches a generated tcp-congestion struct\_ops object in
 \KSStructOpsKsDetachOK{}/\KSStructOpsTrials{} trials.  The median successful
 example expands from \KSMedianKSSloc{} lines of \tool{} to
