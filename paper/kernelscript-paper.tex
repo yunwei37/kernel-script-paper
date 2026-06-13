@@ -52,8 +52,8 @@ into generated C/eBPF projects.  Successful examples have median
 lines of generated C and build logic, an \KSMedianGeneratedRatio{} expansion
 factor.  The results show that the compiler centralizes recurring project
 structure and exposes two current limits: struct\_ops skeleton compatibility with the installed libbpf
-headers, and a map-update microbenchmark where generated code uses more
-instructions than an idiomatic hand-written baseline.
+headers, and a map-update lowering choice whose ablation closes the count
+microbenchmark gap with hand-written C/eBPF in this harness.
 \end{abstract}
 
 \section{Introduction}
@@ -260,7 +260,7 @@ rejected early, and generated artifacts build against the local toolchain.
 
 The evaluation runs on Linux \KSKernelVersion{} using clang 18, bpftool 7.7,
 libbpf 1.3.0, OCaml 4.14, and dune 3.14.  The evaluated commit is
-\KSCommitShort{}.  The artifact contains four scripts under
+\KSCommitShort{}.  The artifact contains five scripts under
 \texttt{experiments/}.  \texttt{run\_evaluation.py} builds the compiler, runs
 \texttt{dune runtest --force}, compiles every \texttt{examples/*.ks} file, runs
 \texttt{make} in each generated project, and records CSV/JSON results.
@@ -270,9 +270,11 @@ stack-limit analysis.  \texttt{run\_smoke.sh} compiles a minimal loopback XDP
 program and uses \texttt{sudo -n} to run the generated loader.
 \texttt{run\_microbench.py} compares two KernelScript-generated XDP objects
 with equivalent hand-written C/eBPF objects using bpftool's
-BPF\_PROG\_TEST\_RUN path.
+BPF\_PROG\_TEST\_RUN path.  \texttt{run\_lowering\_ablation.py} patches the
+generated count program from lookup-plus-update lowering to in-place atomic add
+and reruns the same object-level benchmark.
 
-We measure five outcomes.  \textbf{Compiler regression coverage} is
+We measure six outcomes.  \textbf{Compiler regression coverage} is
 approximated by the repository test suite.  \textbf{Early rejection} is
 measured by static cases whose expected diagnostics are checked by the harness.
 \textbf{Expressiveness} is
@@ -284,6 +286,7 @@ than a manual feature-completeness audit.  \textbf{Generated-structure
 centralization} is measured as an expansion factor: lines of \tool{} source
 compared to generated C and Makefile lines.  \textbf{Compatibility} is measured
 by generated build successes and failures against the local kernel toolchain.
+\textbf{Mechanism isolation} is measured by the map-update lowering ablation.
 
 The harness treats generated data as first-class evidence.  It writes raw
 stdout and stderr logs for every compiler and make invocation, CSV rows for
@@ -413,34 +416,37 @@ as perf events have particularly high expansion factors because attaching and
 reading counters requires substantial userspace coordination code relative to the
 kernel program itself.
 
-\textbf{Runtime microbenchmarks.}  Table~\ref{tab:micro} compares two generated
-XDP objects with hand-written C/eBPF baselines.  Each program is loaded with
-bpftool and executed through BPF\_PROG\_TEST\_RUN for 100000 repetitions over
-seven trials.  The table reports median average nanoseconds with the observed
-min--max range.  The minimal pass program has the same median in this harness:
-2 instructions and \KSMicroKsPassNs{} for \tool{} versus
-\KSMicroCPassNs{} for C.  The map counter is different.
-\tool{} emits a lookup followed by an update helper, while the C baseline uses
-an in-place atomic add on the array-map value.  The generated version therefore
-has \KSMicroKsCountInstr{} instructions and \KSMicroKsCountNs{} median average
-time versus \KSMicroCCountInstr{} instructions and \KSMicroCCountNs{} for C.
-The result is small in absolute terms but important scientifically:
-the unified model need not impose overhead for trivial programs, but map
-assignment lowering can miss an optimization that an expert C programmer would
-write manually.
+\textbf{Runtime microbenchmarks and lowering ablation.}
+Table~\ref{tab:micro} uses BPF\_PROG\_TEST\_RUN for 100000 repetitions over
+seven trials and reports median average nanoseconds with min--max ranges.  The
+pass rows come from \texttt{run\_microbench.py}; the count rows come from
+\texttt{run\_lowering\_ablation.py}, which resets the pinned \texttt{counts} map
+before each trial and requires key 0 to equal \KSAblExpectedCount{} afterward.  The
+minimal pass program has the same median in this harness: 2 instructions and
+\KSMicroKsPassNs{} for \tool{} versus \KSMicroCPassNs{} for C.  The map counter
+isolates a lowering choice.  The current compiler emits lookup plus update,
+which produces \KSAblCurrentInstr{} instructions and \KSAblCurrentNs{}.  Patching
+only the generated eBPF C to use in-place atomic add reduces the object by
+\KSAblInstrReduction{} instructions (\KSAblInstrReductionPct{}) and
+\KSAblNsReduction{}ns median (\KSAblNsReductionPct{}), matching the hand-written
+C/eBPF baseline in this harness.  This ablation does not show that the compiler
+already implements the optimization, but it identifies a concrete lowering
+change that would remove the observed count gap.
 
 \begin{table}[t]
 \centering
-\caption{XDP BPF\_PROG\_TEST\_RUN microbenchmarks: pass matches C in this harness, while map count is slower due to lookup-plus-update lowering.}
+\caption{XDP microbenchmarks and lowering ablation. Patched atomic lowering removes the count gap in this harness.}
 \label{tab:micro}
-\begin{tabular}{llrr}
+\scriptsize
+\begin{tabular}{@{}llrr@{}}
 \toprule
-Benchmark & Impl. & Instr. & Median ns (range) \\
+Bench. & Impl. & Instr. & ns (range) \\
 \midrule
 pass & \tool{} & \KSMicroKsPassInstr{} & \KSMicroKsPassNs{} \\
 pass & C/eBPF & \KSMicroCPassInstr{} & \KSMicroCPassNs{} \\
-count & \tool{} & \KSMicroKsCountInstr{} & \KSMicroKsCountNs{} \\
-count & C/eBPF & \KSMicroCCountInstr{} & \KSMicroCCountNs{} \\
+count & \tool{} & \KSAblCurrentInstr{} & \KSAblCurrentNs{} \\
+count & \tool{} patched & \KSAblAtomicInstr{} & \KSAblAtomicNs{} \\
+count & C/eBPF & \KSAblCInstr{} & \KSAblCNs{} \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -470,8 +476,9 @@ structure needed by several eBPF example classes.  The test suite, static
 corpus, and safety demo support a narrower checking claim: the current compiler
 rejects selected lifecycle, context-signature, and stack-limit errors before
 kernel loading.  The runtime evidence is deliberately smaller.  It establishes
-parity only for a minimal pass program and exposes a map-update gap, so it does
-not yet establish broad runtime performance parity with hand-written C/libbpf.
+parity for a minimal pass program and shows that the map-update gap is caused
+by a specific lowering choice, not by the unified source model alone.  It still
+does not establish broad runtime performance parity with hand-written C/libbpf.
 
 The struct\_ops failures are instructive.  A DSL can hide coordination code, but it
 cannot hide all ABI and API drift.  When bpftool-generated skeletons and
@@ -514,6 +521,13 @@ memory safety.  It strengthens the paper by making early-rejection claims
 executable, but it does not cover all invalid attach orders, map types, helper
 contracts, or verifier failures.
 
+\textbf{The lowering ablation is not a compiler implementation.}  The ablation
+patches generated eBPF C after compilation, so it isolates a code-generation
+choice without proving that the optimization is integrated into \tool{} or
+applies to all map update forms.  A compiler change should implement the same
+lowering rule and rerun verifier, instruction-count, and runtime checks across
+more map types.
+
 \textbf{Build success is not verifier success for every runtime path.}  The
 harness compiles eBPF objects and links userspace loaders.  The smoke test
 loads and attaches one XDP program, but most repository examples are not
@@ -539,7 +553,8 @@ limiters against hand-written C/libbpf versions using \texttt{xdp-bench} or
 pktgen.  For TC, the benchmark should use network namespaces and veth pairs to
 avoid host-network disruption.  For perf events and ring buffers, the benchmark
 should measure event throughput and userspace loss under controlled producer
-rates.  For struct\_ops, the study must first pin a compatible
+rates.  The map-update ablation should be implemented in the compiler and
+retested across array, hash, and per-CPU maps.  For struct\_ops, the study must first pin a compatible
 kernel/libbpf/bpftool stack so that failures are about \tool{} design rather
 than dependency skew.
 
@@ -574,7 +589,8 @@ example expands from \KSMedianKSSloc{} lines of \tool{} to
 \KSMedianGeneratedSloc{} lines of generated C and build logic, giving concrete
 evidence that the model centralizes recurring project structure.  The remaining gaps
 are equally clear: struct\_ops compatibility needs version-aware handling, and
-runtime performance is mixed beyond trivial XDP pass programs.  Taken together,
+the map-update optimization shown by the ablation needs compiler integration
+and broader runtime tests.  Taken together,
 the results frame \tool{}'s scientific contribution as an exploration of a
 compiler-checked unified programming model for eBPF, with a reproducible path for
 evaluating whether that model reduces complexity without abandoning the kernel

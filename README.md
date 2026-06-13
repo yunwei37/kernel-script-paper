@@ -11,6 +11,8 @@ evaluation scripts, generated results, and a paper draft.
 - `experiments/run_smoke.sh`: privileged attach/detach smoke test on `lo`.
 - `experiments/run_microbench.py`: XDP BPF_PROG_TEST_RUN microbenchmarks
   against hand-written C/eBPF baselines.
+- `experiments/run_lowering_ablation.py`: map-update lowering ablation for the
+  XDP count benchmark.
 - `experiments/programs/smoke_lo.ks`: minimal smoke-test KernelScript program.
 - `results/`: tracked CSV/JSON summaries and paper macros. Local reruns also
   create ignored build outputs and logs under `results/build/` and
@@ -55,6 +57,12 @@ status `ok`.
 ./experiments/run_microbench.py
 ```
 
+Run the lowering ablation, which also requires `sudo -n`:
+
+```bash
+./experiments/run_lowering_ablation.py
+```
+
 Build the paper:
 
 ```bash
@@ -79,3 +87,7 @@ The current run evaluates KernelScript commit `6f9e6e8` on Linux
 - Microbenchmarks: XDP pass has the same median as C/eBPF in this harness
   at 5ns average runtime and 2 instructions; XDP array-map count is 13ns and 21 instructions for
   KernelScript versus 9ns and 11 instructions for hand-written C/eBPF.
+- Lowering ablation: patching the generated count program to use in-place
+  atomic add reduces it from 21 to 11 instructions and from 12ns to 9ns median,
+  matching the hand-written C/eBPF baseline in this harness. Each trial resets
+  and reads the `counts` map to verify the expected 100000 increments.

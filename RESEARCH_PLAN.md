@@ -40,6 +40,15 @@ Evidence: `experiments/run_smoke.sh` compiles `smoke_lo.ks`, builds the generate
 project, and uses `sudo -n` to attach/detach an XDP pass program on the loopback
 interface.
 
+RQ6. Is the XDP map-update gap caused by the unified source model or by a
+specific lowering choice?
+
+Evidence: patch the generated count eBPF C from lookup-plus-update lowering to
+in-place atomic add, rebuild the object, and rerun the same BPF_PROG_TEST_RUN
+harness against the unpatched generated object and hand-written C/eBPF. The
+harness resets and reads the `counts` map on every trial to verify that all
+variants perform the same 100000 increments.
+
 ## Implemented Experiments
 
 1. `experiments/run_evaluation.py`
@@ -73,9 +82,20 @@ interface.
    - Writes `results/microbench_summary.csv` and
      `results/microbench_summary.json`.
 
-5. `experiments/update_paper_numbers.py`
-   - Checks that unit tests, static checks, smoke test, and microbenchmarks have
-     successful summaries.
+5. `experiments/run_lowering_ablation.py`
+   - Compiles the KernelScript XDP count benchmark.
+   - Copies the generated project and patches the map update lowering from
+     lookup plus update helper to in-place atomic add.
+   - Rebuilds the patched eBPF object and compares it with the unpatched object
+     and hand-written C/eBPF using BPF_PROG_TEST_RUN.
+   - Resets and reads the pinned `counts` map on every trial as a correctness
+     oracle.
+   - Writes `results/lowering_ablation_summary.csv` and
+     `results/lowering_ablation_summary.json`.
+
+6. `experiments/update_paper_numbers.py`
+   - Checks that unit tests, static checks, smoke test, microbenchmarks, and
+     lowering ablation have successful summaries.
    - Writes `results/paper_numbers.tex` for the LaTeX paper.
 
 ## Current Results
@@ -99,6 +119,10 @@ At commit `6f9e6e8`, on Linux `6.15.11-061511-generic`:
   compared with hand-written C/eBPF, and 4ns median overhead for an array-map
   counter because the generated code emits a lookup plus update helper rather
   than an in-place atomic add.
+- The lowering ablation reduces the generated count object from 21 to 11
+  instructions and from 12ns to 9ns median, matching the hand-written C/eBPF
+  baseline in this harness while preserving the expected 100000 count updates
+  in every trial.
 
 ## Threats and Next Experiments
 
@@ -106,7 +130,8 @@ The current runtime evaluation is a microbenchmark study, not a packet-rate
 performance study. A full runtime comparison should add matched hand-written
 C/libbpf baselines for XDP, TC, perf_event, ring buffer, and struct_ops programs;
 run traffic with `pktgen` or `xdp-bench`; and report throughput, tail latency,
-verifier log size, and CPU utilization. The current artifact is still useful as
-a systems prototype study because it grounds claims about expressiveness,
-generated structure, compatibility, and small-program runtime overhead in
-reproducible evidence.
+verifier log size, and CPU utilization. The lowering ablation should also be
+implemented in the compiler rather than only patching generated C. The current
+artifact is still useful as a systems prototype study because it grounds claims
+about expressiveness, generated structure, compatibility, small-program runtime
+overhead, and one concrete lowering optimization in reproducible evidence.

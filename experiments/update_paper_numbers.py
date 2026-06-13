@@ -51,6 +51,7 @@ def main() -> int:
     smoke = load_json("smoke_summary.json")
     micro = load_json("microbench_summary.json")
     static = load_json("static_checks_summary.json")
+    lowering = load_json("lowering_ablation_summary.json")
 
     if unit.get("returncode") != 0 or unit.get("reported_failures") != 0:
         raise SystemExit("unit tests are not clean; refusing to generate paper numbers")
@@ -60,6 +61,8 @@ def main() -> int:
         raise SystemExit("microbenchmarks did not complete successfully")
     if static.get("status") != "ok":
         raise SystemExit("static checks did not complete successfully")
+    if lowering.get("status") != "ok":
+        raise SystemExit("lowering ablation did not complete successfully")
 
     content = ""
     content += macro("KSCommitShort", str(env["kernelscript_git_head"])[:7])
@@ -110,6 +113,24 @@ def main() -> int:
         label = "".join(part.capitalize() for part in name.split("_"))
         content += macro(f"KSMicro{label}Instr", row["instructions"])
         content += macro(f"KSMicro{label}Ns", ns_range(row))
+
+    ablation_labels = {
+        "ks_count_current": "Current",
+        "ks_count_atomic": "Atomic",
+        "c_count": "C",
+    }
+    for name, label in ablation_labels.items():
+        row = micro_row(lowering, name)
+        content += macro(f"KSAbl{label}Instr", row["instructions"])
+        content += macro(f"KSAbl{label}Ns", ns_range(row))
+    ablation_current = micro_row(lowering, "ks_count_current")
+    content += macro("KSAblTrials", ablation_current["trials"])
+    content += macro("KSAblExpectedCount", ablation_current["expected_count"])
+    current_vs_atomic = lowering["comparisons"]["current_vs_atomic"]
+    content += macro("KSAblInstrReduction", current_vs_atomic["instruction_reduction"])
+    content += macro("KSAblInstrReductionPct", pct(current_vs_atomic["instruction_reduction"], ablation_current["instructions"]))
+    content += macro("KSAblNsReduction", f"{current_vs_atomic['median_ns_reduction']:.0f}")
+    content += macro("KSAblNsReductionPct", pct(current_vs_atomic["median_ns_reduction"], ablation_current["median_avg_ns"]))
 
     OUT.write_text(content, encoding="utf-8")
     return 0

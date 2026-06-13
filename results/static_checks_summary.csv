@@ -1,18 +1,18 @@
 name,source,category,expected,observed,matched,returncode,elapsed_sec,expected_substrings,diagnostic_excerpt
-valid_pass,experiments/static_checks/valid_pass.ks,positive_control,success,success,True,0,0.0023,,
+valid_pass,experiments/static_checks/valid_pass.ks,positive_control,success,success,True,0,0.0024,,
 attach_without_load,experiments/static_checks/attach_without_load.ks,lifecycle_api,failure,failure,True,1,0.0019,"attach() requires (handle, target, flags)"," Found 0 config declarations
 Phase 4: Type Checking
  Type error in phase Type Checking at :0:-1: attach() requires (handle, target, flags) - target is a string or perf_options { ... }"
-detach_string,experiments/static_checks/detach_string.ks,lifecycle_api,failure,failure,True,1,0.0016,detach() requires a ProgramHandle or PerfAttachment," Found 0 config declarations
+detach_string,experiments/static_checks/detach_string.ks,lifecycle_api,failure,failure,True,1,0.0017,detach() requires a ProgramHandle or PerfAttachment," Found 0 config declarations
 Phase 4: Type Checking
  Type error in phase Type Checking at :0:-1: detach() requires a ProgramHandle or PerfAttachment"
-load_string,experiments/static_checks/load_string.ks,lifecycle_api,failure,failure,True,1,0.0016,Type mismatch in function call: load," Found 0 config declarations
+load_string,experiments/static_checks/load_string.ks,lifecycle_api,failure,failure,True,1,0.0017,Type mismatch in function call: load," Found 0 config declarations
 Phase 4: Type Checking
  Type error in phase Type Checking at :0:-1: Type mismatch in function call: load"
-perf_wrong_context,experiments/static_checks/perf_wrong_context.ks,context_signature,failure,failure,True,1,0.0016,@perf_event attributed function parameter must be ctx: *bpf_perf_event_data," Found 0 config declarations
+perf_wrong_context,experiments/static_checks/perf_wrong_context.ks,context_signature,failure,failure,True,1,0.0019,@perf_event attributed function parameter must be ctx: *bpf_perf_event_data," Found 0 config declarations
 Phase 4: Type Checking
  Type error in phase Type Checking at :0:-1: @perf_event attributed function parameter must be ctx: *bpf_perf_event_data"
-stack_overflow,experiments/static_checks/stack_overflow.ks,safety_analysis,failure,failure,True,1,0.0016,Stack overflow detected | exceeds eBPF limit of 512 bytes,"Phase 4.5: Safety Analysis
+stack_overflow,experiments/static_checks/stack_overflow.ks,safety_analysis,failure,failure,True,1,0.0017,Stack overflow detected | exceeds eBPF limit of 512 bytes,"Phase 4.5: Safety Analysis
   Safety Analysis Issues:
  Stack overflow detected: 608 bytes exceeds eBPF limit of 512 bytes
    Stack usage 608 exceeds eBPF limit 512

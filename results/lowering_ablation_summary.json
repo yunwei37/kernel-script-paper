@@ -1,0 +1,112 @@
+{
+  "comparisons": {
+    "atomic_vs_c": {
+      "instruction_delta": 0,
+      "median_ns_delta": 0.0
+    },
+    "current_vs_atomic": {
+      "instruction_reduction": 10,
+      "instruction_reduction_pct": 47.61904761904761,
+      "median_ns_reduction": 3.0,
+      "median_ns_reduction_pct": 25.0
+    },
+    "current_vs_c": {
+      "instruction_delta": 10,
+      "median_ns_delta": 3.0
+    }
+  },
+  "description": "Ablation patches generated map update lowering from lookup+update to in-place atomic add.",
+  "rows": [
+    {
+      "expected_count": 100000,
+      "instructions": 21,
+      "max_avg_ns": 12.0,
+      "median_avg_ns": 12.0,
+      "min_avg_ns": 12.0,
+      "name": "ks_count_current",
+      "object": "results/build/lowering_ablation/ks_count_current/perf_count.ebpf.o",
+      "object_bytes": 7536,
+      "observed_counts": [
+        100000,
+        100000,
+        100000,
+        100000,
+        100000,
+        100000,
+        100000
+      ],
+      "repeat": 100000,
+      "samples_avg_ns": [
+        12.0,
+        12.0,
+        12.0,
+        12.0,
+        12.0,
+        12.0,
+        12.0
+      ],
+      "trials": 7
+    },
+    {
+      "expected_count": 100000,
+      "instructions": 11,
+      "max_avg_ns": 10.0,
+      "median_avg_ns": 9.0,
+      "min_avg_ns": 8.0,
+      "name": "ks_count_atomic",
+      "object": "results/build/lowering_ablation/ks_count_atomic/perf_count.ebpf.o",
+      "object_bytes": 6520,
+      "observed_counts": [
+        100000,
+        100000,
+        100000,
+        100000,
+        100000,
+        100000,
+        100000
+      ],
+      "repeat": 100000,
+      "samples_avg_ns": [
+        9.0,
+        10.0,
+        9.0,
+        9.0,
+        8.0,
+        9.0,
+        9.0
+      ],
+      "trials": 7
+    },
+    {
+      "expected_count": 100000,
+      "instructions": 11,
+      "max_avg_ns": 9.0,
+      "median_avg_ns": 9.0,
+      "min_avg_ns": 9.0,
+      "name": "c_count",
+      "object": "results/build/lowering_ablation/handwritten/c_count.o",
+      "object_bytes": 6488,
+      "observed_counts": [
+        100000,
+        100000,
+        100000,
+        100000,
+        100000,
+        100000,
+        100000
+      ],
+      "repeat": 100000,
+      "samples_avg_ns": [
+        9.0,
+        9.0,
+        9.0,
+        9.0,
+        9.0,
+        9.0,
+        9.0
+      ],
+      "trials": 7
+    }
+  ],
+  "status": "ok"
+}
