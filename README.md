@@ -9,6 +9,8 @@ evaluation scripts, generated results, and a paper draft.
 - `experiments/run_evaluation.py`: compiler/test/example build evaluation.
 - `experiments/run_verifier_matrix.py`: bpftool verifier-load matrix for
   generated eBPF objects.
+- `experiments/run_attach_matrix.py`: isolated network-namespace XDP
+  attach/detach matrix for verifier-clean single-section XDP objects.
 - `experiments/run_static_checks.py`: positive and negative static-check corpus.
 - `experiments/run_smoke.sh`: privileged attach/detach smoke test on `lo`.
 - `experiments/run_microbench.py`: XDP BPF_PROG_TEST_RUN microbenchmarks
@@ -46,6 +48,13 @@ example build outputs from `run_evaluation.py`:
 
 ```bash
 ./experiments/run_verifier_matrix.py
+```
+
+Run the isolated XDP attach matrix, which requires `sudo -n`, `ip`, and the
+verifier summary from `run_verifier_matrix.py`:
+
+```bash
+./experiments/run_attach_matrix.py
 ```
 
 Run the static-check corpus:
@@ -96,10 +105,14 @@ The current run evaluates KernelScript commit `ccb15b4` on Linux
 - Unit tests: 85 suites, 1095 tests, 0 reported failures.
 - Examples: 44 total, 43 KernelScript compile successes, 41 full generated
   C/eBPF build successes.
-- Verifier-load matrix: 39 of 43 generated eBPF objects load with
-  `bpftool prog loadall`. Among the 41 objects from full generated-project
-  build successes, 38 load successfully and 3 fail with recorded reference
-  ownership, map-creation, or local BTF-symbol diagnostics.
+- Verifier-load matrix: 38 of 43 generated eBPF objects load with
+  `bpftool prog loadall` and pin at least one BPF program. Among the 41 objects
+  from full generated-project build successes, 37 load successfully and 4 fail
+  with recorded reference ownership, map-creation, local BTF-symbol, or
+  no-program-pinned diagnostics. Across all generated objects, one additional
+  struct_ops object exposes an argument-type rejection.
+- Attach matrix: 27 of 27 verifier-clean single-section XDP objects attach and
+  detach on a fresh veth inside an isolated network namespace.
 - Static checks: 6 total cases, including 5 expected compiler rejections and
   1 positive control, all matching expected outcomes.
 - Safety: `safety_demo.ks` is rejected before C generation for 608 bytes of

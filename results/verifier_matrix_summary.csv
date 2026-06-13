@@ -1,18 +1,21 @@
-name,source,make_status,classification,object,program_sections,section_kinds,program_count,load_status,failure_class,failure_excerpt
-basic_match,examples/basic_match.ks,ok,success,results/build/examples/basic_match/basic_match.ebpf.o,xdp,xdp,1,ok,,
-break_continue_unbound,examples/break_continue_unbound.ks,ok,success,results/build/examples/break_continue_unbound/break_continue_unbound.ebpf.o,xdp,xdp,1,ok,,
-dynptr,examples/dynptr.ks,ok,success,results/build/examples/dynptr/dynptr.ebpf.o,xdp,xdp,1,ok,,
-error_handling_demo,examples/error_handling_demo.ks,ok,success,results/build/examples/error_handling_demo/error_handling_demo.ebpf.o,xdp,xdp,1,ok,,
-extern_kfunc_demo,examples/extern_kfunc_demo.ks,ok,success,results/build/examples/extern_kfunc_demo/extern_kfunc_demo.ebpf.o,xdp,xdp,1,ok,,
-functions,examples/functions.ks,ok,success,results/build/examples/functions/functions.ebpf.o,xdp,xdp,1,ok,,
-import_demo,examples/import_demo.ks,ok,success,results/build/examples/import_demo/import_demo.ebpf.o,xdp,xdp,1,ok,,
-include_demo,examples/include_demo.ks,ok,success,results/build/examples/include_demo/include_demo.ebpf.o,xdp,xdp,1,ok,,
-local_global_vars,examples/local_global_vars.ks,ok,success,results/build/examples/local_global_vars/local_global_vars.ebpf.o,xdp,xdp,1,ok,,
-map_operations_demo,examples/map_operations_demo.ks,ok,success,results/build/examples/map_operations_demo/map_operations_demo.ebpf.o,xdp tc/ingress tracepoint/syscalls/sys_enter_open fentry/vfs_read,fentry tc tracepoint xdp,4,ok,,
-maps_demo,examples/maps_demo.ks,ok,success,results/build/examples/maps_demo/maps_demo.ebpf.o,xdp tc/ingress,tc xdp,2,ok,,
-multi_programs,examples/multi_programs.ks,ok,success,results/build/examples/multi_programs/multi_programs.ebpf.o,xdp tc/ingress,tc xdp,2,ok,,
-named_return,examples/named_return.ks,ok,success,results/build/examples/named_return/named_return.ebpf.o,xdp,xdp,1,ok,,
-object_allocation,examples/object_allocation.ks,ok,success,results/build/examples/object_allocation/object_allocation.ebpf.o,xdp,xdp,1,failed,verifier_reference_leak,"libbpf: prog 'packet_inspector': BPF program load failed: -EINVAL
+name,source,make_status,classification,object,program_sections,section_kinds,program_count,pinned_program_count,load_status,failure_class,failure_excerpt
+basic_match,examples/basic_match.ks,ok,success,results/build/examples/basic_match/basic_match.ebpf.o,xdp,xdp,1,3,ok,,
+break_continue_unbound,examples/break_continue_unbound.ks,ok,success,results/build/examples/break_continue_unbound/break_continue_unbound.ebpf.o,xdp,xdp,1,1,ok,,
+dynptr,examples/dynptr.ks,ok,success,results/build/examples/dynptr/dynptr.ebpf.o,xdp,xdp,1,1,ok,,
+error_handling_demo,examples/error_handling_demo.ks,ok,success,results/build/examples/error_handling_demo/error_handling_demo.ebpf.o,xdp,xdp,1,1,ok,,
+extern_kfunc_demo,examples/extern_kfunc_demo.ks,ok,success,results/build/examples/extern_kfunc_demo/extern_kfunc_demo.ebpf.o,xdp,xdp,1,1,ok,,
+functions,examples/functions.ks,ok,success,results/build/examples/functions/functions.ebpf.o,xdp,xdp,1,1,ok,,
+import_demo,examples/import_demo.ks,ok,success,results/build/examples/import_demo/import_demo.ebpf.o,xdp,xdp,1,1,ok,,
+include_demo,examples/include_demo.ks,ok,success,results/build/examples/include_demo/include_demo.ebpf.o,xdp,xdp,1,1,ok,,
+local_global_vars,examples/local_global_vars.ks,ok,success,results/build/examples/local_global_vars/local_global_vars.ebpf.o,xdp,xdp,1,0,failed,no_program_pinned,"libbpf: elf: skipping section(3) xdp (size 0)
+libbpf: Error loading ELF section .BTF.ext: -EINVAL. Ignored and continue.
+
+No BPF programs were pinned under the program pin directory."
+map_operations_demo,examples/map_operations_demo.ks,ok,success,results/build/examples/map_operations_demo/map_operations_demo.ebpf.o,xdp tc/ingress tracepoint/syscalls/sys_enter_open fentry/vfs_read,fentry tc tracepoint xdp,4,4,ok,,
+maps_demo,examples/maps_demo.ks,ok,success,results/build/examples/maps_demo/maps_demo.ebpf.o,xdp tc/ingress,tc xdp,2,2,ok,,
+multi_programs,examples/multi_programs.ks,ok,success,results/build/examples/multi_programs/multi_programs.ebpf.o,xdp tc/ingress,tc xdp,2,2,ok,,
+named_return,examples/named_return.ks,ok,success,results/build/examples/named_return/named_return.ebpf.o,xdp,xdp,1,1,ok,,
+object_allocation,examples/object_allocation.ks,ok,success,results/build/examples/object_allocation/object_allocation.ebpf.o,xdp,xdp,1,0,failed,verifier_reference_leak,"libbpf: prog 'packet_inspector': BPF program load failed: -EINVAL
 libbpf: prog 'packet_inspector': -- BEGIN PROG LOAD LOG --
 0: R1=ctx() R10=fp0
 ; enum xdp_action packet_inspector(struct xdp_md* ctx) { @ object_allocation.ebpf.c:79
@@ -23,23 +26,23 @@ libbpf: prog 'packet_inspector': -- BEGIN PROG LOAD LOG --
 ;  @ object_allocation.ebpf.c:0
 3: (07) r2 += -4                      ; R2_w=fp-4
 ; __map_lookup_0 = bpf_map_lookup_elem(&conn_tracker, &src_ip); @ object_allocation.ebpf.c:90
-4: (18) r1 = 0xffff8975e7080800       ; R1_w=map_ptr(map=conn_tracker,ks=4,vs=8)"
-packet_filter,examples/packet_filter.ks,ok,success,results/build/examples/packet_filter/packet_filter.ebpf.o,xdp,xdp,1,ok,,
-packet_matching,examples/packet_matching.ks,ok,success,results/build/examples/packet_matching/packet_matching.ebpf.o,xdp tc/ingress,tc xdp,2,ok,,
-pattern_test,examples/pattern_test.ks,ok,success,results/build/examples/pattern_test/pattern_test.ebpf.o,xdp,xdp,1,ok,,
-perf_cache_miss,examples/perf_cache_miss.ks,ok,success,results/build/examples/perf_cache_miss/perf_cache_miss.ebpf.o,perf_event,perf_event,1,ok,,
-perf_page_fault,examples/perf_page_fault.ks,ok,success,results/build/examples/perf_page_fault/perf_page_fault.ebpf.o,perf_event,perf_event,1,ok,,
-pointer_simple,examples/pointer_simple.ks,ok,success,results/build/examples/pointer_simple/pointer_simple.ebpf.o,xdp,xdp,1,ok,,
-print_demo,examples/print_demo.ks,ok,success,results/build/examples/print_demo/print_demo.ebpf.o,xdp,xdp,1,ok,,
-private_kfunc,examples/private_kfunc.ks,ok,success,results/build/examples/private_kfunc/private_kfunc.ebpf.o,xdp,xdp,1,failed,missing_kernel_btf_symbol,"libbpf: extern (func ksym) 'process_value': not found in kernel or module BTFs
+4: (18) r1 = 0xffff89769f050800       ; R1_w=map_ptr(map=conn_tracker,ks=4,vs=8)"
+packet_filter,examples/packet_filter.ks,ok,success,results/build/examples/packet_filter/packet_filter.ebpf.o,xdp,xdp,1,1,ok,,
+packet_matching,examples/packet_matching.ks,ok,success,results/build/examples/packet_matching/packet_matching.ebpf.o,xdp tc/ingress,tc xdp,2,7,ok,,
+pattern_test,examples/pattern_test.ks,ok,success,results/build/examples/pattern_test/pattern_test.ebpf.o,xdp,xdp,1,1,ok,,
+perf_cache_miss,examples/perf_cache_miss.ks,ok,success,results/build/examples/perf_cache_miss/perf_cache_miss.ebpf.o,perf_event,perf_event,1,1,ok,,
+perf_page_fault,examples/perf_page_fault.ks,ok,success,results/build/examples/perf_page_fault/perf_page_fault.ebpf.o,perf_event,perf_event,1,1,ok,,
+pointer_simple,examples/pointer_simple.ks,ok,success,results/build/examples/pointer_simple/pointer_simple.ebpf.o,xdp,xdp,1,1,ok,,
+print_demo,examples/print_demo.ks,ok,success,results/build/examples/print_demo/print_demo.ebpf.o,xdp,xdp,1,1,ok,,
+private_kfunc,examples/private_kfunc.ks,ok,success,results/build/examples/private_kfunc/private_kfunc.ebpf.o,xdp,xdp,1,0,failed,missing_kernel_btf_symbol,"libbpf: extern (func ksym) 'process_value': not found in kernel or module BTFs
 Error: failed to load object file"
-probe_do_exit,examples/probe_do_exit.ks,ok,success,results/build/examples/probe_do_exit/probe_do_exit.ebpf.o,fentry/do_exit,fentry,1,ok,,
-rate_limiter,examples/rate_limiter.ks,ok,success,results/build/examples/rate_limiter/rate_limiter.ebpf.o,xdp,xdp,1,ok,,
-ringbuf_demo,examples/ringbuf_demo.ks,ok,success,results/build/examples/ringbuf_demo/ringbuf_demo.ebpf.o,xdp fentry/sys_openat,fentry xdp,2,failed,map_create_failed,"libbpf: Error in bpf_create_map_xattr(__pinned_globals): -EINVAL. Retrying without BTF.
+probe_do_exit,examples/probe_do_exit.ks,ok,success,results/build/examples/probe_do_exit/probe_do_exit.ebpf.o,fentry/do_exit,fentry,1,1,ok,,
+rate_limiter,examples/rate_limiter.ks,ok,success,results/build/examples/rate_limiter/rate_limiter.ebpf.o,xdp,xdp,1,1,ok,,
+ringbuf_demo,examples/ringbuf_demo.ks,ok,success,results/build/examples/ringbuf_demo/ringbuf_demo.ebpf.o,xdp fentry/sys_openat,fentry xdp,2,0,failed,map_create_failed,"libbpf: Error in bpf_create_map_xattr(__pinned_globals): -EINVAL. Retrying without BTF.
 libbpf: map '__pinned_globals': failed to create: -EINVAL
 Error: failed to load object file"
-ringbuf_on_event_demo,examples/ringbuf_on_event_demo.ks,ok,success,results/build/examples/ringbuf_on_event_demo/ringbuf_on_event_demo.ebpf.o,xdp fentry/do_sys_open,fentry xdp,2,ok,,
-sched_ext_simple,examples/sched_ext_simple.ks,failed,libbpf_struct_ops_skeleton_api_mismatch,results/build/examples/sched_ext_simple/sched_ext_simple.ebpf.o,struct_ops/select_cpu struct_ops/enqueue struct_ops/dispatch struct_ops/runnable struct_ops/running struct_ops/stopping struct_ops/quiescent struct_ops/init_task struct_ops/exit_task struct_ops/enable struct_ops/init struct_ops/exit,struct_ops,12,failed,struct_ops_argument_type,"libbpf: prog 'select_cpu': BPF program load failed: -EINVAL
+ringbuf_on_event_demo,examples/ringbuf_on_event_demo.ks,ok,success,results/build/examples/ringbuf_on_event_demo/ringbuf_on_event_demo.ebpf.o,xdp fentry/do_sys_open,fentry xdp,2,2,ok,,
+sched_ext_simple,examples/sched_ext_simple.ks,failed,libbpf_struct_ops_skeleton_api_mismatch,results/build/examples/sched_ext_simple/sched_ext_simple.ebpf.o,struct_ops/select_cpu struct_ops/enqueue struct_ops/dispatch struct_ops/runnable struct_ops/running struct_ops/stopping struct_ops/quiescent struct_ops/init_task struct_ops/exit_task struct_ops/enable struct_ops/init struct_ops/exit,struct_ops,12,0,failed,struct_ops_argument_type,"libbpf: prog 'select_cpu': BPF program load failed: -EINVAL
 libbpf: prog 'select_cpu': -- BEGIN PROG LOAD LOG --
 0: R1=ctx() R10=fp0
 ; __s32 select_cpu(struct task_struct* p, __s32 prev_cpu, __u64 wake_flags) { @ sched_ext_simple.ebpf.c:16
@@ -51,19 +54,19 @@ libbpf: prog 'select_cpu': -- BEGIN PROG LOAD LOG --
 ;  @ sched_ext_simple.ebpf.c:0
 4: (07) r4 += -1                      ; R4_w=fp-1
 ; cpu = scx_bpf_select_cpu_dfl(p, prev_cpu, wake_flags, __unop_0); @ sched_ext_simple.ebpf.c:21"
-simple_gfp_test,examples/simple_gfp_test.ks,ok,success,results/build/examples/simple_gfp_test/simple_gfp_test.ebpf.o,xdp,xdp,1,ok,,
-simple_program_lifecycle,examples/simple_program_lifecycle.ks,ok,success,results/build/examples/simple_program_lifecycle/simple_program_lifecycle.ebpf.o,xdp,xdp,1,ok,,
-string_test,examples/string_test.ks,ok,success,results/build/examples/string_test/string_test.ebpf.o,xdp,xdp,1,ok,,
-struct_ops_simple,examples/struct_ops_simple.ks,failed,libbpf_struct_ops_skeleton_api_mismatch,results/build/examples/struct_ops_simple/struct_ops_simple.ebpf.o,struct_ops/ssthresh struct_ops/undo_cwnd struct_ops/cong_avoid struct_ops/set_state struct_ops/cwnd_event,struct_ops,5,ok,,
-symbols,examples/symbols.ks,ok,success,results/build/examples/symbols/symbols.ebpf.o,xdp tc/ingress,tc xdp,2,ok,,
-sysctl_demo,examples/sysctl_demo.ks,ok,success,results/build/examples/sysctl_demo/sysctl_demo.ebpf.o,xdp,xdp,1,ok,,
-tail_call,examples/tail_call.ks,ok,success,results/build/examples/tail_call/tail_call.ebpf.o,xdp,xdp,1,ok,,
-test_config,examples/test_config.ks,ok,success,results/build/examples/test_config/test_config.ebpf.o,xdp,xdp,1,ok,,
-test_error_handling,examples/test_error_handling.ks,ok,success,results/build/examples/test_error_handling/test_error_handling.ebpf.o,xdp,xdp,1,ok,,
-test_exec,examples/test_exec.ks,ok,success,results/build/examples/test_exec/test_exec.ebpf.o,xdp,xdp,1,ok,,
-test_functions,examples/test_functions.ks,ok,success,results/build/examples/test_functions/test_functions.ebpf.o,xdp,xdp,1,ok,,
-tracepoint_sched_switch,examples/tracepoint_sched_switch.ks,ok,success,results/build/examples/tracepoint_sched_switch/tracepoint_sched_switch.ebpf.o,tracepoint/sched/sched_switch,tracepoint,1,ok,,
-type_alias,examples/type_alias.ks,ok,success,results/build/examples/type_alias/type_alias.ebpf.o,xdp,xdp,1,ok,,
-type_checking,examples/type_checking.ks,ok,success,results/build/examples/type_checking/type_checking.ebpf.o,xdp,xdp,1,ok,,
-types_demo,examples/types_demo.ks,ok,success,results/build/examples/types_demo/types_demo.ebpf.o,xdp,xdp,1,ok,,
-userspace_example,examples/userspace_example.ks,ok,success,results/build/examples/userspace_example/userspace_example.ebpf.o,xdp,xdp,1,ok,,
+simple_gfp_test,examples/simple_gfp_test.ks,ok,success,results/build/examples/simple_gfp_test/simple_gfp_test.ebpf.o,xdp,xdp,1,1,ok,,
+simple_program_lifecycle,examples/simple_program_lifecycle.ks,ok,success,results/build/examples/simple_program_lifecycle/simple_program_lifecycle.ebpf.o,xdp,xdp,1,1,ok,,
+string_test,examples/string_test.ks,ok,success,results/build/examples/string_test/string_test.ebpf.o,xdp,xdp,1,1,ok,,
+struct_ops_simple,examples/struct_ops_simple.ks,failed,libbpf_struct_ops_skeleton_api_mismatch,results/build/examples/struct_ops_simple/struct_ops_simple.ebpf.o,struct_ops/ssthresh struct_ops/undo_cwnd struct_ops/cong_avoid struct_ops/set_state struct_ops/cwnd_event,struct_ops,5,5,ok,,
+symbols,examples/symbols.ks,ok,success,results/build/examples/symbols/symbols.ebpf.o,xdp tc/ingress,tc xdp,2,2,ok,,
+sysctl_demo,examples/sysctl_demo.ks,ok,success,results/build/examples/sysctl_demo/sysctl_demo.ebpf.o,xdp,xdp,1,1,ok,,
+tail_call,examples/tail_call.ks,ok,success,results/build/examples/tail_call/tail_call.ebpf.o,xdp,xdp,1,2,ok,,
+test_config,examples/test_config.ks,ok,success,results/build/examples/test_config/test_config.ebpf.o,xdp,xdp,1,1,ok,,
+test_error_handling,examples/test_error_handling.ks,ok,success,results/build/examples/test_error_handling/test_error_handling.ebpf.o,xdp,xdp,1,1,ok,,
+test_exec,examples/test_exec.ks,ok,success,results/build/examples/test_exec/test_exec.ebpf.o,xdp,xdp,1,1,ok,,
+test_functions,examples/test_functions.ks,ok,success,results/build/examples/test_functions/test_functions.ebpf.o,xdp,xdp,1,1,ok,,
+tracepoint_sched_switch,examples/tracepoint_sched_switch.ks,ok,success,results/build/examples/tracepoint_sched_switch/tracepoint_sched_switch.ebpf.o,tracepoint/sched/sched_switch,tracepoint,1,1,ok,,
+type_alias,examples/type_alias.ks,ok,success,results/build/examples/type_alias/type_alias.ebpf.o,xdp,xdp,1,1,ok,,
+type_checking,examples/type_checking.ks,ok,success,results/build/examples/type_checking/type_checking.ebpf.o,xdp,xdp,1,1,ok,,
+types_demo,examples/types_demo.ks,ok,success,results/build/examples/types_demo/types_demo.ebpf.o,xdp,xdp,1,1,ok,,
+userspace_example,examples/userspace_example.ks,ok,success,results/build/examples/userspace_example/userspace_example.ebpf.o,xdp,xdp,1,1,ok,,

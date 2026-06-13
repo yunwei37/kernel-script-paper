@@ -33,13 +33,18 @@ RQ4. Do generated artifacts remain compatible with the local kernel toolchain?
 Evidence: compile generated eBPF objects, generate libbpf skeletons with
 `bpftool`, link userspace loaders, and build generated kernel modules when
 present. Then run `bpftool prog loadall` on each generated eBPF object to
-classify which objects pass kernel verifier loading without attaching them.
+classify which objects pass kernel verifier loading and actually pin at least
+one BPF program, without attaching them.
 
-RQ5. Can at least one generated loader execute end to end?
+RQ5. Can generated XDP artifacts attach and detach in an isolated deployment
+setting?
 
 Evidence: `experiments/run_smoke.sh` compiles `smoke_lo.ks`, builds the generated
 project, and uses `sudo -n` to attach/detach an XDP pass program on the loopback
-interface.
+interface. `experiments/run_attach_matrix.py` then filters the verifier-clean
+single-section XDP objects, creates a fresh network namespace and veth pair for
+each object, attaches it with iproute2, confirms `prog/xdp` in `ip -d link
+show`, detaches it, and removes the namespace.
 
 RQ6. Is the XDP map-update gap caused by the unified source model or by a
 specific lowering choice?
@@ -75,18 +80,28 @@ verify that all variants perform the same 100000 increments.
    - Reads `results/examples_summary.csv` after `run_evaluation.py`.
    - Attempts `bpftool prog loadall` for every generated eBPF object under
      `results/build/examples`.
-   - Pins programs and maps under `/sys/fs/bpf/kernelscript-paper`, removes pins
-     after each attempt, and keeps raw bpftool logs under
+   - Counts an object as loadable only when `bpftool` succeeds and at least one
+     program is pinned under `/sys/fs/bpf/kernelscript-paper`.
+   - Removes pins after each attempt and keeps raw bpftool logs under
      `results/logs/verifier_matrix`.
    - Writes `results/verifier_matrix_summary.csv` and
      `results/verifier_matrix_summary.json`.
 
-4. `experiments/run_smoke.sh`
+4. `experiments/run_attach_matrix.py`
+   - Reads `results/verifier_matrix_summary.csv`.
+   - Selects verifier-clean, single-section XDP objects.
+   - Creates a fresh network namespace and veth pair per object.
+   - Attaches with `ip link set ... xdp obj ... sec xdp`, confirms `prog/xdp`,
+     detaches, and cleans the namespace.
+   - Writes `results/attach_matrix_summary.csv` and
+     `results/attach_matrix_summary.json`.
+
+5. `experiments/run_smoke.sh`
    - Compiles and builds `experiments/programs/smoke_lo.ks`.
    - Runs the generated binary with `sudo -n`.
    - Writes `results/smoke_summary.json` and logs under `results/logs/`.
 
-5. `experiments/run_microbench.py`
+6. `experiments/run_microbench.py`
    - Compiles two KernelScript XDP microbenchmarks and two hand-written C/eBPF
      baselines.
    - Loads each object with `bpftool prog load`.
@@ -95,7 +110,7 @@ verify that all variants perform the same 100000 increments.
    - Writes `results/microbench_summary.csv` and
      `results/microbench_summary.json`.
 
-6. `experiments/run_compiler_patch_ablation.py`
+7. `experiments/run_compiler_patch_ablation.py`
    - Copies the KernelScript compiler source tree into `results/build`.
    - Applies `experiments/patches/kernelscript-map-increment-lowering.patch`.
    - Builds the patched compiler with `dune build`.
@@ -108,7 +123,7 @@ verify that all variants perform the same 100000 increments.
    - Writes `results/compiler_patch_ablation_summary.csv` and
      `results/compiler_patch_ablation_summary.json`.
 
-7. `experiments/run_lowering_ablation.py`
+8. `experiments/run_lowering_ablation.py`
    - Compiles the KernelScript XDP count benchmark.
    - Copies the generated project and patches the map update lowering from
      lookup plus update helper to in-place atomic add.
@@ -119,9 +134,10 @@ verify that all variants perform the same 100000 increments.
    - Writes `results/lowering_ablation_summary.csv` and
      `results/lowering_ablation_summary.json`.
 
-8. `experiments/update_paper_numbers.py`
+9. `experiments/update_paper_numbers.py`
    - Checks that unit tests, static checks, smoke test, microbenchmarks, and
-     verifier matrix plus both lowering ablations have successful summaries.
+     verifier matrix, attach matrix, and both lowering ablations have successful
+     summaries.
    - Writes `results/paper_numbers.tex` for the LaTeX paper.
 
 ## Current Results
@@ -131,9 +147,14 @@ At commit `ccb15b4`, on Linux `6.15.11-061511-generic`:
 - 85 unit test suites and 1095 unit tests pass.
 - 43 of 44 examples compile from KernelScript.
 - 41 examples build fully into generated C/eBPF artifacts.
-- The verifier-load matrix loads 39 of 43 generated eBPF objects. Among the 41
-  objects from full generated-project build successes, 38 load successfully and
-  3 expose reference-ownership, map-creation, or local BTF-symbol failures.
+- The verifier-load matrix loads 38 of 43 generated eBPF objects and confirms
+  that each loadable object pins at least one BPF program. Among the 41 objects
+  from full generated-project build successes, 37 load successfully and 4 expose
+  reference-ownership, map-creation, local BTF-symbol, or no-program-pinned
+  failures. Across all generated objects, one additional struct_ops object
+  exposes an argument-type rejection.
+- The isolated attach matrix attaches and detaches 27 of 27 verifier-clean
+  single-section XDP objects on fresh veth devices inside network namespaces.
 - The one KernelScript rejection is an intentional safety rejection for stack
   usage above the eBPF limit.
 - The static-check corpus has 6 cases, including 5 expected compiler
@@ -155,14 +176,18 @@ At commit `ccb15b4`, on Linux `6.15.11-061511-generic`:
 
 ## Threats and Next Experiments
 
-The current runtime evaluation is a microbenchmark study, not a packet-rate
-performance study. A full runtime comparison should add matched hand-written
-C/libbpf baselines for XDP, TC, perf_event, ring buffer, and struct_ops
-programs. It should run traffic with `pktgen` or `xdp-bench` and report
-throughput, tail latency, verifier log size, and CPU utilization. The current compiler-source patch
-should be upstreamed or otherwise integrated, semantically generalized beyond
-constant array-map increments where safe, and retested across hash, per-CPU, and
-structured map values. The current artifact is still useful as a systems
-prototype study because it grounds claims about example marker coverage,
-generated structure, compatibility, small-program runtime overhead, and one
-concrete lowering optimization in reproducible evidence.
+The current runtime evaluation combines attach/detach checks and
+BPF_PROG_TEST_RUN microbenchmarks, not a packet-rate performance study. The
+attach matrix confirms that verifier-clean single-section XDP objects can be
+installed and removed on isolated veth devices, but it does not validate packet
+behavior or generated-loader correctness for those objects. A full runtime
+comparison should add matched hand-written C/libbpf baselines for XDP, TC,
+perf_event, ring buffer, and struct_ops programs. It should run traffic with
+`pktgen` or `xdp-bench` and report throughput, tail latency, verifier log size,
+and CPU utilization. The current compiler-source patch should be upstreamed or
+otherwise integrated, semantically generalized beyond constant array-map
+increments where safe, and retested across hash, per-CPU, and structured map
+values. The current artifact is still useful as a systems prototype study
+because it grounds claims about example marker coverage, generated structure,
+compatibility, attachability for an XDP subset, small-program runtime overhead,
+and one concrete lowering optimization in reproducible evidence.

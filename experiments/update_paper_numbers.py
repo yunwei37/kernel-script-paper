@@ -62,6 +62,7 @@ def main() -> int:
     lowering = load_json("lowering_ablation_summary.json")
     compiler_patch = load_json("compiler_patch_ablation_summary.json")
     verifier = load_json("verifier_matrix_summary.json")
+    attach = load_json("attach_matrix_summary.json")
 
     if unit.get("returncode") != 0 or unit.get("reported_failures") != 0:
         raise SystemExit("unit tests are not clean; refusing to generate paper numbers")
@@ -77,6 +78,8 @@ def main() -> int:
         raise SystemExit("compiler patch ablation did not complete successfully")
     if verifier.get("status") != "ok":
         raise SystemExit("verifier matrix did not complete successfully")
+    if attach.get("status") != "ok":
+        raise SystemExit("attach matrix did not complete successfully")
 
     content = ""
     content += macro("KSCommitShort", str(env["kernelscript_git_head"])[:7])
@@ -119,6 +122,11 @@ def main() -> int:
     content += macro("KSVerifierMapCreateFailed", failure_classes.get("map_create_failed", 0))
     content += macro("KSVerifierMissingBTF", failure_classes.get("missing_kernel_btf_symbol", 0))
     content += macro("KSVerifierStructOpsArg", failure_classes.get("struct_ops_argument_type", 0))
+    content += macro("KSVerifierNoProgramPinned", failure_classes.get("no_program_pinned", 0))
+    content += macro("KSAttachEligible", attach["eligible_xdp_objects"])
+    content += macro("KSAttachOK", attach["attach_ok"])
+    content += macro("KSAttachFailed", attach["attach_failed"])
+    content += macro("KSAttachOKPct", pct(attach["attach_ok"], attach["eligible_xdp_objects"]))
 
     features = {
         "XDP": "feature_xdp",

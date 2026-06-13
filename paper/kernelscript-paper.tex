@@ -48,7 +48,9 @@ test host, \tool's own test suite reports \KSTotalUnitSuites{} successful
 suites and \KSTotalUnitTests{} passing tests.  Of \KSTotalExamples{} repository
 examples, \KSKSCompileOK{} compile from \tool{} source and \KSMakeOK{} build
 into generated C/eBPF projects.  A verifier-load matrix then loads
-\KSVerifierBuildLoadOK{} of those build-success eBPF objects with bpftool.
+\KSVerifierBuildLoadOK{} of those build-success eBPF objects with bpftool, and
+an isolated XDP attach matrix attaches and detaches \KSAttachOK{} of
+\KSAttachEligible{} verifier-clean single-section XDP objects.
 Successful examples have median \KSMedianKSSloc{} lines of \tool{} source and median \KSMedianGeneratedSloc{}
 lines of generated C and build logic, an \KSMedianGeneratedRatio{} expansion
 factor.  The results show that the compiler centralizes recurring project
@@ -122,8 +124,9 @@ cross-boundary invariants, including program-handle use, perf-event context
 signatures, and stack-limit violations before load or attach time.  Third, it
 implements a reproducible artifact evaluation of test coverage, example
 buildability, generated-code expansion, example marker coverage, static
-rejection cases, an attach/detach smoke test, XDP microbenchmarks, and a
-compiler-source patch that isolates one map-update lowering mechanism.  The
+rejection cases, an isolated XDP attach matrix, an attach/detach smoke test,
+XDP microbenchmarks, and a compiler-source patch that isolates one map-update
+lowering mechanism.  The
 artifact is designed so that a
 reviewer can rerun the evaluation without changing the \tool{} source tree:
 all scripts, logs, derived tables, and paper macros are stored outside the
@@ -272,12 +275,17 @@ libbpf 1.3.0, OCaml 4.14, and dune 3.14.  The host CPU is a
 microbenchmarks do not pin CPUs or change the governor, so their nanosecond
 values should be read as local BPF\_PROG\_TEST\_RUN comparisons rather than
 packet-rate performance claims.  The evaluated commit is \KSCommitShort{}.
-The artifact contains seven measurement scripts under
+The artifact contains eight measurement scripts under
 \texttt{experiments/}.  \texttt{run\_evaluation.py} builds the compiler, runs
 \texttt{dune runtest --force}, compiles every \texttt{examples/*.ks} file, runs
 \texttt{make} in each generated project, and records CSV/JSON results.
 \texttt{run\_verifier\_matrix.py} attempts \texttt{bpftool prog loadall} on
-each generated eBPF object and removes all pins after each attempt.
+each generated eBPF object, requires that at least one program is actually
+pinned, and removes all pins after each attempt.
+\texttt{run\_attach\_matrix.py} filters the verifier-clean single-section XDP
+objects, creates a fresh network namespace and veth pair for each object,
+attaches with iproute2, confirms \texttt{prog/xdp}, detaches, and cleans up the
+namespace.
 \texttt{run\_static\_checks.py} compiles a small corpus with expected success
 or expected failure outcomes for lifecycle API use, context signatures, and
 stack-limit analysis.  \texttt{run\_smoke.sh} compiles a minimal loopback XDP
@@ -302,8 +310,8 @@ markers in the example source, so they are a coarse corpus classifier rather
 than a manual feature-completeness audit.  \textbf{Generated-structure
 centralization} is measured as an expansion factor: lines of \tool{} source
 compared to generated C and Makefile lines.  \textbf{Compatibility} is measured
-by generated build successes, failures, and verifier-load outcomes against the
-local kernel toolchain.
+by generated build successes, failures, verifier-load outcomes, and isolated
+XDP attach/detach outcomes against the local kernel toolchain.
 \textbf{Mechanism isolation} is measured by the map-update lowering ablation.
 
 The harness treats generated data as first-class evidence.  It writes raw
@@ -381,19 +389,33 @@ bpftool, libbpf, and kernel headers.
 
 \textbf{Verifier-load matrix.}  Build success is still weaker than kernel
 acceptance, so \texttt{run\_verifier\_matrix.py} loads generated objects with
-\texttt{bpftool prog loadall} without attaching them.  Of \KSVerifierTotalObjects{}
-objects present after evaluation, \KSVerifierLoadOK{} load successfully.  Among
-the \KSVerifierBuildObjects{} objects from fully built generated projects,
+\texttt{bpftool prog loadall} without attaching them.  The script counts a load
+as successful only when \texttt{bpftool} returns success and at least one BPF
+program is pinned, avoiding false positives from empty program sections.  Of
+\KSVerifierTotalObjects{} objects present after evaluation,
+\KSVerifierLoadOK{} load successfully under this stricter criterion.  Among the
+\KSVerifierBuildObjects{} objects from fully built generated projects,
 \KSVerifierBuildLoadOK{} load successfully (\KSVerifierBuildLoadOKPct{}) and
 \KSVerifierBuildLoadFailed{} fail: \KSVerifierReferenceLeak{} remaining
 reference-ownership failure, \KSVerifierMapCreateFailed{} map creation failure,
-and \KSVerifierMissingBTF{} missing kfunc symbol in kernel BTF.  Across all
+\KSVerifierMissingBTF{} missing kfunc symbol in kernel BTF, and
+\KSVerifierNoProgramPinned{} object for which no program is pinned.  Across all
 generated objects, including those from generated projects that did not fully
 build, the matrix also records \KSVerifierStructOpsArg{} struct\_ops
 argument-type rejection.  The current run has \KSVerifierRejected{} other
 verifier rejections.  This result narrows the compatibility claim from
 ``builds'' to a measured split between verifier-clean objects and generated
 objects that still need backend fixes.
+
+\textbf{Isolated XDP attach matrix.}  Verifier acceptance is still weaker than
+attachability.  \texttt{run\_attach\_matrix.py} therefore takes the
+verifier-clean, single-section XDP subset, creates a fresh network namespace
+and veth pair per object, attaches each object to the namespace-side veth with
+iproute2, confirms \texttt{prog/xdp} in \texttt{ip -d link show}, detaches it,
+and removes the namespace.  The matrix attaches and detaches \KSAttachOK{} of
+\KSAttachEligible{} eligible objects (\KSAttachOKPct{}), with
+\KSAttachFailed{} failures.  This broadens the deployment evidence beyond one
+smoke-test loader, but it is not a packet-behavior or throughput test.
 
 \textbf{Example marker coverage.}  The examples exercise many eBPF domains.
 Table~\ref{tab:features} reports attempted examples, examples that pass the
@@ -500,7 +522,8 @@ the loopback interface and detaches it:
 \texttt{XDP attached to interface: lo} followed by
 \texttt{XDP detached from interface index: 1}.  This test is not a benchmark,
 but it validates that this minimal generated XDP loader can complete a real
-load/attach/detach lifecycle on \texttt{lo} on the test host.
+load/attach/detach lifecycle on \texttt{lo} on the test host, complementing the
+object-level attach matrix.
 
 \section{Discussion}
 
@@ -513,8 +536,10 @@ rejects selected lifecycle, context-signature, and stack-limit errors before
 kernel loading.  The runtime evidence is deliberately smaller.  It establishes
 parity for a minimal pass program and shows that the map-update gap is caused
 by a specific lowering choice, not by the unified source model alone.  The
-compiler-source patch result strengthens that mechanism claim, but it still does
-not establish broad runtime performance parity with hand-written C/libbpf.
+compiler-source patch result strengthens that mechanism claim, and the XDP
+attach matrix strengthens the deployment evidence for one program class, but
+the artifact still does not establish broad runtime performance parity with
+hand-written C/libbpf.
 
 The struct\_ops failures are instructive.  A DSL can hide coordination code, but it
 cannot hide all ABI and API drift.  When bpftool-generated skeletons and
@@ -566,14 +591,14 @@ would require upstreaming or otherwise integrating the rule and rerunning
 verifier, instruction-count, and runtime checks across hash, per-CPU, and
 structured map values.
 
-\textbf{Verifier load is not deployment success.}  The verifier matrix loads
-generated eBPF objects and therefore catches failures beyond C compilation, but
-it deliberately avoids attaching most programs because examples target fixed
-devices, kernel functions, scheduler hooks, or performance events that may
-perturb the host.  Thus, verifier-load success is evidence of kernel acceptance,
-not full deployment validation.  A complete deployment study would run each
-example in a VM with known kernel configuration and explicit cleanup checks
-after detach.
+\textbf{Load and attach are not workload validation.}  The verifier matrix
+loads generated eBPF objects and therefore catches failures beyond C
+compilation.  The attach matrix goes further for verifier-clean single-section
+XDP objects by installing and removing them on isolated veth devices.  However,
+the matrix does not send traffic, compare packet behavior, or exercise the
+generated loaders for those objects.  A complete deployment study would run
+each example in a VM with known kernel configuration, representative workloads,
+and explicit cleanup checks after detach.
 
 \textbf{Kernel version skew matters.}  The struct\_ops failures show that
 results depend on the alignment between kernel headers, bpftool, generated
@@ -623,8 +648,9 @@ space.
 eBPF development.  Our artifact evaluation shows that the current compiler
 passes a broad test suite, compiles most repository examples, builds most
 generated projects, verifier-loads \KSVerifierBuildLoadOK{} build-success
-objects, rejects an eBPF stack-limit violation before C generation, and can run
-a minimal XDP attach/detach smoke test.  The median successful
+objects, attaches and detaches \KSAttachOK{} verifier-clean single-section XDP
+objects in isolated namespaces, rejects an eBPF stack-limit violation before C
+generation, and can run a minimal XDP attach/detach smoke test.  The median successful
 example expands from \KSMedianKSSloc{} lines of \tool{} to
 \KSMedianGeneratedSloc{} lines of generated C and build logic, giving concrete
 evidence that the model centralizes recurring project structure.  The remaining gaps

@@ -1,0 +1,279 @@
+{
+  "attach_failed": 0,
+  "attach_ok": 27,
+  "description": "Isolated network-namespace XDP attach/detach matrix for verifier-clean single-section XDP objects.",
+  "eligible_xdp_objects": 27,
+  "rows": [
+    {
+      "attach_status": "ok",
+      "detach_status": "ok",
+      "failure_excerpt": "",
+      "name": "basic_match",
+      "object": "results/build/examples/basic_match/basic_match.ebpf.o",
+      "program_sections": "xdp",
+      "show_has_xdp": true,
+      "source": "examples/basic_match.ks"
+    },
+    {
+      "attach_status": "ok",
+      "detach_status": "ok",
+      "failure_excerpt": "",
+      "name": "break_continue_unbound",
+      "object": "results/build/examples/break_continue_unbound/break_continue_unbound.ebpf.o",
+      "program_sections": "xdp",
+      "show_has_xdp": true,
+      "source": "examples/break_continue_unbound.ks"
+    },
+    {
+      "attach_status": "ok",
+      "detach_status": "ok",
+      "failure_excerpt": "",
+      "name": "dynptr",
+      "object": "results/build/examples/dynptr/dynptr.ebpf.o",
+      "program_sections": "xdp",
+      "show_has_xdp": true,
+      "source": "examples/dynptr.ks"
+    },
+    {
+      "attach_status": "ok",
+      "detach_status": "ok",
+      "failure_excerpt": "",
+      "name": "error_handling_demo",
+      "object": "results/build/examples/error_handling_demo/error_handling_demo.ebpf.o",
+      "program_sections": "xdp",
+      "show_has_xdp": true,
+      "source": "examples/error_handling_demo.ks"
+    },
+    {
+      "attach_status": "ok",
+      "detach_status": "ok",
+      "failure_excerpt": "",
+      "name": "extern_kfunc_demo",
+      "object": "results/build/examples/extern_kfunc_demo/extern_kfunc_demo.ebpf.o",
+      "program_sections": "xdp",
+      "show_has_xdp": true,
+      "source": "examples/extern_kfunc_demo.ks"
+    },
+    {
+      "attach_status": "ok",
+      "detach_status": "ok",
+      "failure_excerpt": "",
+      "name": "functions",
+      "object": "results/build/examples/functions/functions.ebpf.o",
+      "program_sections": "xdp",
+      "show_has_xdp": true,
+      "source": "examples/functions.ks"
+    },
+    {
+      "attach_status": "ok",
+      "detach_status": "ok",
+      "failure_excerpt": "",
+      "name": "import_demo",
+      "object": "results/build/examples/import_demo/import_demo.ebpf.o",
+      "program_sections": "xdp",
+      "show_has_xdp": true,
+      "source": "examples/import_demo.ks"
+    },
+    {
+      "attach_status": "ok",
+      "detach_status": "ok",
+      "failure_excerpt": "",
+      "name": "include_demo",
+      "object": "results/build/examples/include_demo/include_demo.ebpf.o",
+      "program_sections": "xdp",
+      "show_has_xdp": true,
+      "source": "examples/include_demo.ks"
+    },
+    {
+      "attach_status": "ok",
+      "detach_status": "ok",
+      "failure_excerpt": "",
+      "name": "named_return",
+      "object": "results/build/examples/named_return/named_return.ebpf.o",
+      "program_sections": "xdp",
+      "show_has_xdp": true,
+      "source": "examples/named_return.ks"
+    },
+    {
+      "attach_status": "ok",
+      "detach_status": "ok",
+      "failure_excerpt": "",
+      "name": "packet_filter",
+      "object": "results/build/examples/packet_filter/packet_filter.ebpf.o",
+      "program_sections": "xdp",
+      "show_has_xdp": true,
+      "source": "examples/packet_filter.ks"
+    },
+    {
+      "attach_status": "ok",
+      "detach_status": "ok",
+      "failure_excerpt": "",
+      "name": "pattern_test",
+      "object": "results/build/examples/pattern_test/pattern_test.ebpf.o",
+      "program_sections": "xdp",
+      "show_has_xdp": true,
+      "source": "examples/pattern_test.ks"
+    },
+    {
+      "attach_status": "ok",
+      "detach_status": "ok",
+      "failure_excerpt": "",
+      "name": "pointer_simple",
+      "object": "results/build/examples/pointer_simple/pointer_simple.ebpf.o",
+      "program_sections": "xdp",
+      "show_has_xdp": true,
+      "source": "examples/pointer_simple.ks"
+    },
+    {
+      "attach_status": "ok",
+      "detach_status": "ok",
+      "failure_excerpt": "",
+      "name": "print_demo",
+      "object": "results/build/examples/print_demo/print_demo.ebpf.o",
+      "program_sections": "xdp",
+      "show_has_xdp": true,
+      "source": "examples/print_demo.ks"
+    },
+    {
+      "attach_status": "ok",
+      "detach_status": "ok",
+      "failure_excerpt": "",
+      "name": "rate_limiter",
+      "object": "results/build/examples/rate_limiter/rate_limiter.ebpf.o",
+      "program_sections": "xdp",
+      "show_has_xdp": true,
+      "source": "examples/rate_limiter.ks"
+    },
+    {
+      "attach_status": "ok",
+      "detach_status": "ok",
+      "failure_excerpt": "",
+      "name": "simple_gfp_test",
+      "object": "results/build/examples/simple_gfp_test/simple_gfp_test.ebpf.o",
+      "program_sections": "xdp",
+      "show_has_xdp": true,
+      "source": "examples/simple_gfp_test.ks"
+    },
+    {
+      "attach_status": "ok",
+      "detach_status": "ok",
+      "failure_excerpt": "",
+      "name": "simple_program_lifecycle",
+      "object": "results/build/examples/simple_program_lifecycle/simple_program_lifecycle.ebpf.o",
+      "program_sections": "xdp",
+      "show_has_xdp": true,
+      "source": "examples/simple_program_lifecycle.ks"
+    },
+    {
+      "attach_status": "ok",
+      "detach_status": "ok",
+      "failure_excerpt": "",
+      "name": "string_test",
+      "object": "results/build/examples/string_test/string_test.ebpf.o",
+      "program_sections": "xdp",
+      "show_has_xdp": true,
+      "source": "examples/string_test.ks"
+    },
+    {
+      "attach_status": "ok",
+      "detach_status": "ok",
+      "failure_excerpt": "",
+      "name": "sysctl_demo",
+      "object": "results/build/examples/sysctl_demo/sysctl_demo.ebpf.o",
+      "program_sections": "xdp",
+      "show_has_xdp": true,
+      "source": "examples/sysctl_demo.ks"
+    },
+    {
+      "attach_status": "ok",
+      "detach_status": "ok",
+      "failure_excerpt": "",
+      "name": "tail_call",
+      "object": "results/build/examples/tail_call/tail_call.ebpf.o",
+      "program_sections": "xdp",
+      "show_has_xdp": true,
+      "source": "examples/tail_call.ks"
+    },
+    {
+      "attach_status": "ok",
+      "detach_status": "ok",
+      "failure_excerpt": "",
+      "name": "test_config",
+      "object": "results/build/examples/test_config/test_config.ebpf.o",
+      "program_sections": "xdp",
+      "show_has_xdp": true,
+      "source": "examples/test_config.ks"
+    },
+    {
+      "attach_status": "ok",
+      "detach_status": "ok",
+      "failure_excerpt": "",
+      "name": "test_error_handling",
+      "object": "results/build/examples/test_error_handling/test_error_handling.ebpf.o",
+      "program_sections": "xdp",
+      "show_has_xdp": true,
+      "source": "examples/test_error_handling.ks"
+    },
+    {
+      "attach_status": "ok",
+      "detach_status": "ok",
+      "failure_excerpt": "",
+      "name": "test_exec",
+      "object": "results/build/examples/test_exec/test_exec.ebpf.o",
+      "program_sections": "xdp",
+      "show_has_xdp": true,
+      "source": "examples/test_exec.ks"
+    },
+    {
+      "attach_status": "ok",
+      "detach_status": "ok",
+      "failure_excerpt": "",
+      "name": "test_functions",
+      "object": "results/build/examples/test_functions/test_functions.ebpf.o",
+      "program_sections": "xdp",
+      "show_has_xdp": true,
+      "source": "examples/test_functions.ks"
+    },
+    {
+      "attach_status": "ok",
+      "detach_status": "ok",
+      "failure_excerpt": "",
+      "name": "type_alias",
+      "object": "results/build/examples/type_alias/type_alias.ebpf.o",
+      "program_sections": "xdp",
+      "show_has_xdp": true,
+      "source": "examples/type_alias.ks"
+    },
+    {
+      "attach_status": "ok",
+      "detach_status": "ok",
+      "failure_excerpt": "",
+      "name": "type_checking",
+      "object": "results/build/examples/type_checking/type_checking.ebpf.o",
+      "program_sections": "xdp",
+      "show_has_xdp": true,
+      "source": "examples/type_checking.ks"
+    },
+    {
+      "attach_status": "ok",
+      "detach_status": "ok",
+      "failure_excerpt": "",
+      "name": "types_demo",
+      "object": "results/build/examples/types_demo/types_demo.ebpf.o",
+      "program_sections": "xdp",
+      "show_has_xdp": true,
+      "source": "examples/types_demo.ks"
+    },
+    {
+      "attach_status": "ok",
+      "detach_status": "ok",
+      "failure_excerpt": "",
+      "name": "userspace_example",
+      "object": "results/build/examples/userspace_example/userspace_example.ebpf.o",
+      "program_sections": "xdp",
+      "show_has_xdp": true,
+      "source": "examples/userspace_example.ks"
+    }
+  ],
+  "status": "ok"
+}

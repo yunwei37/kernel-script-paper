@@ -106,6 +106,8 @@ def first_error_excerpt(text: str, max_lines: int = 12) -> str:
 
 def classify_failure(text: str) -> str:
     low = text.lower()
+    if "no bpf programs were pinned" in low:
+        return "no_program_pinned"
     if "failed to create" in low and "map" in low:
         return "map_create_failed"
     if "unreleased reference" in low or "reference leak" in low:
@@ -121,6 +123,17 @@ def classify_failure(text: str) -> str:
     return "load_failed"
 
 
+def pinned_program_names(prog_pin: str) -> list[str]:
+    res = run(
+        ["find", prog_pin, "-maxdepth", "1", "-type", "f", "-printf", "%f\n"],
+        ROOT,
+        sudo=True,
+    )
+    if res.returncode != 0:
+        return []
+    return sorted(name for name in res.stdout.splitlines() if name.strip())
+
+
 def load_object(row: dict[str, str], obj: Path, sections: list[str]) -> dict[str, object]:
     name = row["name"]
     pin_base = f"{PIN_ROOT}/{os.getpid()}_{name}"
@@ -131,9 +144,12 @@ def load_object(row: dict[str, str], obj: Path, sections: list[str]) -> dict[str
     res = run(["bpftool", "prog", "loadall", str(obj), prog_pin, "pinmaps", map_pin], ROOT, timeout=60, sudo=True)
     write(LOGS / f"{name}.load.stdout", res.stdout)
     write(LOGS / f"{name}.load.stderr", res.stderr)
+    pinned_programs = pinned_program_names(prog_pin)
     run(["rm", "-rf", pin_base], ROOT, sudo=True)
     text = res.stdout + res.stderr
-    ok = res.returncode == 0
+    if res.returncode == 0 and not pinned_programs:
+        text += "\nNo BPF programs were pinned under the program pin directory."
+    ok = res.returncode == 0 and bool(pinned_programs)
     return {
         "name": name,
         "source": row["source"],
@@ -143,6 +159,7 @@ def load_object(row: dict[str, str], obj: Path, sections: list[str]) -> dict[str
         "program_sections": " ".join(sections),
         "section_kinds": " ".join(section_kinds(sections)),
         "program_count": len(sections),
+        "pinned_program_count": len(pinned_programs),
         "load_status": "ok" if ok else "failed",
         "failure_class": "" if ok else classify_failure(text),
         "failure_excerpt": "" if ok else first_error_excerpt(text),
@@ -180,6 +197,7 @@ def main() -> int:
         "program_sections",
         "section_kinds",
         "program_count",
+        "pinned_program_count",
         "load_status",
         "failure_class",
         "failure_excerpt",
