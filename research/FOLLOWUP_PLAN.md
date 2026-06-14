@@ -9,12 +9,13 @@ isolated XDP attach matrix, local XDP and TC traffic benchmarks, one generated
 perf_event loader lifecycle latency check, a perf_event page-fault counter
 workload, a ringbuf event-emission workload, a direct tcp-congestion struct_ops
 load/attach/detach compatibility check, a loopback TCP workload through selected
-BPF tcp-congestion algorithms, a local struct_ops skeleton build repair, and a
-broader 23-case static negative corpus. It now also includes a longer XDP/TC
-traffic stress rerun.
+BPF tcp-congestion algorithms, a callback-flag workload for cong_avoid and
+cwnd_event, a local struct_ops skeleton build repair, and a broader 23-case
+static negative corpus. It now also includes a longer XDP/TC traffic stress
+rerun.
 It is closer to a top-systems weak accept, but still not there. The main
 remaining gap is representative runtime evidence across scheduler-extension or
-callback-instrumented struct_ops, generated-dispatch-loop throughput beyond one
+broader callback-level struct_ops behavior, generated-dispatch-loop throughput beyond one
 perf_event lifecycle loader workload, broader skeleton version coverage and
 compiler integration, and non-local or longer-duration deployment methodology.
 
@@ -47,6 +48,10 @@ compiler integration, and non-local or longer-duration deployment methodology.
 - Added `experiments/run_struct_ops_workload.py`, which selects the generated
   and hand-written BPF tcp-congestion algorithms on loopback TCP sender sockets,
   transfers 1MiB, and requires byte-count and detach success.
+- Added `experiments/run_struct_ops_callback_workload.py`, which instruments
+  generated and hand-written tcp-congestion callbacks with BPF map flags,
+  transfers 4MiB over loopback TCP, and requires cong_avoid plus cwnd_event to
+  be reached before detach.
 - Added `experiments/run_traffic_stress.py`, which reruns matched XDP and TC
   pass/count traffic checks for three 5s trials per variant while preserving
   the headline 1s summaries.
@@ -57,14 +62,14 @@ compiler integration, and non-local or longer-duration deployment methodology.
   including 22 expected rejections across lifecycle, signature, map, type,
   symbol, config, ringbuf, and safety categories.
 - Updated the paper-number generator, paper, README, and research plan so the
-  new verifier, attach, XDP traffic, TC traffic, perf_event loader latency, and
+  verifier, attach, XDP traffic, TC traffic, perf_event loader latency, and
   perf_event counter/ringbuf/struct_ops/static-check results are generated from
   checked-in JSON summaries.
 
 ## Remaining Experiments For Weak-Accept Bar
 
 1. Sustained matched C/libbpf runtime baselines for scheduler-extension or
-   callback-instrumented struct_ops programs, broader skeleton version coverage
+   broader callback-level struct_ops programs, broader skeleton version coverage
    with compiler-integrated generation, plus broader perf_event event types and
    generated-dispatch-loop throughput.
 2. Larger XDP and TC stress runs using isolated network

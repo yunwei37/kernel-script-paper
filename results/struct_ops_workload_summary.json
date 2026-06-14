@@ -66,16 +66,16 @@
         1
       ],
       "elapsed_sec_samples": [
-        0.035235,
-        0.035501,
-        0.029526,
-        0.03393,
-        0.038885,
-        0.027451,
-        0.02774,
-        0.027846,
-        0.033486,
-        0.032925
+        0.036066,
+        0.037337,
+        0.041489,
+        0.03874,
+        0.039038,
+        0.040123,
+        0.030076,
+        0.029969,
+        0.039937,
+        0.038566
       ],
       "implementation": "kernelscript",
       "load_ok_samples": [
@@ -91,8 +91,8 @@
         1
       ],
       "map_name": "minimal_congestion_control",
-      "median_elapsed_sec": 0.033205,
-      "median_mib_per_sec": 30.117642,
+      "median_elapsed_sec": 0.038653,
+      "median_mib_per_sec": 25.871344,
       "name": "ks_generated",
       "object": "results/build/struct_ops_workload/kernelscript/struct_ops_simple.ebpf.o",
       "oracle_passed": true,
@@ -186,16 +186,16 @@
         1
       ],
       "elapsed_sec_samples": [
-        0.034671,
-        0.034659,
-        0.033654,
-        0.035229,
-        0.040356,
-        0.032648,
-        0.032696,
-        0.02785,
-        0.026556,
-        0.030876
+        0.03865,
+        0.025949,
+        0.0317,
+        0.031775,
+        0.039756,
+        0.032874,
+        0.030426,
+        0.035629,
+        0.03506,
+        0.040613
       ],
       "implementation": "handwritten_c",
       "load_ok_samples": [
@@ -211,8 +211,8 @@
         1
       ],
       "map_name": "ks_paper_cc",
-      "median_elapsed_sec": 0.033175,
-      "median_mib_per_sec": 30.149465,
+      "median_elapsed_sec": 0.033967,
+      "median_mib_per_sec": 29.470855,
       "name": "c_libbpf",
       "object": "results/build/struct_ops_workload/handwritten/struct_ops_tcp_cc.o",
       "oracle_passed": true,

@@ -14,6 +14,10 @@
 #include <sys/wait.h>
 #include <unistd.h>
 
+#define CALLBACK_SLOTS 5
+#define CALLBACK_CONG_AVOID 2
+#define CALLBACK_CWND_EVENT 4
+
 static int set_memlock_rlimit(void) {
     struct rlimit rlim = {RLIM_INFINITY, RLIM_INFINITY};
     return setrlimit(RLIMIT_MEMLOCK, &rlim);
@@ -185,20 +189,77 @@ static int run_tcp_workload(const char *cc_name, size_t bytes, uint64_t *receive
     return WIFEXITED(status) && WEXITSTATUS(status) == 0 ? 0 : 1;
 }
 
+static int reset_callback_flags(struct bpf_map *map) {
+    int map_fd = bpf_map__fd(map);
+
+    for (__u32 key = 0; key < CALLBACK_SLOTS; key++) {
+        __u32 zero = 0;
+
+        if (bpf_map_update_elem(map_fd, &key, &zero, BPF_ANY) != 0) {
+            fprintf(stderr, "reset callback flag %u failed: %s\n", key, strerror(errno));
+            return -1;
+        }
+    }
+
+    return 0;
+}
+
+static int print_callback_flags(struct bpf_map *map, int *any_out, int *positive_slots_out, int *required_out) {
+    int map_fd = bpf_map__fd(map);
+    int any = 0;
+    int positive_slots = 0;
+    int saw_cong_avoid = 0;
+    int saw_cwnd_event = 0;
+
+    for (__u32 key = 0; key < CALLBACK_SLOTS; key++) {
+        __u32 value = 0;
+
+        if (bpf_map_lookup_elem(map_fd, &key, &value) != 0) {
+            fprintf(stderr, "lookup callback flag %u failed: %s\n", key, strerror(errno));
+            return -1;
+        }
+        printf("callback_flag_%u=%u\n", key, value);
+        if (value != 0) {
+            any = 1;
+            positive_slots++;
+        }
+        if (key == CALLBACK_CONG_AVOID && value != 0) {
+            saw_cong_avoid = 1;
+        }
+        if (key == CALLBACK_CWND_EVENT && value != 0) {
+            saw_cwnd_event = 1;
+        }
+    }
+
+    *any_out = any;
+    *positive_slots_out = positive_slots;
+    *required_out = saw_cong_avoid && saw_cwnd_event;
+    printf("callback_any=%d\n", any);
+    printf("callback_positive_slots=%d\n", positive_slots);
+    printf("callback_required=%d\n", *required_out);
+    return 0;
+}
+
 int main(int argc, char **argv) {
     const char *obj_path;
     const char *map_name;
     const char *cc_name;
+    const char *callback_map_name = NULL;
     size_t bytes;
     struct bpf_object *obj = NULL;
     struct bpf_map *map = NULL;
+    struct bpf_map *callback_map = NULL;
     struct bpf_link *link = NULL;
     uint64_t received = 0;
     int workload_rc;
     int destroy_rc = 0;
+    int callback_any = 1;
+    int callback_required = 1;
+    int callback_positive_slots = 0;
+    int callback_map_rc = 0;
 
-    if (argc != 5) {
-        fprintf(stderr, "usage: %s OBJ STRUCT_OPS_MAP TCP_CC_NAME BYTES\n", argv[0]);
+    if (argc != 5 && argc != 6) {
+        fprintf(stderr, "usage: %s OBJ STRUCT_OPS_MAP TCP_CC_NAME BYTES [CALLBACK_FLAGS_MAP]\n", argv[0]);
         return 2;
     }
 
@@ -206,6 +267,10 @@ int main(int argc, char **argv) {
     map_name = argv[2];
     cc_name = argv[3];
     bytes = (size_t)strtoull(argv[4], NULL, 10);
+    if (argc == 6) {
+        callback_map_name = argv[5];
+        callback_any = 0;
+    }
     if (bytes == 0) {
         fprintf(stderr, "BYTES must be positive\n");
         return 2;
@@ -234,6 +299,20 @@ int main(int argc, char **argv) {
         return 1;
     }
 
+    if (callback_map_name) {
+        callback_map = bpf_object__find_map_by_name(obj, callback_map_name);
+        printf("callback_map_found=%d\n", callback_map ? 1 : 0);
+        if (!callback_map) {
+            fprintf(stderr, "callback flags map not found: %s\n", callback_map_name);
+            bpf_object__close(obj);
+            return 1;
+        }
+        if (reset_callback_flags(callback_map) != 0) {
+            bpf_object__close(obj);
+            return 1;
+        }
+    }
+
     link = bpf_map__attach_struct_ops(map);
     long link_err = libbpf_get_error(link);
     printf("attach_ok=%d\n", link_err ? 0 : 1);
@@ -249,6 +328,18 @@ int main(int argc, char **argv) {
     printf("bytes_received=%llu\n", (unsigned long long)received);
     printf("workload_ok=%d\n", workload_rc == 0 && received == bytes ? 1 : 0);
 
+    if (callback_map) {
+        callback_map_rc = print_callback_flags(
+            callback_map,
+            &callback_any,
+            &callback_positive_slots,
+            &callback_required
+        );
+        if (callback_map_rc != 0) {
+            workload_rc = 1;
+        }
+    }
+
     destroy_rc = bpf_link__destroy(link);
     printf("detach_ok=%d\n", destroy_rc == 0 ? 1 : 0);
     if (destroy_rc != 0) {
@@ -257,5 +348,5 @@ int main(int argc, char **argv) {
     }
 
     bpf_object__close(obj);
-    return workload_rc == 0 && received == bytes && destroy_rc == 0 ? 0 : 1;
+    return workload_rc == 0 && received == bytes && destroy_rc == 0 && callback_required ? 0 : 1;
 }

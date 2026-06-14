@@ -1,6 +1,6 @@
 Last updated: 2026-06-13
 Stage at update: experiment-design
-Source/command: top-systems experiment-design follow-up after isolated XDP attach matrix
+Source/command: top-systems experiment-design follow-up after struct_ops callback workload
 
 # Experiment Plan: KernelScript Paper
 
@@ -25,8 +25,8 @@ runtime behavior.
 |----|-------|-------|------------------------|--------|
 | C1 | Unified source centralizes eBPF project structure. | Repository examples and generated artifacts. | Build matrix, feature coverage, SLOC expansion. | partial |
 | C2 | Selected invalid programs are rejected before load/attach. | Covered static checks. | Unit/static check corpus. | partial |
-| C3 | Generated eBPF objects remain compatible with the local kernel verifier, can attach for an XDP subset, and perf_event/ringbuf/struct_ops examples can complete local lifecycle, object-level, workload, or generated-build compatibility checks. | Local kernel/toolchain, generated repository examples, verifier-clean single-section XDP subset, perf_event examples, one ringbuf XDP object workload, one tcp-congestion struct_ops object and loopback TCP workload, and two generated struct_ops userspace build repairs. | Strict verifier matrix, isolated XDP attach matrix, perf_event generated-loader and counter workloads, ringbuf submitted/received/drop oracle, struct_ops load/attach/detach and TCP socket workload oracles, and skeleton build-repair oracle. | partial |
-| C4 | The observed XDP count runtime gap is caused by a specific map-update lowering choice, and generated objects can run matched local workloads for XDP, TC, perf_event counters, ringbuf emission, and tcp-congestion struct_ops checks. | XDP array-map count mechanism; local XDP/TC pass/count traffic including one longer stress rerun, perf_event page-fault counter, XDP ringbuf emission, tcp-congestion struct_ops load/attach/detach and loopback TCP transfer, and local struct_ops generated-build repair only. | Hand-written C/eBPF baseline, compiler-source patch ablation, map-count correctness oracle, traffic and stress results, perf_event counter result, ringbuf event-rate/loss result, struct_ops direct compatibility, TCP workload, and skeleton repair results. | partial |
+| C3 | Generated eBPF objects remain compatible with the local kernel verifier, can attach for an XDP subset, and perf_event/ringbuf/struct_ops examples can complete local lifecycle, object-level, workload, callback-reachability, or generated-build compatibility checks. | Local kernel/toolchain, generated repository examples, verifier-clean single-section XDP subset, perf_event examples, one ringbuf XDP object workload, one tcp-congestion struct_ops object with loopback TCP and callback-flag workloads, and two generated struct_ops userspace build repairs. | Strict verifier matrix, isolated XDP attach matrix, perf_event generated-loader and counter workloads, ringbuf submitted/received/drop oracle, struct_ops load/attach/detach, TCP socket workload, callback-flag, and skeleton build-repair oracles. | partial |
+| C4 | The observed XDP count runtime gap is caused by a specific map-update lowering choice, and generated objects can run matched local workloads for XDP, TC, perf_event counters, ringbuf emission, and tcp-congestion struct_ops checks. | XDP array-map count mechanism; local XDP/TC pass/count traffic including one longer stress rerun, perf_event page-fault counter, XDP ringbuf emission, tcp-congestion struct_ops load/attach/detach, loopback TCP transfer, callback-flag reachability for cong_avoid/cwnd_event, and local struct_ops generated-build repair only. | Hand-written C/eBPF baseline, compiler-source patch ablation, map-count correctness oracle, traffic and stress results, perf_event counter result, ringbuf event-rate/loss result, struct_ops direct compatibility, TCP workload, callback-flag workload, and skeleton repair results. | partial |
 
 ## System-Under-Test Model
 
@@ -39,8 +39,9 @@ runtime behavior.
   microbenchmarks, XDP and TC traffic over veth/netns, perf_event loader
   lifecycle latency, longer XDP/TC traffic stress, perf_event page-fault counter
   workload, ringbuf event-emission workload, direct tcp-congestion struct_ops
-  load/attach/detach compatibility, loopback TCP workload for tcp-congestion
-  struct_ops, and version-aware struct_ops skeleton build repair.
+  load/attach/detach compatibility, loopback TCP workload and callback flags
+  for tcp-congestion struct_ops, and version-aware struct_ops skeleton build
+  repair.
 - Observability: compile logs, verifier logs, iproute2 attach state, bpftool map
   lookups, iperf3 JSON.
 - Assumptions: local host is a valid reproducibility target but not a general
@@ -63,7 +64,8 @@ runtime behavior.
 | B11 | C4 | Longer XDP/TC traffic stress | KS vs C/eBPF | receiver Gb/s, map Mpps, retransmits | iperf3 JSON plus positive map count | Runtime paragraph | done |
 | B12 | C3 | Struct_ops skeleton repair | Generated userspace before/after repair | build status, removed assignments, header support | repaired generated userspace build status | Runtime paragraph | done |
 | B13 | C3/C4 | Struct_ops TCP workload | KS vs C/libbpf | TCP algorithm selection, bytes transferred, detach status | socket-level TCP_CONGESTION and byte-count oracle | Runtime paragraph | done |
-| B14 | C3/C4 | Scheduler-extension or callback-level struct_ops | KS vs C/libbpf | scheduler behavior or callback counters | workload-specific checker | Future table | planned |
+| B14 | C3/C4 | Callback-flag tcp-congestion struct_ops workload | KS vs C/libbpf | TCP algorithm selection, bytes transferred, required callback flags | cong_avoid and cwnd_event flags set by workload | Runtime paragraph | done |
+| B15 | C3/C4 | Scheduler-extension or broader callback-level struct_ops | KS vs C/libbpf | scheduler behavior or broader callback counters | workload-specific checker | Future table | planned |
 
 ## Run Order
 
@@ -81,7 +83,8 @@ runtime behavior.
 | R009 | supplement | Longer XDP/TC traffic stress rerun | `./experiments/run_traffic_stress.py` | 3 trials, 5s TCP by default | all XDP/TC pass/count stress oracles pass | medium | done |
 | R010 | supplement | Version-aware struct_ops skeleton repair | `./experiments/run_struct_ops_skeleton_repair.py` | 2 generated examples | original generated userspace failures are repaired when local libbpf lacks map-link support | low | done |
 | R011 | supplement | Loopback TCP struct_ops workload | `./experiments/run_struct_ops_workload.py` | 10 trials, 1MiB per variant | generated and C/eBPF objects are selected with TCP_CONGESTION, transfer all bytes, and detach | low | done |
-| R012 | supplement | Scheduler-extension or callback-level struct_ops baseline | to be implemented | 10 trials | matched C/libbpf exists and reports scheduler behavior or per-callback counters | medium | planned |
+| R012 | supplement | Callback-flag tcp-congestion struct_ops workload | `./experiments/run_struct_ops_callback_workload.py` | 10 trials, 4MiB per variant | generated and C/eBPF objects transfer all bytes and set cong_avoid plus cwnd_event flags | low | done |
+| R013 | supplement | Scheduler-extension or broader callback-level struct_ops baseline | to be implemented | 10 trials | matched C/libbpf exists and reports scheduler behavior or broader per-callback behavior | medium | planned |
 
 ## Tracker Handoff
 
@@ -112,8 +115,8 @@ runtime behavior.
   traffic runs plus a longer stress rerun; perf_event software and hardware
   counters for loader lifecycle; page-fault workload for perf_event counter
   runs; BPF_PROG_TEST_RUN plus ring-buffer consumption for ringbuf event runs;
-  direct libbpf load/attach/detach and loopback TCP socket transfer for
-  tcp-congestion struct_ops objects;
+  direct libbpf load/attach/detach, loopback TCP socket transfer, and
+  callback-flag reads for tcp-congestion struct_ops objects;
   generated userspace rebuild before and after skeleton header repair for two
   struct_ops examples.
 - Data/traces: JSON/CSV summaries plus raw logs under `results/logs/`.
@@ -126,10 +129,11 @@ runtime behavior.
   effort.
 - The XDP and TC traffic experiments are local-host evidence, not NIC-rate
   benchmarks.
-- Scheduler-extension struct_ops, callback-level TCP struct_ops instrumentation,
-  broader libbpf-version coverage for skeleton generation, broader perf_event
-  workloads, broader generated-dispatch-loop throughput, and larger or non-local
-  stress runs remain necessary before claiming general runtime equivalence.
+- Scheduler-extension struct_ops, broader callback-level TCP behavior beyond
+  cong_avoid/cwnd_event flags, broader libbpf-version coverage for skeleton
+  generation, broader perf_event workloads, broader generated-dispatch-loop
+  throughput, and larger or non-local stress runs remain necessary before
+  claiming general runtime equivalence.
 
 ## Claim Gate After Results
 
@@ -137,5 +141,5 @@ runtime behavior.
 |-------|------------------|---------|-------------------|
 | C1 | `results/evaluation_summary.json`, `results/examples_summary.csv` | partial | Centralizes generated project structure for repository examples. |
 | C2 | `results/static_checks_summary.json` | partial | Rejects 22 selected invalid programs before load/attach across lifecycle, signature, map, type, symbol, config, ringbuf, and safety categories. |
-| C3 | `results/verifier_matrix_summary.json`, `results/attach_matrix_summary.json`, `results/perf_event_loader_summary.json`, `results/perf_event_counter_summary.json`, `results/ringbuf_workload_summary.json`, `results/struct_ops_compat_summary.json`, `results/struct_ops_workload_summary.json`, `results/struct_ops_skeleton_repair_summary.json` | partial | Most generated build-success objects load; verifier-clean single-section XDP objects attach; one generated perf_event loader completes 20 attach/read/detach trials with invocation timing; perf_event counter objects run a page-fault workload; ringbuf objects deliver 50000 events/trial with zero drops; tcp-congestion struct_ops objects load, attach, and detach in 3/3 direct libbpf trials; the generated and C/eBPF tcp-congestion objects each complete 10/10 loopback TCP workload trials; the two generated struct_ops userspace build failures repair to 2/2 on this host. |
-| C4 | `results/compiler_patch_ablation_summary.json`, `results/xdp_traffic_summary.json`, `results/tc_traffic_summary.json`, `results/traffic_stress_summary.json`, `results/perf_event_counter_summary.json`, `results/ringbuf_workload_summary.json`, `results/struct_ops_compat_summary.json`, `results/struct_ops_workload_summary.json`, `results/struct_ops_skeleton_repair_summary.json` | partial | XDP count gap is tied to map-update lowering; local checks cover XDP and TC pass/count plus a longer stress rerun, a perf_event counter workload, ringbuf event emission, direct tcp-congestion struct_ops load/attach/detach compatibility, a loopback TCP struct_ops workload, and a local struct_ops skeleton build repair, but broader runtime equivalence remains unproven. |
+| C3 | `results/verifier_matrix_summary.json`, `results/attach_matrix_summary.json`, `results/perf_event_loader_summary.json`, `results/perf_event_counter_summary.json`, `results/ringbuf_workload_summary.json`, `results/struct_ops_compat_summary.json`, `results/struct_ops_workload_summary.json`, `results/struct_ops_callback_workload_summary.json`, `results/struct_ops_skeleton_repair_summary.json` | partial | Most generated build-success objects load; verifier-clean single-section XDP objects attach; one generated perf_event loader completes 20 attach/read/detach trials with invocation timing; perf_event counter objects run a page-fault workload; ringbuf objects deliver 50000 events/trial with zero drops; tcp-congestion struct_ops objects load, attach, and detach in 3/3 direct libbpf trials; the generated and C/eBPF tcp-congestion objects each complete 10/10 loopback TCP workload trials and 10/10 callback-flag trials for cong_avoid/cwnd_event; the two generated struct_ops userspace build failures repair to 2/2 on this host. |
+| C4 | `results/compiler_patch_ablation_summary.json`, `results/xdp_traffic_summary.json`, `results/tc_traffic_summary.json`, `results/traffic_stress_summary.json`, `results/perf_event_counter_summary.json`, `results/ringbuf_workload_summary.json`, `results/struct_ops_compat_summary.json`, `results/struct_ops_workload_summary.json`, `results/struct_ops_callback_workload_summary.json`, `results/struct_ops_skeleton_repair_summary.json` | partial | XDP count gap is tied to map-update lowering; local checks cover XDP and TC pass/count plus a longer stress rerun, a perf_event counter workload, ringbuf event emission, direct tcp-congestion struct_ops load/attach/detach compatibility, a loopback TCP struct_ops workload, callback flags for cong_avoid/cwnd_event, and a local struct_ops skeleton build repair, but broader runtime equivalence remains unproven. |

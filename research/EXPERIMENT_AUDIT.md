@@ -1,6 +1,6 @@
 Last updated: 2026-06-13
 Stage at update: audit
-Source/command: manual/fallback experiment audit after struct_ops workload evidence
+Source/command: manual/fallback experiment audit after struct_ops callback workload evidence
 Completeness: complete
 
 # Experiment Audit
@@ -18,7 +18,7 @@ general runtime-equivalence or production-deployment claim.
 | Check | Evidence | Result |
 |---|---|---|
 | Required result files exist | Python audit over `results/*.json` inputs used by `experiments/update_paper_numbers.py` | pass |
-| Required status fields are clean | `smoke`, `microbench`, `static`, `lowering`, `compiler_patch`, `verifier`, `attach`, `xdp_traffic`, `tc_traffic`, `traffic_stress`, `perf_event_loader`, `perf_event_counter`, `ringbuf`, `struct_ops`, `struct_ops_workload`, and `struct_ops_skeleton_repair` summaries all report `ok` | pass |
+| Required status fields are clean | `smoke`, `microbench`, `static`, `lowering`, `compiler_patch`, `verifier`, `attach`, `xdp_traffic`, `tc_traffic`, `traffic_stress`, `perf_event_loader`, `perf_event_counter`, `ringbuf`, `struct_ops`, `struct_ops_workload`, `struct_ops_callback_workload`, and `struct_ops_skeleton_repair` summaries all report `ok` | pass |
 | Example corpus present | `results/examples_summary.json` contains 44 rows | pass |
 | Paper macro coverage | Parsed `paper/kernelscript-paper.tex` and `results/paper_numbers.tex`: all used `KS...` macros are defined | pass |
 | Paper-number reproducibility | `./experiments/update_paper_numbers.py && git diff --exit-code -- results/paper_numbers.tex` | pass |
@@ -50,6 +50,7 @@ The audit checked these paper-number inputs:
 - `results/ringbuf_workload_summary.json`
 - `results/struct_ops_compat_summary.json`
 - `results/struct_ops_workload_summary.json`
+- `results/struct_ops_callback_workload_summary.json`
 - `results/struct_ops_skeleton_repair_summary.json`
 
 ## Number-To-Paper Consistency
@@ -82,6 +83,8 @@ build completes from those macros.
 - Struct_ops workload results require socket-level TCP congestion-control
   algorithm selection, full loopback byte transfer, client success, and detach
   success for generated and C/eBPF tcp-congestion objects.
+- Struct_ops callback workload results require the same loopback byte-transfer
+  oracle plus callback-map flags for cong_avoid and cwnd_event before detach.
 - Struct_ops skeleton repair results require the original generated userspace
   failures to match the local map-link field mismatch and the repaired
   generated userspace projects to build successfully.
@@ -101,6 +104,7 @@ equivalence, NIC-rate performance, scheduler-extension struct_ops portability,
 or full generated-dispatch-loop throughput. It also labels traffic results as
 local-host veth evidence, labels the direct struct_ops result as object
 compatibility, labels the struct_ops workload as socket-level loopback evidence,
+labels the callback workload as reachability for cong_avoid/cwnd_event only,
 and labels the skeleton repair as a local generated-userspace build repair
 rather than cross-version portability.
 
@@ -113,11 +117,12 @@ rather than cross-version portability.
    but the perf-event counter and ring-buffer workloads use shared libbpf
    runners, so they do not measure broader generated userspace dispatch-loop
    throughput.
-3. The struct_ops checks cover tcp-congestion object load/attach/detach and a
-   loopback socket workload only, and the skeleton repair covers local generated
-   userspace builds only. They do not cover scheduler-extension struct_ops,
-   callback-level TCP instrumentation, running the repaired binaries, or broad
-   libbpf-version portability.
+3. The struct_ops checks cover tcp-congestion object load/attach/detach, a
+   loopback socket workload, and cong_avoid/cwnd_event callback flags only, and
+   the skeleton repair covers local generated userspace builds only. They do
+   not cover scheduler-extension struct_ops, broader tcp-congestion callback
+   behavior, running the repaired binaries, or broad libbpf-version
+   portability.
 4. The generated-structure result is a corpus artifact result, not a
    developer-effort study against an expert C implementation.
 

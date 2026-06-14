@@ -1,6 +1,6 @@
 Last updated: 2026-06-13
 Stage at update: analyze
-Source/command: `./experiments/run_xdp_traffic.py`, `./experiments/run_tc_traffic.py`, `./experiments/run_traffic_stress.py`, `./experiments/run_perf_event_loader.py`, `./experiments/run_perf_event_counter.py`, `./experiments/run_ringbuf_workload.py`, `./experiments/run_struct_ops_workload.py`, and checked-in result summaries
+Source/command: `./experiments/run_xdp_traffic.py`, `./experiments/run_tc_traffic.py`, `./experiments/run_traffic_stress.py`, `./experiments/run_perf_event_loader.py`, `./experiments/run_perf_event_counter.py`, `./experiments/run_ringbuf_workload.py`, `./experiments/run_struct_ops_workload.py`, `./experiments/run_struct_ops_callback_workload.py`, and checked-in result summaries
 
 # Results Summary
 
@@ -11,8 +11,9 @@ traffic-driven XDP and TC checks, one generated perf_event loader lifecycle
 latency check, one perf_event page-fault counter workload, and one ringbuf
 event-emission workload, direct tcp-congestion struct_ops load/attach/detach
 compatibility, a loopback TCP workload through selected BPF tcp-congestion
-algorithms, a version-aware struct_ops skeleton build repair, and a longer
-XDP/TC traffic stress rerun in addition to BPF_PROG_TEST_RUN microbenchmarks. On
+algorithms, a callback-flag workload for cong_avoid/cwnd_event reachability, a
+version-aware struct_ops skeleton build repair, and a longer XDP/TC traffic
+stress rerun in addition to BPF_PROG_TEST_RUN microbenchmarks. On
 fresh veth/netns
 pairs with iperf3 TCP, KernelScript and hand-written C/eBPF pass/count objects
 all pass the traffic oracles. XDP count medians are 17.4Gb/s for KernelScript
@@ -29,7 +30,9 @@ check loads, attaches, and detaches both generated and C/eBPF tcp-congestion
 objects in 3/3 privileged trials without using generated skeletons. The
 struct_ops TCP workload selects the registered generated and C/eBPF BPF
 congestion-control algorithms on loopback sender sockets, transfers 1MiB, and
-detaches in 10/10 trials for both variants. The
+detaches in 10/10 trials for both variants. The callback-flag workload
+transfers 4MiB and reaches cong_avoid plus cwnd_event in 10/10 trials for both
+generated and C/eBPF variants. The
 struct_ops skeleton repair changes the two original generated userspace build
 failures from 0/2 to 2/2 repaired builds on this host by removing 2
 version-incompatible map-link assignments. The stress
@@ -53,6 +56,7 @@ pass, with XDP count medians of 17.8 versus 18.1Gb/s and TC count medians of
 | R009 | `results/traffic_stress_summary.json` | ok | Longer 3 x 5s XDP/TC traffic stress rerun passes all oracles; XDP count gap is 2.0%, TC count gap is 5.0% in this local setup. |
 | R010 | `results/struct_ops_skeleton_repair_summary.json` | ok | Original generated struct_ops userspace builds are 0/2; after a local version-aware skeleton header repair, 2/2 generated userspace projects build. |
 | R011 | `results/struct_ops_workload_summary.json` | ok | Generated and C/eBPF tcp-congestion objects each complete 10/10 loopback TCP workload trials with algorithm selection, full byte transfer, and detach success. |
+| R012 | `results/struct_ops_callback_workload_summary.json` | ok | Generated and C/eBPF tcp-congestion objects each complete 10/10 4MiB loopback TCP workload trials and set cong_avoid plus cwnd_event flags in 10/10 trials. |
 
 ## Anomalies And Negative Results
 
@@ -67,14 +71,15 @@ pass, with XDP count medians of 17.8 versus 18.1Gb/s and TC count medians of
   KernelScript count trial, so the stress result supports stability/oracle
   claims more strongly than precise throughput ranking.
 - The struct_ops workload exercises socket-level TCP algorithm selection and
-  byte transfer, but it does not instrument individual congestion-control
-  callbacks, measure production TCP performance, or cover scheduler-extension
-  struct_ops. The skeleton repair validates one local generated-userspace build
-  fix, but it does not run the generated binaries or prove portability across
-  libbpf versions. The perf_event counter, ringbuf, and direct struct_ops runs
-  are object checks through a shared libbpf runner, and the generated-loader
-  latency check is one perf_event lifecycle workload rather than a broad
-  generated-dispatch-loop throughput study.
+  byte transfer, and the callback-flag workload confirms cong_avoid/cwnd_event
+  reachability for that loopback transfer. It still does not measure production
+  TCP performance, cover every tcp-congestion callback, or cover
+  scheduler-extension struct_ops. The skeleton repair validates one local
+  generated-userspace build fix, but it does not run the generated binaries or
+  prove portability across libbpf versions. The perf_event counter, ringbuf,
+  and direct struct_ops runs are object checks through a shared libbpf runner,
+  and the generated-loader latency check is one perf_event lifecycle workload
+  rather than a broad generated-dispatch-loop throughput study.
 
 ## Figure/Table Candidates
 
@@ -98,6 +103,7 @@ pass, with XDP count medians of 17.8 versus 18.1Gb/s and TC count medians of
 - `results/ringbuf_workload_summary.json`
 - `results/struct_ops_compat_summary.json`
 - `results/struct_ops_workload_summary.json`
+- `results/struct_ops_callback_workload_summary.json`
 - `results/struct_ops_skeleton_repair_summary.json`
 - `results/traffic_stress_summary.json`
 - `results/xdp_traffic_stress_summary.json`

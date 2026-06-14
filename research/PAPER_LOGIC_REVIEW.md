@@ -17,8 +17,8 @@ macro where it should use success macros, zero-drop ring-buffer language lacked
 trial and variant scope, and the methodology scattered the roles of generated
 objects, generated loaders, shared runners, baselines, and oracles. A later
 delegated review also found stale research-state artifacts after adding the
-struct_ops skeleton repair, later followed by a new loopback struct_ops TCP
-workload result.
+struct_ops skeleton repair, later followed by loopback struct_ops TCP workload
+and callback-flag workload results.
 
 ## Must-Fix Findings Applied
 
@@ -53,6 +53,9 @@ workload result.
 9. Integrated the loopback struct_ops TCP workload as socket-level algorithm
    selection and byte-transfer evidence, while preserving the non-production
    throughput scope.
+10. Integrated the callback-flag struct_ops workload as cong_avoid/cwnd_event
+    reachability evidence, while preserving the limits around production TCP
+    performance, scheduler-extension struct_ops, and broader callback behavior.
 
 ## Remaining Accepted Limits
 
@@ -63,10 +66,10 @@ workload result.
   shared libbpf runners, so they do not measure broader generated userspace
   dispatch-loop throughput.
 - Struct_ops evidence covers tcp-congestion object load/attach/detach, a
-  loopback TCP socket workload, and a local generated-userspace skeleton build
-  repair, not scheduler-extension struct_ops, callback-level TCP
-  instrumentation, running repaired generated binaries, production TCP
-  performance, or broad libbpf-version portability.
+  loopback TCP socket workload, cong_avoid/cwnd_event callback flags, and a
+  local generated-userspace skeleton build repair, not scheduler-extension
+  struct_ops, broader callback-level TCP behavior, running repaired generated
+  binaries, production TCP performance, or broad libbpf-version portability.
 - Generated-structure evidence is a corpus artifact result, not a developer
   effort study against expert-written C/libbpf.
 
@@ -74,6 +77,6 @@ workload result.
 
 The next scientific-strength gate is additional evidence rather than prose:
 broader generated-dispatch-loop throughput, scheduler-extension struct_ops,
-callback-level TCP instrumentation, upstream-integrated skeleton generation
+broader callback-level TCP behavior, upstream-integrated skeleton generation
 across libbpf versions, or non-local deployment/longer-duration workload
 evidence.

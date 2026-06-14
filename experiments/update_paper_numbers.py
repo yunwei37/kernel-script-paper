@@ -84,6 +84,22 @@ def yes_no(value: bool) -> str:
     return "yes" if value else "no"
 
 
+def latex_texttt(value: str) -> str:
+    escaped = value.replace("\\", r"\textbackslash{}").replace("_", r"\_")
+    return rf"\texttt{{{escaped}}}"
+
+
+def latex_join(values: list[str]) -> str:
+    formatted = [latex_texttt(value) for value in values]
+    if not formatted:
+        return "none"
+    if len(formatted) == 1:
+        return formatted[0]
+    if len(formatted) == 2:
+        return f"{formatted[0]} and {formatted[1]}"
+    return ", ".join(formatted[:-1]) + f", and {formatted[-1]}"
+
+
 def turbo_state(no_turbo: str) -> str:
     if no_turbo == "0":
         return "enabled"
@@ -113,6 +129,7 @@ def main() -> int:
     struct_ops = load_json("struct_ops_compat_summary.json")
     struct_ops_repair = load_json("struct_ops_skeleton_repair_summary.json")
     struct_ops_workload = load_json("struct_ops_workload_summary.json")
+    struct_ops_callback = load_json("struct_ops_callback_workload_summary.json")
 
     if unit.get("returncode") != 0 or unit.get("reported_failures") != 0:
         raise SystemExit("unit tests are not clean; refusing to generate paper numbers")
@@ -148,6 +165,8 @@ def main() -> int:
         raise SystemExit("struct_ops skeleton repair check did not complete successfully")
     if struct_ops_workload.get("status") != "ok":
         raise SystemExit("struct_ops workload check did not complete successfully")
+    if struct_ops_callback.get("status") != "ok":
+        raise SystemExit("struct_ops callback workload check did not complete successfully")
 
     content = ""
     content += macro("KSCommitShort", str(env["kernelscript_git_head"])[:7])
@@ -388,6 +407,29 @@ def main() -> int:
     content += macro("KSStructOpsWorkloadCElapsedMs", elapsed_ms(struct_ops_workload_rows["c_libbpf"]["median_elapsed_sec"]))
     content += macro("KSStructOpsWorkloadKsMiBps", f"{struct_ops_workload_rows['ks_generated']['median_mib_per_sec']:.1f}")
     content += macro("KSStructOpsWorkloadCMiBps", f"{struct_ops_workload_rows['c_libbpf']['median_mib_per_sec']:.1f}")
+    struct_ops_callback_rows = {row["name"]: row for row in struct_ops_callback["rows"]}
+    callback_flag_names = struct_ops_callback["flag_names"]
+    callback_cong_avoid = callback_flag_names.index("cong_avoid")
+    callback_cwnd_event = callback_flag_names.index("cwnd_event")
+    required_callback_flags = struct_ops_callback["required_callback_flags"]
+    content += macro("KSStructOpsCallbackTrials", struct_ops_callback["trials"])
+    content += macro("KSStructOpsCallbackBytes", struct_ops_callback["bytes_per_trial"])
+    content += macro("KSStructOpsCallbackMiB", f"{struct_ops_callback['bytes_per_trial'] / (1024 * 1024):.0f}")
+    content += macro("KSStructOpsCallbackRequired", latex_join(required_callback_flags))
+    content += macro("KSStructOpsCallbackKsOK", sum(struct_ops_callback_rows["ks_generated"]["workload_ok_samples"]))
+    content += macro("KSStructOpsCallbackCOK", sum(struct_ops_callback_rows["c_libbpf"]["workload_ok_samples"]))
+    content += macro("KSStructOpsCallbackKsOracleOK", sum(struct_ops_callback_rows["ks_generated"]["callback_oracle_samples"]))
+    content += macro("KSStructOpsCallbackCOracleOK", sum(struct_ops_callback_rows["c_libbpf"]["callback_oracle_samples"]))
+    content += macro("KSStructOpsCallbackKsCongAvoid", sum(struct_ops_callback_rows["ks_generated"]["callback_flags_by_slot"][callback_cong_avoid]))
+    content += macro("KSStructOpsCallbackCCongAvoid", sum(struct_ops_callback_rows["c_libbpf"]["callback_flags_by_slot"][callback_cong_avoid]))
+    content += macro("KSStructOpsCallbackKsCwndEvent", sum(struct_ops_callback_rows["ks_generated"]["callback_flags_by_slot"][callback_cwnd_event]))
+    content += macro("KSStructOpsCallbackCCwndEvent", sum(struct_ops_callback_rows["c_libbpf"]["callback_flags_by_slot"][callback_cwnd_event]))
+    content += macro("KSStructOpsCallbackKsDetachOK", sum(struct_ops_callback_rows["ks_generated"]["detach_ok_samples"]))
+    content += macro("KSStructOpsCallbackCDetachOK", sum(struct_ops_callback_rows["c_libbpf"]["detach_ok_samples"]))
+    content += macro("KSStructOpsCallbackKsElapsedMs", elapsed_ms(struct_ops_callback_rows["ks_generated"]["median_elapsed_sec"]))
+    content += macro("KSStructOpsCallbackCElapsedMs", elapsed_ms(struct_ops_callback_rows["c_libbpf"]["median_elapsed_sec"]))
+    content += macro("KSStructOpsCallbackKsMiBps", f"{struct_ops_callback_rows['ks_generated']['median_mib_per_sec']:.1f}")
+    content += macro("KSStructOpsCallbackCMiBps", f"{struct_ops_callback_rows['c_libbpf']['median_mib_per_sec']:.1f}")
 
     OUT.write_text(content, encoding="utf-8")
     return 0

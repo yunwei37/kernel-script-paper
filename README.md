@@ -31,6 +31,8 @@ evaluation scripts, generated results, and a paper draft.
   compatibility check against a hand-written C/eBPF baseline.
 - `experiments/run_struct_ops_workload.py`: loopback TCP workload using selected
   BPF tcp-congestion struct_ops algorithms.
+- `experiments/run_struct_ops_callback_workload.py`: loopback TCP workload that
+  verifies selected tcp-congestion callbacks are reached with BPF map flags.
 - `experiments/run_struct_ops_skeleton_repair.py`: version-aware generated
   struct_ops skeleton build repair for local libbpf header mismatches.
 - `experiments/run_compiler_patch_ablation.py`: applies a tracked
@@ -152,6 +154,13 @@ Run the optional struct_ops TCP workload check, which also requires `sudo -n`:
 ./experiments/run_struct_ops_workload.py
 ```
 
+Run the optional struct_ops callback workload check, which also requires
+`sudo -n`:
+
+```bash
+./experiments/run_struct_ops_callback_workload.py
+```
+
 Run the optional struct_ops skeleton repair check:
 
 ```bash
@@ -253,6 +262,11 @@ The current run evaluates KernelScript commit `ccb15b4` on Linux
   and C/eBPF tcp-congestion objects, selects the registered BPF algorithm on a
   loopback TCP sender socket, transfers 1MiB, and detaches. This is a local
   socket-level workload oracle, not a production TCP throughput claim.
+- Struct_ops callback workload: `run_struct_ops_callback_workload.py` attaches
+  callback-flag variants of the generated and C/eBPF tcp-congestion objects,
+  transfers 4MiB on loopback, and confirms `cong_avoid` plus `cwnd_event` are
+  reached in 10/10 trials for both variants. This is callback-reachability
+  evidence for this workload, not coverage of every TCP callback.
 - Compiler-patch lowering ablation: applying
   `experiments/patches/kernelscript-map-increment-lowering.patch` to a copied
   KernelScript compiler tree reduces the count object from 21 to 11
