@@ -10,14 +10,15 @@ perf_event loader lifecycle latency check, a perf_event page-fault counter
 workload, a ringbuf event-emission workload, a direct tcp-congestion struct_ops
 load/attach/detach compatibility check, a loopback TCP workload through selected
 BPF tcp-congestion algorithms, a callback-flag workload with clean and
-loss-injected reachability profiles, a local struct_ops skeleton build repair, and a broader 28-case
-static negative corpus. It now also includes a longer XDP/TC traffic stress
-rerun.
+loss-injected reachability profiles, a local struct_ops skeleton build repair,
+a scheduler-extension verifier diagnostic, and a broader 28-case static
+negative corpus. It now also includes a longer XDP/TC traffic stress rerun.
 It is closer to a top-systems weak accept, but still not there. The main
-remaining gap is representative runtime evidence across scheduler-extension or
-broader callback-level struct_ops behavior, generated-dispatch-loop throughput beyond one
-perf_event lifecycle loader workload, broader skeleton version coverage and
-compiler integration, and non-local or longer-duration deployment methodology.
+remaining gap is representative runtime evidence after fixing the generated
+scheduler-extension verifier gap, broader callback-level struct_ops behavior,
+generated-dispatch-loop throughput beyond one perf_event lifecycle loader
+workload, broader skeleton version coverage and compiler integration, and
+non-local or longer-duration deployment methodology.
 
 ## Completed In This Iteration
 
@@ -60,20 +61,25 @@ compiler integration, and non-local or longer-duration deployment methodology.
 - Added `experiments/run_struct_ops_skeleton_repair.py`, which detects the
   local libbpf skeleton map-link mismatch, removes two generated map-link
   assignments, and repairs both affected generated struct_ops userspace builds.
+- Added `experiments/run_sched_ext_verifier.py`, which compiles generated and
+  hand-written scheduler-extension struct_ops objects, uses verifier loadall
+  only, confirms the C/eBPF baseline pins 5 programs, records the generated
+  `struct_ops_task_arg_type` failure, and leaves sched_ext disabled.
 - Expanded `experiments/run_static_checks.py` to 28 deterministic cases,
   including 27 expected rejections across lifecycle, signature, map, type,
   symbol, config, helper-scope, kernel-context, perf-event group, ringbuf, and
   safety categories.
 - Updated the paper-number generator, paper, README, and research plan so the
   verifier, attach, XDP traffic, TC traffic, perf_event loader latency, and
-  perf_event counter/ringbuf/struct_ops/static-check results are generated from
-  checked-in JSON summaries.
+  perf_event counter/ringbuf/struct_ops/scheduler-extension/static-check
+  results are generated from checked-in JSON summaries.
 
 ## Remaining Experiments For Weak-Accept Bar
 
-1. Sustained matched C/libbpf runtime baselines for scheduler-extension or
-   broader callback-level struct_ops programs, broader skeleton version coverage
-   with compiler-integrated generation, plus broader perf_event event types and
+1. Fix the generated scheduler-extension struct_ops verifier gap, then add a
+   no-surprises scheduler workload baseline; also add broader callback-level
+   struct_ops programs, broader skeleton version coverage with
+   compiler-integrated generation, broader perf_event event types, and
    generated-dispatch-loop throughput.
 2. Larger XDP and TC stress runs using isolated network
    namespaces, `xdp-bench`, `pktgen`, a controlled packet generator, or a

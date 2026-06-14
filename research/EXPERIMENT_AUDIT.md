@@ -1,6 +1,6 @@
 Last updated: 2026-06-13
 Stage at update: audit
-Source/command: manual/fallback experiment audit after struct_ops callback workload evidence
+Source/command: manual/fallback experiment audit after scheduler-extension verifier diagnostic
 Completeness: complete
 
 # Experiment Audit
@@ -18,7 +18,7 @@ general runtime-equivalence or production-deployment claim.
 | Check | Evidence | Result |
 |---|---|---|
 | Required result files exist | Python audit over `results/*.json` inputs used by `experiments/update_paper_numbers.py` | pass |
-| Required status fields are clean | `smoke`, `microbench`, `static`, `lowering`, `compiler_patch`, `verifier`, `attach`, `xdp_traffic`, `tc_traffic`, `traffic_stress`, `perf_event_loader`, `perf_event_counter`, `ringbuf`, `struct_ops`, `struct_ops_workload`, `struct_ops_callback_workload`, and `struct_ops_skeleton_repair` summaries all report `ok` | pass |
+| Required status fields are clean | `smoke`, `microbench`, `static`, `lowering`, `compiler_patch`, `verifier`, `attach`, `xdp_traffic`, `tc_traffic`, `traffic_stress`, `perf_event_loader`, `perf_event_counter`, `ringbuf`, `struct_ops`, `struct_ops_workload`, `struct_ops_callback_workload`, `struct_ops_skeleton_repair`, and `sched_ext_verifier` summaries all report `ok` | pass |
 | Example corpus present | `results/examples_summary.json` contains 44 rows | pass |
 | Paper macro coverage | Parsed `paper/kernelscript-paper.tex` and `results/paper_numbers.tex`: all used `KS...` macros are defined | pass |
 | Paper-number reproducibility | `./experiments/update_paper_numbers.py && git diff --exit-code -- results/paper_numbers.tex` | pass |
@@ -52,6 +52,7 @@ The audit checked these paper-number inputs:
 - `results/struct_ops_workload_summary.json`
 - `results/struct_ops_callback_workload_summary.json`
 - `results/struct_ops_skeleton_repair_summary.json`
+- `results/sched_ext_verifier_summary.json`
 
 ## Number-To-Paper Consistency
 
@@ -90,6 +91,9 @@ build completes from those macros.
 - Struct_ops skeleton repair results require the original generated userspace
   failures to match the local map-link field mismatch and the repaired
   generated userspace projects to build successfully.
+- Scheduler-extension verifier diagnostic results require the matched C/eBPF
+  object to verifier-load and pin programs, record the generated-object failure
+  class when it fails, and confirm no scheduler attach is attempted.
 
 ## Metric And Normalization Review
 
@@ -107,8 +111,10 @@ or full generated-dispatch-loop throughput. It also labels traffic results as
 local-host veth evidence, labels the direct struct_ops result as object
 compatibility, labels the struct_ops workload as socket-level loopback evidence,
 labels the callback workload as clean and loss-injected local reachability
-evidence rather than full callback coverage, and labels the skeleton repair as
-a local generated-userspace build repair rather than cross-version portability.
+evidence rather than full callback coverage, labels the skeleton repair as a
+local generated-userspace build repair rather than cross-version portability,
+and labels the scheduler-extension result as a verifier diagnostic rather than
+scheduler workload evidence.
 
 ## Accepted Warnings
 
@@ -120,11 +126,13 @@ a local generated-userspace build repair rather than cross-version portability.
    runners, so they do not measure broader generated userspace dispatch-loop
    throughput.
 3. The struct_ops checks cover tcp-congestion object load/attach/detach, a
-   loopback socket workload, clean cong_avoid/cwnd_event callback flags, and
-   loss-injected ssthresh/cong_avoid/set_state/cwnd_event flags. The skeleton
-   repair covers local generated userspace builds only. These checks do not
-   cover scheduler-extension struct_ops, every tcp-congestion callback path,
-   running the repaired binaries, or broad libbpf-version portability.
+   loopback socket workload, clean cong_avoid/cwnd_event callback flags,
+   loss-injected ssthresh/cong_avoid/set_state/cwnd_event flags, and one
+   scheduler-extension verifier diagnostic where the C/eBPF baseline loads but
+   the generated object does not. The skeleton repair covers local generated
+   userspace builds only. These checks do not cover scheduler-extension workload
+   behavior, every tcp-congestion callback path, running the repaired binaries,
+   or broad libbpf-version portability.
 4. The generated-structure result is a corpus artifact result, not a
    developer-effort study against an expert C implementation.
 

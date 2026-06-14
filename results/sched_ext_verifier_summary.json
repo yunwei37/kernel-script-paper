@@ -1,0 +1,38 @@
+{
+  "attach_attempted": false,
+  "description": "sched_ext struct_ops verifier diagnostic without scheduler attachment",
+  "diagnosis": "generated_sched_ext_verifier_gap",
+  "rows": [
+    {
+      "failure_class": "struct_ops_task_arg_type",
+      "failure_excerpt": "libbpf: prog 'select_cpu': BPF program load failed: -EINVAL\nlibbpf: prog 'select_cpu': -- BEGIN PROG LOAD LOG --\n0: R1=ctx() R10=fp0\n; __s32 select_cpu(struct task_struct* p, __s32 prev_cpu, __u64 wake_flags) { @ sched_ext_simple.ebpf.c:16\n0: (bf) r6 = r1                       ; R1=ctx() R6_w=ctx()\n1: (b7) r1 = 0                        ; R1_w=0\n; __u8 direct = 0; @ sched_ext_simple.ebpf.c:18\n2: (73) *(u8 *)(r10 -1) = r1          ; R1_w=0 R10=fp0 fp-8=0???????\n3: (bf) r4 = r10                      ; R4_w=fp0 R10=fp0\n;  @ sched_ext_simple.ebpf.c:0\n4: (07) r4 += -1                      ; R4_w=fp-1\n; cpu = scx_bpf_select_cpu_dfl(p, prev_cpu, wake_flags, __unop_0); @ sched_ext_simple.ebpf.c:21\n5: (bf) r1 = r6                       ; R1_w=ctx() R6_w=ctx()\n6: (85) call scx_bpf_select_cpu_dfl#127190\narg#0 pointer type STRUCT task_struct must point to scalar, or struct with scalar\nprocessed 7 insns (limit 1000000) max_states_per_insn 0 total_states 0 peak_states 0 mark_read 0",
+      "implementation": "kernelscript",
+      "load_status": "failed",
+      "name": "ks_generated",
+      "object": "results/build/sched_ext_verifier/kernelscript/sched_ext_simple.ebpf.o",
+      "pinned_program_count": 0,
+      "program_count": 12,
+      "program_sections": "struct_ops/select_cpu struct_ops/enqueue struct_ops/dispatch struct_ops/runnable struct_ops/running struct_ops/stopping struct_ops/quiescent struct_ops/init_task struct_ops/exit_task struct_ops/enable struct_ops/init struct_ops/exit",
+      "returncode": 255
+    },
+    {
+      "failure_class": "",
+      "failure_excerpt": "",
+      "implementation": "handwritten_c",
+      "load_status": "ok",
+      "name": "c_libbpf",
+      "object": "results/build/sched_ext_verifier/handwritten/sched_ext_simple.o",
+      "pinned_program_count": 5,
+      "program_count": 5,
+      "program_sections": "struct_ops/select_cpu struct_ops/enqueue struct_ops/dispatch struct_ops/init struct_ops/exit",
+      "returncode": 0
+    }
+  ],
+  "sched_ext_enable_seq_after": "0",
+  "sched_ext_enable_seq_before": "0",
+  "sched_ext_nr_rejected_after": "0",
+  "sched_ext_nr_rejected_before": "0",
+  "sched_ext_state_after": "disabled",
+  "sched_ext_state_before": "disabled",
+  "status": "ok"
+}

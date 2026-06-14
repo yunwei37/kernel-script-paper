@@ -62,7 +62,10 @@ namespaces.  For struct\_ops, shared libbpf runners distinguish direct object
 load/attach/detach, loopback TCP byte-transfer behavior, callback reachability
 under clean and loss-trigger profiles, and a local skeleton-header repair that
 builds \KSStructOpsRepairBuildOK{}/\KSStructOpsRepairExamples{} affected
-generated userspace projects.  The results support an artifact/prototype
+generated userspace projects.  A scheduler-extension diagnostic adds a negative
+boundary: without attaching a scheduler, the hand-written C/eBPF object
+verifier-loads while the generated object fails in \texttt{select\_cpu}.  The
+results support an artifact/prototype
 claim: \tool{} centralizes recurring project structure for this repository
 corpus and exposes concrete compatibility limits, but it does not yet establish
 broad runtime equivalence or broad struct\_ops portability.
@@ -382,7 +385,7 @@ Project generation & Repository examples lowered to generated projects & Compile
 Early checks & Unit tests and targeted invalid programs & Dune and static-check harnesses & Test success and expected diagnostic categories & Selected cases, not soundness \\
 Compatibility & Generated objects and generated perf loader & Local kernel/toolchain & Pinned-program load criterion, attach state, loader attach/read/detach and invocation timing & Local host only \\
 Runtime sanity & Generated XDP, TC, perf-counter, and ring-buffer objects & Matched C/eBPF objects or shared libbpf runner & iperf3 JSON, positive map counts, perf-counter equality, submitted/received/drop counts & Local workloads only \\
-Struct\_ops compatibility & Generated tcp-congestion object and generated skeleton projects & Minimal C/eBPF object with same function set; installed libbpf header & Shared libbpf runner load/attach/detach; loopback TCP byte-transfer; clean and loss-injected callback flags; repaired userspace build status & Local object compatibility, socket workload, callback reachability for two clean functions and four loss-injected functions, and skeleton build repair only; no scheduler workload \\
+Struct\_ops compatibility & Generated tcp-congestion and scheduler-extension objects plus generated skeleton projects & Minimal C/eBPF objects with matched function sets and installed libbpf header & Shared libbpf runner load/attach/detach, loopback TCP byte-transfer, clean and loss-injected callback flags, scheduler-extension verifier diagnostic, and repaired userspace build status & Local tcp-congestion object compatibility, socket workload, callback reachability for two clean functions and four loss-injected functions, scheduler-extension load boundary, and skeleton build repair only, with no scheduler workload \\
 \bottomrule
 \end{tabular}
 \end{table*}
@@ -509,6 +512,25 @@ The script removes \KSStructOpsRepairRemovedAssignments{} assignments across
 the two examples.  This is a version-aware local build repair for the observed
 map-link mismatch, not a scheduler workload or a portability result across
 libbpf versions.
+
+\textbf{Scheduler-extension struct\_ops verifier diagnostic.}  To test whether
+the tcp-congestion struct\_ops result generalizes to scheduler extensions,
+\texttt{run\_sched\_ext\_verifier.py} compiles
+\texttt{sched\_ext\_simple.ks}, compiles a hand-written C/eBPF baseline using
+\texttt{BPF\_PROG} wrappers for the same minimal
+\texttt{sched\_ext\_ops} callbacks, and runs \texttt{bpftool prog loadall}
+without attaching a scheduler.  The script records
+\texttt{/sys/kernel/sched\_ext/state} before and after the run.  On this host,
+the state remains \KSSchedExtStateBefore{} to \KSSchedExtStateAfter{} and the
+enable sequence remains
+\KSSchedExtEnableSeqBefore{} to \KSSchedExtEnableSeqAfter{}, so the diagnostic
+does not install a scheduler.  The C/eBPF object verifier-loads and pins
+\KSSchedExtCPinnedProgramCount{} programs, while the generated object pins
+\KSSchedExtKsPinnedProgramCount{} programs and fails in
+\texttt{select\_cpu} with failure class \KSSchedExtKsFailureClass{}.  This is a
+negative boundary result: it shows local scheduler-extension kernel support for
+the matched C baseline, but the current \tool{} lowering does not produce a
+verifier-clean sched\_ext object on this host.
 
 \textbf{Struct\_ops TCP workload.}  To move beyond load/attach/detach,
 \texttt{run\_struct\_ops\_workload.py} uses one runner for the generated object
@@ -832,7 +854,10 @@ algorithm, or entirely unreached callback path.  The
 skeleton-repair experiment shows that one local map-link mismatch can be
 handled with a version-aware generated-header repair, but a production compiler
 would still need to integrate that decision into generation, dependency checks,
-or containerized toolchains.  From a
+or containerized toolchains.  The scheduler-extension verifier diagnostic adds
+a sharper boundary: a \texttt{BPF\_PROG}-wrapped C/eBPF sched\_ext object
+verifier-loads on the same host, but the generated sched\_ext object does not.
+From a
 systems-research perspective, this is part of the contribution: the artifact
 exposes where a unified model centralizes structure and where the underlying
 Linux BPF stack still leaks through.
@@ -899,9 +924,11 @@ validates that a clean loopback transfer reaches \texttt{cong\_avoid} and
 \texttt{cwnd\_event} in both variants.  Its loss-injected profile also reaches
 \texttt{ssthresh}, \texttt{cong\_avoid}, \texttt{set\_state}, and
 \texttt{cwnd\_event}.  The skeleton repair validates a local
-generated-userspace build fix for the observed map-link mismatch.  These
+generated-userspace build fix for the observed map-link mismatch.  The
+scheduler-extension diagnostic uses \texttt{bpftool prog loadall} only.  It
+does not attach a scheduler or measure scheduler behavior.  These
 checks do not measure production TCP performance, cover every
-tcp-congestion-control callback, cover scheduler-extension struct\_ops, prove
+tcp-congestion-control callback, provide a scheduler-extension workload, prove
 compatibility across libbpf versions, or measure generated-loader behavior.
 However, the traffic runs, including the \KSTrafficStressSeconds{}s stress
 rerun, are local-host veth evidence, not NIC-rate performance or long-duration
@@ -961,9 +988,10 @@ finished eBPF replacement.  It shows how a compiler-checked unified programming
 model can make selected cross-boundary eBPF structure explicit while still
 lowering through libbpf and bpftool.  The remaining gates are also clear:
 version-aware skeleton handling needs upstream integration and broader version
-coverage, scheduler-extension struct\_ops and broader callback-level TCP
-behavior remain incompletely tested, generated-loader dispatch-loop throughput
-needs stronger workloads, and the experimental map-update compiler patch needs
+coverage, scheduler-extension support is currently a negative verifier
+diagnostic rather than workload evidence, broader callback-level TCP behavior
+remains incompletely tested, generated-loader dispatch-loop throughput needs
+stronger workloads, and the experimental map-update compiler patch needs
 upstream integration plus broader semantic and runtime validation.
 
 \bibliographystyle{plain}

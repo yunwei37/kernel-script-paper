@@ -2,7 +2,7 @@ Last updated: 2026-06-13
 Stage at update: paper-logic review
 Source/command: main-agent review plus delegated read-only reviewer, followed by
 paper edits and `make -C paper`
-Completeness: complete for the current draft
+Completeness: complete for the current draft after scheduler-extension verifier diagnostic
 
 # Paper Logic Review
 
@@ -17,8 +17,8 @@ macro where it should use success macros, zero-drop ring-buffer language lacked
 trial and variant scope, and the methodology scattered the roles of generated
 objects, generated loaders, shared runners, baselines, and oracles. A later
 delegated review also found stale research-state artifacts after adding the
-struct_ops skeleton repair, later followed by loopback struct_ops TCP workload
-and callback-flag workload results.
+struct_ops skeleton repair, later followed by loopback struct_ops TCP workload,
+callback-flag workload results, and a scheduler-extension verifier diagnostic.
 
 ## Must-Fix Findings Applied
 
@@ -76,6 +76,10 @@ and callback-flag workload results.
     experiment plan, changed generated-SLOC wording away from developer-effort
     savings, and renamed the runner's clean-profile callback field so the JSON
     profile oracle is not easy to misread.
+15. Integrated the scheduler-extension struct_ops verifier diagnostic as a
+    negative boundary: the paper now says the matched C/eBPF object
+    verifier-loads, the generated object fails before pinning, and no scheduler
+    attach or workload evidence is claimed.
 
 ## Remaining Accepted Limits
 
@@ -88,17 +92,18 @@ and callback-flag workload results.
 - Struct_ops evidence covers tcp-congestion object load/attach/detach, a
   loopback TCP socket workload, clean cong_avoid/cwnd_event callback flags,
   loss-injected ssthresh/cong_avoid/set_state/cwnd_event flags, and a local
-  generated-userspace skeleton build repair, not scheduler-extension
-  struct_ops, every callback path, running repaired generated binaries,
-  production TCP performance, or broad libbpf-version portability.
+  generated-userspace skeleton build repair. Scheduler-extension evidence is a
+  negative verifier diagnostic only, not scheduler workload behavior. The paper
+  still does not cover every callback path, running repaired generated
+  binaries, production TCP performance, or broad libbpf-version portability.
 - Generated-structure evidence is a corpus artifact result, not a developer
   effort study against expert-written C/libbpf.
 
 ## Follow-Up Gate
 
 The next scientific-strength gate is additional evidence rather than prose:
-broader generated-dispatch-loop throughput, scheduler-extension struct_ops,
-every tcp-congestion callback path beyond the two tested profiles,
-upstream-integrated skeleton generation
-across libbpf versions, or non-local deployment/longer-duration workload
-evidence.
+broader generated-dispatch-loop throughput, fixing the generated
+scheduler-extension verifier gap and adding workload evidence, every
+tcp-congestion callback path beyond the two tested profiles,
+upstream-integrated skeleton generation across libbpf versions, or non-local
+deployment/longer-duration workload evidence.
