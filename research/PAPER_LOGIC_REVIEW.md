@@ -1,8 +1,10 @@
 Last updated: 2026-06-13
 Stage at update: paper-logic review
-Source/command: main-agent review plus delegated read-only reviewer, followed by
-paper edits and `make -C paper`
-Completeness: complete for the current draft after scheduler-extension verifier diagnostic
+Source/command: main-agent review plus prior delegated read-only reviews; the
+latest delegated attempt was unavailable because of usage limits, so the
+main agent completed the current top-systems writing and experiment pass locally,
+followed by paper edits and `make -C paper`
+Completeness: complete for the current draft after the external XDP portfolio
 
 # Paper Logic Review
 
@@ -114,14 +116,22 @@ callback-flag workload results, and a scheduler-extension verifier diagnostic.
     provenance and semantic-equivalence oracles, rewrote the evaluation overview
     around C1--C4 rather than a raw script list, added a table-caption takeaway,
     and rounded toy scheduler iteration prose in the artifact summary.
-23. Added one external port/build/runtime check for C1 with a semantic runtime
-    oracle, not C4 performance evidence. The paper now reports
-    a manual KernelScript port of pinned `xdp-tutorial/basic03-map-counter`
-    against the original external C/eBPF source: the port builds through its
-    generated Makefile, the original source compiles directly with clang, and
-    both objects attach, pass traffic, and increment the XDP_PASS map key over
-    five local trials. The wording keeps this as one hand port rather than
+23. Added an external port/build/runtime portfolio for C1 with semantic runtime
+    oracles, not C4 performance evidence. The paper now reports manual
+    KernelScript ports of pinned `xdp-tutorial/basic01-xdp-pass`,
+    `basic02-prog-by-name`, and `basic03-map-counter` against their original
+    external C/eBPF sources: the ports build through generated Makefiles, the
+    originals compile directly with clang, all 6 objects attach and pass traffic,
+    and the map-counter pair increments the XDP_PASS map key over five local
+    trials. The wording keeps this as a small hand-port portfolio rather than
     automated translation, broad portability, or a performance ranking.
+24. Applied a local top-systems writing and experiment pass after the delegated
+    reviewer could not run. The pass rechecked old single-workload wording,
+    headline evidence scope, source-footprint macros, LaTeX hard warnings, weak
+    sentence openings, and the forbidden venue-keyword scans. It found no new
+    must-fix claim/evidence contradiction, then tightened weak prose openings in
+    the introduction, methodology, evaluation, and threats sections without
+    changing any result or claim scope.
 
 ## Remaining Accepted Limits
 
@@ -141,8 +151,8 @@ callback-flag workload results, and a scheduler-extension verifier diagnostic.
   libbpf-version portability.
 - Generated-structure, source-footprint, and external source-corpus evidence are
   corpus artifact results. The external scan is source-only feature context. The
-  added external port is one hand port of one XDP map-counter, not a
-  developer-time study, automated translator result, or broad external
+  added external ports are three hand ports from one XDP tutorial repository, not
+  a developer-time study, automated translator result, or broad external
   application portability/runtime result.
 
 ## Follow-Up Gate

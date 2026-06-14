@@ -26,13 +26,14 @@ public eBPF repositories, 166 selected C/header files, 34843 nonblank noncomment
 lines, and 14 tracked feature families; a 7-file manual spot-check matches the
 expected classifier markers with zero false-positive or false-negative feature
 labels. It is source-only feature context, not translation, build, verifier,
-attach, or runtime evidence. A separate manual port of pinned
-`xdp-tutorial/basic03-map-counter` builds through KernelScript's generated
-Makefile, while the original external C/eBPF source compiles directly to a BPF
-object with clang. Both variants attach as XDP programs, pass five one-second
-iperf3 traffic trials, and increment the XDP_PASS map key. Median receiver
-throughput is 16.1 Gb/s for the KernelScript port and 16.1 Gb/s for the original
-C/eBPF object. These numbers are descriptive local samples, not a performance
+attach, or runtime evidence. A separate manual external portfolio ports
+`xdp-tutorial/basic01-xdp-pass`, `basic02-prog-by-name`, and
+`basic03-map-counter` to KernelScript. The ports build through generated
+Makefiles, while the original external C/eBPF sources compile directly to BPF
+objects with clang. All 6 variants attach as XDP programs and pass five
+one-second iperf3 traffic trials; the map-counter pair also increments the
+XDP_PASS map key. The KernelScript ports and original C/eBPF bodies each total
+45 SLOC. These numbers are descriptive local samples, not a performance
 ranking. On
 fresh veth/netns
 pairs with iperf3 TCP, KernelScript and hand-written C/eBPF pass/count objects
@@ -94,7 +95,7 @@ pass, with XDP count medians of 17.3 versus 15.3 Gb/s and TC count medians of
 | R014 | `results/sched_ext_attach_summary.json` | ok | Opt-in scheduler-extension attach harness registers the C/eBPF and generated toy FIFO schedulers, keeps sched_ext enabled during five bounded 0.75s CPU progress trials, records per-worker iteration counts, unregisters both, and returns sched_ext to disabled with zero rejected tasks. |
 | R015 | `results/source_footprint_summary.json` | ok | Matched source-footprint proxy covers 11 local workload rows; unique maintained KernelScript sources total 203 SLOC, C/eBPF objects alone total 254 SLOC, and C/libbpf sources total 1105 SLOC with runner/loader files included. |
 | R016 | `results/external_corpus_summary.json` | ok | External source-corpus scan covers 3 pinned public eBPF repositories, 166 selected C/header files, 34843 SLOC, and 14 tracked feature families; the 7-file classifier spot-check has zero false-positive or false-negative feature labels; no external application is translated, built, verifier-loaded, attached, or run. |
-| R017 | `results/external_port_summary.json` | ok | Manual KernelScript port of pinned `xdp-tutorial/basic03-map-counter` builds through its generated Makefile; the original external C/eBPF source compiles directly with clang; both objects attach, pass 5 x 1s iperf3 trials, and increment the same XDP_PASS map key. |
+| R017 | `results/external_port_summary.json` | ok | Manual KernelScript ports of three pinned `xdp-tutorial` XDP workloads build through generated Makefiles; the original external C/eBPF sources compile directly with clang; all 6 objects attach and pass 5 x 1s iperf3 trials, and the `basic03-map-counter` pair increments the same XDP_PASS map key. |
 
 ## Anomalies And Negative Results
 
@@ -130,10 +131,11 @@ pass, with XDP count medians of 17.3 versus 15.3 Gb/s and TC count medians of
 - The external source-corpus scan is source-only feature context. It finds no
   tail-call marker in the selected paths and does not translate, build,
   verifier-load, attach, or run any external application.
-- The external port check covers one hand-written KernelScript port of
-  one XDP map-counter workload. It is useful external build/runtime evidence but
-  not a performance ranking, automated translation result, exact packet-count
-  equivalence result, or broad external-application portability claim.
+- The external port check covers three hand-written KernelScript ports from one
+  pinned XDP tutorial repository. It is useful external build/runtime evidence
+  but not a performance ranking, automated translation result, exact
+  packet-count equivalence result, or broad external-application portability
+  claim.
 
 ## Figure/Table Candidates
 

@@ -19,6 +19,7 @@ import shutil
 import statistics
 import subprocess
 import time
+from dataclasses import dataclass
 from pathlib import Path
 
 
@@ -37,9 +38,42 @@ XDP_PASS_KEY = 2
 
 XDP_TUTORIAL_URL = "https://github.com/xdp-project/xdp-tutorial.git"
 XDP_TUTORIAL_COMMIT = "4e2bf5658434e8ae12f281b9b182bb188766a319"
-EXTERNAL_WORKLOAD = "basic03-map-counter"
-EXTERNAL_C_SOURCE = Path("basic03-map-counter") / "xdp_prog_kern.c"
-KS_PORT_SOURCE = ROOT / "experiments" / "external_ports" / "xdp_tutorial_basic03.ks"
+
+
+@dataclass(frozen=True)
+class Workload:
+    name: str
+    source_workload: str
+    external_c_source: Path
+    ks_port_source: Path
+    oracle: str
+    map_key: int | None = None
+
+
+WORKLOADS = [
+    Workload(
+        name="basic01_xdp_pass",
+        source_workload="basic01-xdp-pass",
+        external_c_source=Path("basic01-xdp-pass") / "xdp_pass_kern.c",
+        ks_port_source=ROOT / "experiments" / "external_ports" / "xdp_tutorial_basic01.ks",
+        oracle="xdp_attach_and_traffic_pass",
+    ),
+    Workload(
+        name="basic02_prog_by_name",
+        source_workload="basic02-prog-by-name",
+        external_c_source=Path("basic02-prog-by-name") / "xdp_prog_kern.c",
+        ks_port_source=ROOT / "experiments" / "external_ports" / "xdp_tutorial_basic02.ks",
+        oracle="xdp_attach_and_traffic_pass_for_selected_xdp_section",
+    ),
+    Workload(
+        name="basic03_map_counter",
+        source_workload="basic03-map-counter",
+        external_c_source=Path("basic03-map-counter") / "xdp_prog_kern.c",
+        ks_port_source=ROOT / "experiments" / "external_ports" / "xdp_tutorial_basic03.ks",
+        oracle="xdp_attach_traffic_pass_and_xdp_pass_map_key_increment",
+        map_key=XDP_PASS_KEY,
+    ),
+]
 
 
 def run(argv: list[str], cwd: Path = ROOT, timeout: int = 120, sudo: bool = False) -> subprocess.CompletedProcess[str]:
@@ -78,8 +112,9 @@ def check_prerequisites() -> str | None:
         return "missing /sys/kernel/btf/vmlinux"
     if not COMPILER.exists():
         return f"missing KernelScript compiler at {COMPILER}"
-    if not KS_PORT_SOURCE.exists():
-        return f"missing KernelScript port source at {KS_PORT_SOURCE}"
+    for workload in WORKLOADS:
+        if not workload.ks_port_source.exists():
+            return f"missing KernelScript port source at {workload.ks_port_source}"
     return None
 
 
@@ -126,19 +161,19 @@ def nonblank_noncomment_sloc(path: Path) -> int:
     return count
 
 
-def compile_ks_port() -> Path:
-    out = BUILD / "ks_xdp_tutorial_basic03"
+def compile_ks_port(workload: Workload) -> Path:
+    out = BUILD / f"ks_{workload.name}"
     if out.exists():
         shutil.rmtree(out)
     out.mkdir(parents=True, exist_ok=True)
-    res = run([str(COMPILER), "compile", str(KS_PORT_SOURCE), "-o", str(out)])
-    write(LOGS / "ks_port.compile.stdout", res.stdout)
-    write(LOGS / "ks_port.compile.stderr", res.stderr)
-    check(res, "KernelScript external port compile")
+    res = run([str(COMPILER), "compile", str(workload.ks_port_source), "-o", str(out)])
+    write(LOGS / f"{workload.name}.ks.compile.stdout", res.stdout)
+    write(LOGS / f"{workload.name}.ks.compile.stderr", res.stderr)
+    check(res, f"{workload.name} KernelScript external port compile")
     make = run(["make", "ebpf-only"], out)
-    write(LOGS / "ks_port.make.stdout", make.stdout)
-    write(LOGS / "ks_port.make.stderr", make.stderr)
-    check(make, "KernelScript external port eBPF build")
+    write(LOGS / f"{workload.name}.ks.make.stdout", make.stdout)
+    write(LOGS / f"{workload.name}.ks.make.stderr", make.stderr)
+    check(make, f"{workload.name} KernelScript external port eBPF build")
     objects = sorted(out.glob("*.ebpf.o"))
     if len(objects) != 1:
         raise RuntimeError(f"Expected one generated eBPF object in {out}, found {objects}")
@@ -153,13 +188,13 @@ def multiarch_include() -> list[str]:
     return ["-I", str(include)] if include.exists() else []
 
 
-def compile_external_c(repo_dir: Path) -> Path:
-    source = repo_dir / EXTERNAL_C_SOURCE
+def compile_external_c(workload: Workload, repo_dir: Path) -> Path:
+    source = repo_dir / workload.external_c_source
     if not source.exists():
         raise RuntimeError(f"missing external C source {source}")
-    out_dir = BUILD / "external_c"
+    out_dir = BUILD / f"external_c_{workload.name}"
     out_dir.mkdir(parents=True, exist_ok=True)
-    obj = out_dir / "xdp_prog_kern.o"
+    obj = out_dir / f"{workload.name}.o"
     cmd = [
         "clang",
         "-target",
@@ -170,7 +205,7 @@ def compile_external_c(repo_dir: Path) -> Path:
         "-Wextra",
         *multiarch_include(),
         "-I",
-        str(repo_dir / "basic03-map-counter"),
+        str(source.parent),
         "-I",
         str(repo_dir / "common"),
         "-c",
@@ -179,9 +214,9 @@ def compile_external_c(repo_dir: Path) -> Path:
         str(obj),
     ]
     res = run(cmd)
-    write(LOGS / "external_c.clang.stdout", res.stdout)
-    write(LOGS / "external_c.clang.stderr", res.stderr)
-    check(res, "external C/eBPF compile")
+    write(LOGS / f"{workload.name}.external_c.clang.stdout", res.stdout)
+    write(LOGS / f"{workload.name}.external_c.clang.stderr", res.stderr)
+    check(res, f"{workload.name} external C/eBPF compile")
     return obj
 
 
@@ -201,11 +236,14 @@ def setup_namespace(idx: int) -> tuple[str, str, str, int]:
     ns = f"ksext{pid}_{idx}"
     host_dev = f"ke{pid:04d}{idx:02d}h"
     peer_dev = f"ke{pid:04d}{idx:02d}n"
-    host_ip = f"10.254.{idx}.1"
-    peer_ip = f"10.254.{idx}.2"
+    subnet_a = 200 + ((idx // 250) % 40)
+    subnet_b = idx % 250
+    host_ip = f"10.{subnet_a}.{subnet_b}.1"
+    peer_ip = f"10.{subnet_a}.{subnet_b}.2"
     port = 37000 + ((os.getpid() + idx) % 20000)
 
     cleanup_namespace(ns)
+    run(["ip", "link", "del", host_dev], sudo=True)
     cmds = [
         ["ip", "netns", "add", ns],
         ["ip", "link", "add", host_dev, "type", "veth", "peer", "name", peer_dev],
@@ -338,25 +376,35 @@ def run_iperf_trial(ns: str, peer_ip: str, port: int, log_prefix: Path) -> dict[
     }
 
 
-def trial(name: str, obj: Path, idx: int) -> dict[str, object]:
+def trial(workload: Workload, implementation: str, obj: Path, idx: int) -> dict[str, object]:
     ns, peer_dev, peer_ip, port = setup_namespace(idx)
     try:
         prog_id = attach_xdp(ns, peer_dev, obj)
         map_ids = map_ids_for_prog(prog_id)
-        if len(map_ids) != 1:
-            raise RuntimeError(f"{name} expected exactly one map, program {prog_id} has {map_ids}")
-        map_id = map_ids[0]
-        reset_rx_packets(map_id)
-        result = run_iperf_trial(ns, peer_ip, port, LOGS / f"{name}.trial{idx}")
-        rx_packets = read_rx_packets(map_id)
+        map_id = None
+        if workload.map_key is None:
+            if map_ids:
+                raise RuntimeError(f"{workload.name} expected no maps, program {prog_id} has {map_ids}")
+        else:
+            if len(map_ids) != 1:
+                raise RuntimeError(f"{workload.name} expected exactly one map, program {prog_id} has {map_ids}")
+            map_id = map_ids[0]
+            reset_rx_packets(map_id)
+
+        result = run_iperf_trial(ns, peer_ip, port, LOGS / f"{workload.name}.{implementation}.trial{idx}")
+        rx_packets = None
+        rx_mpps = None
+        if map_id is not None:
+            rx_packets = read_rx_packets(map_id)
+            rx_mpps = rx_packets / result["seconds"] / 1_000_000.0
         result.update(
             {
                 "prog_id": prog_id,
                 "map_id": map_id,
-                "xdp_pass_key": XDP_PASS_KEY,
+                "xdp_pass_key": workload.map_key,
                 "rx_packets": rx_packets,
-                "rx_mpps": rx_packets / result["seconds"] / 1_000_000.0,
-                "oracle_passed": result["receiver_bytes"] > 0 and rx_packets > 0,
+                "rx_mpps": rx_mpps,
+                "oracle_passed": result["receiver_bytes"] > 0 and (rx_packets is None or rx_packets > 0),
             }
         )
         return result
@@ -369,19 +417,23 @@ def median(values: list[float]) -> float:
     return statistics.median(values) if values else 0.0
 
 
-def summarize(name: str, implementation: str, obj: Path, offset: int) -> dict[str, object]:
-    samples = [trial(name, obj, offset + i) for i in range(TRIALS)]
+def summarize(workload: Workload, implementation: str, obj: Path, offset: int) -> dict[str, object]:
+    samples = [trial(workload, implementation, obj, offset + i) for i in range(TRIALS)]
     receiver_gbps = [float(row["receiver_bps"]) / 1_000_000_000.0 for row in samples]
-    rx_mpps = [float(row["rx_mpps"]) for row in samples]
+    rx_packet_samples = [row["rx_packets"] for row in samples if row["rx_packets"] is not None]
+    rx_mpps = [float(row["rx_mpps"]) for row in samples if row["rx_mpps"] is not None]
     return {
-        "name": name,
+        "name": f"{workload.name}_{implementation}",
+        "workload": workload.name,
+        "source_workload": workload.source_workload,
         "implementation": implementation,
         "object": str(obj.relative_to(ROOT)),
+        "oracle": workload.oracle,
         "trials": TRIALS,
         "seconds_per_trial": SECONDS,
         "receiver_gbps_samples": receiver_gbps,
         "retransmits_samples": [int(row["retransmits"]) for row in samples],
-        "rx_packet_samples": [int(row["rx_packets"]) for row in samples],
+        "rx_packet_samples": [int(value) for value in rx_packet_samples],
         "rx_mpps_samples": rx_mpps,
         "median_receiver_gbps": median(receiver_gbps),
         "min_receiver_gbps": min(receiver_gbps),
@@ -391,14 +443,36 @@ def summarize(name: str, implementation: str, obj: Path, offset: int) -> dict[st
     }
 
 
-def comparison(rows: dict[str, dict[str, object]]) -> dict[str, float]:
-    ks = float(rows["kernelscript_port"]["median_receiver_gbps"])
-    external_c = float(rows["external_c"]["median_receiver_gbps"])
+def comparison(row_list: list[dict[str, object]]) -> dict[str, dict[str, float]]:
+    by_workload: dict[str, dict[str, dict[str, object]]] = {}
+    for row in row_list:
+        by_workload.setdefault(str(row["workload"]), {})[str(row["implementation"])] = row
+    out = {}
+    for workload, variants in by_workload.items():
+        ks = float(variants["kernelscript"]["median_receiver_gbps"])
+        external_c = float(variants["original_external_c"]["median_receiver_gbps"])
+        out[workload] = {
+            "ks_median_receiver_gbps": ks,
+            "external_c_median_receiver_gbps": external_c,
+            "delta_gbps": ks - external_c,
+            "ks_over_external_c_ratio": (ks / external_c) if external_c else 0.0,
+        }
+    return out
+
+
+def workload_metadata(workload: Workload, repo_dir: Path) -> dict[str, object]:
+    external_source = repo_dir / workload.external_c_source
     return {
-        "ks_median_receiver_gbps": ks,
-        "external_c_median_receiver_gbps": external_c,
-        "delta_gbps": ks - external_c,
-        "ks_over_external_c_ratio": (ks / external_c) if external_c else 0.0,
+        "name": workload.name,
+        "source_workload": workload.source_workload,
+        "external_c_source": str(workload.external_c_source),
+        "kernelscript_port_source": str(workload.ks_port_source.relative_to(ROOT)),
+        "oracle": workload.oracle,
+        "map_key": workload.map_key,
+        "source_sloc": {
+            "external_c_ebpf_sloc": nonblank_noncomment_sloc(external_source),
+            "kernelscript_port_sloc": nonblank_noncomment_sloc(workload.ks_port_source),
+        },
     }
 
 
@@ -418,44 +492,54 @@ def main() -> int:
     LOGS.mkdir(parents=True, exist_ok=True)
 
     external_repo = prepare_external_repo()
-    external_source = external_repo / EXTERNAL_C_SOURCE
-    objects = {
-        "kernelscript_port": compile_ks_port(),
-        "external_c": compile_external_c(external_repo),
+    object_pairs = {
+        workload.name: {
+            "kernelscript": compile_ks_port(workload),
+            "original_external_c": compile_external_c(workload, external_repo),
+        }
+        for workload in WORKLOADS
     }
 
-    row_list = [
-        summarize("kernelscript_port", "kernelscript", objects["kernelscript_port"], 10),
-        summarize("external_c", "original_external_c", objects["external_c"], 30),
-    ]
-    rows = {row["name"]: row for row in row_list}
+    row_list = []
+    for workload_index, workload in enumerate(WORKLOADS):
+        base_offset = 100 * (workload_index + 1)
+        row_list.append(summarize(workload, "kernelscript", object_pairs[workload.name]["kernelscript"], base_offset + 10))
+        row_list.append(
+            summarize(workload, "original_external_c", object_pairs[workload.name]["original_external_c"], base_offset + 30)
+        )
     status = "ok" if all(row["oracle_passed"] for row in row_list) else "failed"
+    workload_rows = [workload_metadata(workload, external_repo) for workload in WORKLOADS]
     summary = {
         "status": status,
-        "description": "Manual KernelScript port of a pinned xdp-tutorial XDP map-counter example, checked against the original external C/eBPF source under traffic.",
+        "description": "Manual KernelScript ports of pinned xdp-tutorial XDP examples, checked against the original external C/eBPF sources under traffic.",
         "scope": {
             "source_repo": XDP_TUTORIAL_URL,
             "source_commit": XDP_TUTORIAL_COMMIT,
-            "source_workload": EXTERNAL_WORKLOAD,
-            "external_c_source": str(EXTERNAL_C_SOURCE),
-            "kernelscript_port_source": str(KS_PORT_SOURCE.relative_to(ROOT)),
-            "interpretation": "one manual external application port/build/runtime check, not an automated translation, performance ranking, or broad portability claim",
+            "source_workloads": [workload.source_workload for workload in WORKLOADS],
+            "interpretation": "manual external application port/build/runtime checks for a small pinned XDP portfolio, not automated translation, performance ranking, or broad portability claim",
         },
-        "semantic_oracle": "Both objects attach as XDP programs, pass iperf3 traffic, and increment map key XDP_PASS for rx_packets.",
+        "semantic_oracle": "Each pair of objects attaches as XDP programs and passes iperf3 traffic; map-counter workloads also increment map key XDP_PASS for rx_packets.",
         "trials": TRIALS,
         "seconds_per_trial": SECONDS,
-        "source_sloc": {
-            "external_c_ebpf_sloc": nonblank_noncomment_sloc(external_source),
-            "kernelscript_port_sloc": nonblank_noncomment_sloc(KS_PORT_SOURCE),
+        "workload_count": len(WORKLOADS),
+        "variant_count": len(row_list),
+        "oracle_passed": sum(1 for row in row_list if row["oracle_passed"]),
+        "workloads": workload_rows,
+        "aggregate_source_sloc": {
+            "external_c_ebpf_sloc": sum(int(row["source_sloc"]["external_c_ebpf_sloc"]) for row in workload_rows),
+            "kernelscript_port_sloc": sum(int(row["source_sloc"]["kernelscript_port_sloc"]) for row in workload_rows),
         },
         "rows": row_list,
-        "comparison": comparison(rows),
+        "comparison": comparison(row_list),
     }
 
     fields = [
         "name",
+        "workload",
+        "source_workload",
         "implementation",
         "object",
+        "oracle",
         "trials",
         "seconds_per_trial",
         "median_receiver_gbps",

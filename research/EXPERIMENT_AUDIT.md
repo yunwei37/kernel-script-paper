@@ -81,11 +81,11 @@ build completes from those macros.
   outputs, Rust userspace, and support libraries outside the selected paths. The
   classifier audit compares seven manually selected files against expected
   feature markers and records false-positive and false-negative feature labels.
-- External port results clone a pinned `xdp-tutorial` commit, build the manual
-  KernelScript port through its generated Makefile, compile the original
-  external XDP map-counter C/eBPF source directly with clang, attach both
-  objects on isolated veth devices, run iperf3 traffic, and require the XDP_PASS
-  map key to increase.
+- External port results clone a pinned `xdp-tutorial` commit, build three manual
+  KernelScript ports through generated Makefiles, compile the corresponding
+  original external C/eBPF sources directly with clang, attach all 6 objects on
+  isolated veth devices, run iperf3 traffic, and require the XDP_PASS map key to
+  increase for the map-counter pair.
 - Static checks use explicit expected pass/fail programs and diagnostic
   category matching.
 - Verifier-load results use `bpftool prog loadall` and require at least one
@@ -132,9 +132,9 @@ separate from developer-time claims. External source-corpus numbers are labeled
 as source-only feature context rather than portability, build, verifier,
 attach, or runtime results. The classifier audit is labeled as a spot-check of
 selected marker rules rather than a statistical precision/recall estimate.
-External port numbers are labeled as one manual port/build/runtime check rather
-than a performance ranking, automated translation, or broad portability
-evidence.
+External port numbers are labeled as a small manual XDP port/build/runtime
+portfolio rather than a performance ranking, automated translation, or broad
+portability evidence.
 
 ## Scope Language Review
 
@@ -175,9 +175,9 @@ runtime evidence.
    are corpus artifact results. The external scan adds source-only feature
    context but is not a developer-effort study, translation/build corpus, or
    runtime portability result.
-5. The external port check adds runtime evidence for one hand-ported XDP
-   map-counter, but it is not an automated translator, broad external corpus, or
-   developer-effort result.
+5. The external port check adds runtime evidence for three hand-ported XDP
+   tutorial workloads, but it is not an automated translator, broad external
+   corpus, or developer-effort result.
 
 ## Gate Status
 

@@ -11,8 +11,8 @@ evaluation scripts, generated results, and a paper draft.
   hand-written C/eBPF and C/libbpf baseline source files.
 - `experiments/run_external_corpus.py`: pinned external eBPF source-corpus
   feature scan for source-only context.
-- `experiments/run_external_port.py`: one pinned external XDP map-counter
-  port/build/runtime check against its original C/eBPF source.
+- `experiments/run_external_port.py`: small pinned external XDP portfolio
+  port/build/runtime check against original C/eBPF sources.
 - `experiments/run_verifier_matrix.py`: bpftool verifier-load matrix for
   generated eBPF objects.
 - `experiments/run_attach_matrix.py`: isolated network-namespace XDP
@@ -253,15 +253,16 @@ The current run evaluates KernelScript commit `3b19cd2` on Linux
   families, and a seven-file manual spot-check matches the expected markers with
   zero false-positive or false-negative feature labels. This is feature-context
   evidence only, not translation, build, verifier, attach, or runtime evidence.
-- External port/build/runtime check: a manual KernelScript port of
-  `xdp-tutorial` `basic03-map-counter` at `4e2bf5658434` builds through its
-  generated Makefile, while the original external C/eBPF source compiles
-  directly to a BPF object with clang. Both XDP objects attach on isolated veth
-  devices, pass iperf3 traffic, and increment the XDP_PASS map key in 5
-  one-second trials. Median receiver throughput is 16.1 Gb/s for the
-  KernelScript port and 16.1 Gb/s for the original C/eBPF object. These numbers
-  are descriptive local samples, not a performance ranking. This is one manual
-  external port, not an automated translation or broad portability claim.
+- External port/build/runtime check: manual KernelScript ports of three
+  `xdp-tutorial` workloads (`basic01-xdp-pass`, `basic02-prog-by-name`, and
+  `basic03-map-counter`) at `4e2bf5658434` build through generated Makefiles,
+  while the original external C/eBPF sources compile directly to BPF objects
+  with clang. All 6 XDP objects attach on isolated veth devices and pass
+  5 one-second iperf3 trials; the map-counter pair also increments the XDP_PASS
+  map key. The ports and original C/eBPF bodies each total 45 SLOC. Receiver
+  throughput medians are descriptive local samples, not a performance ranking.
+  This is a small manual external XDP portfolio, not an automated translation or
+  broad portability claim.
 - Verifier-load matrix: 39 of 43 generated eBPF objects load with
   `bpftool prog loadall` and pin at least one BPF program. Among the 41 objects
   from full generated-project build successes, 37 load successfully and 4 fail

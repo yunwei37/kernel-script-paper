@@ -259,22 +259,37 @@ def main() -> int:
     content += macro("KSExternalCorpusAuditMatched", external_audit["matched_samples"])
     content += macro("KSExternalCorpusAuditFalsePositives", external_audit["false_positive_count"])
     content += macro("KSExternalCorpusAuditFalseNegatives", external_audit["false_negative_count"])
-    external_port_rows = {row["name"]: row for row in external_port["rows"]}
+    external_port_rows = external_port["rows"]
+    external_port_by_workload = {}
+    for row in external_port_rows:
+        external_port_by_workload.setdefault(row["workload"], {})[row["implementation"]] = row
     external_port_scope = external_port["scope"]
     external_port_comparison = external_port["comparison"]
-    content += macro("KSExternalPortWorkloads", 1)
-    content += macro("KSExternalPortVariants", len(external_port_rows))
-    content += macro("KSExternalPortOracleOK", sum(1 for row in external_port_rows.values() if row["oracle_passed"]))
+    external_port_ks_gbps = [
+        float(row["median_receiver_gbps"]) for row in external_port_rows if row["implementation"] == "kernelscript"
+    ]
+    external_port_c_gbps = [
+        float(row["median_receiver_gbps"]) for row in external_port_rows if row["implementation"] == "original_external_c"
+    ]
+    map_counter_rows = external_port_by_workload["basic03_map_counter"]
+    content += macro("KSExternalPortWorkloads", external_port["workload_count"])
+    content += macro("KSExternalPortVariants", external_port["variant_count"])
+    content += macro("KSExternalPortOracleOK", external_port["oracle_passed"])
     content += macro("KSExternalPortTrials", external_port["trials"])
     content += macro("KSExternalPortSeconds", external_port["seconds_per_trial"])
     content += macro("KSExternalPortCommitShort", str(external_port_scope["source_commit"])[:12])
-    content += macro("KSExternalPortKSSloc", external_port["source_sloc"]["kernelscript_port_sloc"])
-    content += macro("KSExternalPortCSloc", external_port["source_sloc"]["external_c_ebpf_sloc"])
-    content += macro("KSExternalPortKSMedianGbps", f"{external_port_rows['kernelscript_port']['median_receiver_gbps']:.1f}")
-    content += macro("KSExternalPortCMedianGbps", f"{external_port_rows['external_c']['median_receiver_gbps']:.1f}")
-    content += macro("KSExternalPortKSMedianMpps", f"{external_port_rows['kernelscript_port']['median_rx_mpps']:.2f}")
-    content += macro("KSExternalPortCMedianMpps", f"{external_port_rows['external_c']['median_rx_mpps']:.2f}")
-    content += macro("KSExternalPortRatio", f"{external_port_comparison['ks_over_external_c_ratio']:.2f}x")
+    content += macro("KSExternalPortKSSloc", external_port["aggregate_source_sloc"]["kernelscript_port_sloc"])
+    content += macro("KSExternalPortCSloc", external_port["aggregate_source_sloc"]["external_c_ebpf_sloc"])
+    content += macro("KSExternalPortKSMedianGbpsRange", f"{min(external_port_ks_gbps):.1f}--{max(external_port_ks_gbps):.1f}")
+    content += macro("KSExternalPortCMedianGbpsRange", f"{min(external_port_c_gbps):.1f}--{max(external_port_c_gbps):.1f}")
+    content += macro("KSExternalPortMapKSMedianMpps", f"{map_counter_rows['kernelscript']['median_rx_mpps']:.2f}")
+    content += macro("KSExternalPortMapCMedianMpps", f"{map_counter_rows['original_external_c']['median_rx_mpps']:.2f}")
+    content += macro("KSExternalPortMapKSMedianGbps", f"{map_counter_rows['kernelscript']['median_receiver_gbps']:.1f}")
+    content += macro("KSExternalPortMapCMedianGbps", f"{map_counter_rows['original_external_c']['median_receiver_gbps']:.1f}")
+    content += macro(
+        "KSExternalPortMapRatio",
+        f"{external_port_comparison['basic03_map_counter']['ks_over_external_c_ratio']:.2f}x",
+    )
     content += macro("KSStaticTotal", static["total_cases"])
     content += macro("KSStaticMatched", static["matched_cases"])
     content += macro("KSStaticExpectedFailures", static["expected_failures"])

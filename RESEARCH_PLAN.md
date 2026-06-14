@@ -29,9 +29,9 @@ source-footprint proxy, not a developer-time study.
 Finally, scan pinned public eBPF source trees for feature overlap as external
 source-only context. This third metric does not translate, build, verifier-load,
 attach, or run external applications.
-Then add one manual external application port/build/runtime check that compiles
-and runs a pinned external XDP map-counter workload in both KernelScript and its
-original C/eBPF form.
+Then add a small manual external application port/build/runtime portfolio that
+compiles and runs pinned external XDP tutorial workloads in both KernelScript
+and their original C/eBPF form.
 
 RQ3. Which classes of errors are rejected before load/attach time?
 
@@ -136,13 +136,14 @@ one libbpf runner.
 
 4. `experiments/run_external_port.py`
    - Clones pinned commit `4e2bf5658434` of `xdp-tutorial`.
-   - Builds the manual KernelScript port in
-     `experiments/external_ports/xdp_tutorial_basic03.ks` through its generated
-     Makefile.
-   - Compiles the original `basic03-map-counter/xdp_prog_kern.c` C/eBPF source
-     directly to a BPF object with clang.
-   - Attaches each object on an isolated veth, runs iperf3 traffic, and checks
-     that XDP_PASS map key `rx_packets` increases.
+   - Builds manual KernelScript ports for `basic01-xdp-pass`,
+     `basic02-prog-by-name`, and `basic03-map-counter` through generated
+     Makefiles.
+   - Compiles the corresponding original C/eBPF sources directly to BPF objects
+     with clang.
+   - Attaches each object on an isolated veth and runs iperf3 traffic. For
+     `basic03-map-counter`, it also checks that XDP_PASS map key `rx_packets`
+     increases.
    - Writes `results/external_port_summary.csv` and
      `results/external_port_summary.json`.
 
@@ -373,18 +374,18 @@ At commit `3b19cd2`, on Linux `6.15.11-061511-generic`:
   expected markers with zero false-positive or false-negative feature labels.
   This is source-only feature context, not translation, build, verifier, attach,
   or runtime evidence.
-- The external port/build/runtime check manually ports the pinned
-  `xdp-tutorial` `basic03-map-counter` XDP map-counter to KernelScript. The
-  KernelScript port is 22 SLOC and the original external C/eBPF source is 24
-  SLOC. The KernelScript port builds through its generated Makefile, and the
-  original external C/eBPF source compiles directly to a BPF object with clang.
-  Both objects attach to isolated veth devices, pass iperf3 traffic, and
-  increment the XDP_PASS map key in 5 one-second trials. Median receiver
-  throughput is 16.1 Gb/s for the KernelScript port and 16.1 Gb/s for the
-  original external C/eBPF object, with median map update rates of 1.40 and 1.40
-  million updates/s. These numbers are descriptive local samples, not a
-  performance ranking. This is one manual port, not an automated translation or
-  broad portability result.
+- The external port/build/runtime check manually ports three pinned
+  `xdp-tutorial` XDP workloads (`basic01-xdp-pass`, `basic02-prog-by-name`, and
+  `basic03-map-counter`) to KernelScript. The KernelScript ports and original
+  external C/eBPF program bodies each total 45 SLOC. The KernelScript ports
+  build through generated Makefiles, and the original external C/eBPF sources
+  compile directly to BPF objects with clang. All 6 objects attach to isolated
+  veth devices and pass iperf3 traffic in 5 one-second trials per variant. The
+  map-counter pair also increments the XDP_PASS map key, with median map update
+  rates of 1.59 and 1.56 million updates/s for KernelScript and C/eBPF. These
+  numbers are descriptive local samples, not a performance ranking. This is a
+  small manual XDP portfolio, not an automated translation or broad portability
+  result.
 - The verifier-load matrix loads 39 of 43 generated eBPF objects and confirms
   that each loadable object pins at least one BPF program. Among the 41 objects
   from full generated-project build successes, 37 load successfully and 4 expose
@@ -474,10 +475,10 @@ one loopback struct_ops TCP workload, one callback-flag tcp-congestion
 workload, and one local struct_ops skeleton build repair.
 The C1 evidence now also includes a pinned external source-corpus scan that
 adds feature-overlap context across public eBPF source trees. A separate manual
-port of one external XDP map-counter adds compile/build/attach/runtime evidence
-against its original C/eBPF source. These additions still do not establish
-automated translation, broad external application portability, or developer-time
-benefit.
+external XDP portfolio adds compile/build/attach/runtime evidence for three
+pinned tutorial workloads against their original C/eBPF sources. These additions
+still do not establish automated translation, broad external application
+portability, or developer-time benefit.
 The attach matrix confirms that verifier-clean single-section XDP objects can
 be installed and removed on isolated veth devices, and the traffic benchmark
 checks matched XDP and TC pass/count objects under real TCP traffic. The

@@ -15,13 +15,14 @@ loss-injected reachability profiles, a local struct_ops skeleton build repair,
 a scheduler-extension load-only verifier diagnostic, an opt-in bounded
 scheduler-extension attach/progress check, a broader 28-case static negative
 corpus, a source-only external feature scan across 3 pinned public eBPF
-repositories, and one manual external XDP map-counter port/build/runtime check.
+repositories, and a small manual external XDP port/build/runtime portfolio.
 It now also includes a longer XDP/TC traffic stress rerun.
 It is closer to a top-systems weak accept, but still not there. The source
 footprint result partially addresses the missing hand-written-baseline concern
-for C1, the external source scan adds feature-context evidence, and one external
-XDP map-counter now has manual port/build/runtime evidence; however, this is
-still not broad external application portability or developer-time evidence. The
+for C1, the external source scan adds feature-context evidence, and three small
+external XDP tutorial workloads now have manual port/build/runtime evidence;
+however, this is still not broad external application portability or
+developer-time evidence. The
 main remaining gaps are
 representative scheduler-policy and performance evidence beyond one toy FIFO
 progress/fairness proxy, broader callback-level struct_ops behavior,
@@ -93,12 +94,13 @@ non-local or longer-duration deployment methodology.
   feature labels. This is source-only feature context, not translation, build,
   verifier, attach, or runtime evidence.
 - Added `experiments/run_external_port.py`, which manually ports pinned
-  `xdp-tutorial/basic03-map-counter` to KernelScript. The port builds through
-  its generated Makefile, the original external C/eBPF source compiles directly
-  with clang, both XDP objects attach in isolated veth/netns trials, iperf3
-  traffic passes, and the XDP_PASS map key increases in 5/5 one-second trials
-  per variant. This is one manual external port, not automated translation,
-  broad portability evidence, or a performance ranking.
+  `xdp-tutorial/basic01-xdp-pass`, `basic02-prog-by-name`, and
+  `basic03-map-counter` to KernelScript. The ports build through generated
+  Makefiles, the original external C/eBPF sources compile directly with clang,
+  all 6 XDP objects attach in isolated veth/netns trials, iperf3 traffic passes
+  in 5/5 one-second trials per variant, and the map-counter pair increments the
+  XDP_PASS map key. This is a small manual external XDP portfolio, not automated
+  translation, broad portability evidence, or a performance ranking.
 - Expanded `experiments/run_static_checks.py` to 28 deterministic cases,
   including 27 expected rejections across lifecycle, signature, map, type,
   symbol, config, helper-scope, kernel-context, perf-event group, ringbuf, and
@@ -108,11 +110,11 @@ non-local or longer-duration deployment methodology.
 
 ## Remaining Experiments For Weak-Accept Bar
 
-1. Expand external application translation/build/runtime evidence beyond the one
-   manual XDP map-counter port, or add a controlled developer-effort study for
+1. Expand external application translation/build/runtime evidence beyond the
+   small manual XDP tutorial portfolio, or add a controlled developer-effort study for
    C1. The current source-footprint result is local and line-count based, the
-   corpus scan is source-only, and the external runtime evidence covers one
-   hand port.
+   corpus scan is source-only, and the external runtime evidence covers three
+   hand ports from one tutorial repository.
 2. Add scheduler-extension policy/performance evidence beyond the current toy
    FIFO progress/fairness proxy; also add broader callback-level struct_ops programs,
    broader skeleton version coverage with
