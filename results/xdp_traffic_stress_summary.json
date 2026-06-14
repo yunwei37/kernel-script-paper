@@ -1,18 +1,18 @@
 {
   "comparisons": {
     "count": {
-      "c_median_receiver_gbps": 18.127208736102403,
-      "delta_gbps": -0.3584547508861675,
-      "ks_median_receiver_gbps": 17.768753985216236,
-      "ks_over_c_ratio": 0.9802255958926394,
-      "overhead_pct": 1.9774404107360668
+      "c_median_receiver_gbps": 15.301045129197622,
+      "delta_gbps": 1.9878241165156325,
+      "ks_median_receiver_gbps": 17.288869245713254,
+      "ks_over_c_ratio": 1.1299142705436798,
+      "overhead_pct": -12.991427054367971
     },
     "pass": {
-      "c_median_receiver_gbps": 18.26146493640677,
-      "delta_gbps": -0.49980479779899767,
-      "ks_median_receiver_gbps": 17.761660138607773,
-      "ks_over_c_ratio": 0.9726306296050451,
-      "overhead_pct": 2.7369370394954857
+      "c_median_receiver_gbps": 17.89764638444447,
+      "delta_gbps": -0.25203899412023034,
+      "ks_median_receiver_gbps": 17.64560739032424,
+      "ks_over_c_ratio": 0.9859177576365971,
+      "overhead_pct": 1.4082242363402993
     }
   },
   "description": "iperf3 TCP over veth/netns with XDP objects attached on the receiver-side veth.",
@@ -20,29 +20,29 @@
     {
       "bench": "pass",
       "implementation": "kernelscript",
-      "max_receiver_gbps": 17.942980545420845,
-      "median_receiver_gbps": 17.761660138607773,
-      "median_sender_gbps": 17.76239880638491,
+      "max_receiver_gbps": 18.058070649577278,
+      "median_receiver_gbps": 17.64560739032424,
+      "median_sender_gbps": 17.64605043057169,
       "median_xdp_map_mpps": 0.0,
-      "min_receiver_gbps": 17.5285202478601,
+      "min_receiver_gbps": 1.299289376975951,
       "name": "ks_pass",
       "object": "results/build/xdp_traffic_stress/ks_pass/perf_pass.ebpf.o",
       "oracle_passed": true,
       "receiver_gbps_samples": [
-        17.942980545420845,
-        17.761660138607773,
-        17.5285202478601
+        18.058070649577278,
+        17.64560739032424,
+        1.299289376975951
       ],
       "retransmits_samples": [
-        10,
-        23,
-        152
+        31,
+        128,
+        4
       ],
       "seconds_per_trial": 5,
       "sender_gbps_samples": [
-        17.94323527623947,
-        17.76239880638491,
-        17.529389523554137
+        18.058918593407274,
+        17.64605043057169,
+        1.3037200255182366
       ],
       "trials": 3,
       "xdp_map_count_samples": [
@@ -55,29 +55,29 @@
     {
       "bench": "pass",
       "implementation": "handwritten_c",
-      "max_receiver_gbps": 18.788342432031826,
-      "median_receiver_gbps": 18.26146493640677,
-      "median_sender_gbps": 18.26238136539016,
+      "max_receiver_gbps": 17.971571593923443,
+      "median_receiver_gbps": 17.89764638444447,
+      "median_sender_gbps": 17.903453771044223,
       "median_xdp_map_mpps": 0.0,
-      "min_receiver_gbps": 17.558029430582213,
+      "min_receiver_gbps": 17.77982360793516,
       "name": "c_pass",
       "object": "results/build/xdp_traffic_stress/handwritten/c_pass.o",
       "oracle_passed": true,
       "receiver_gbps_samples": [
-        17.558029430582213,
-        18.788342432031826,
-        18.26146493640677
+        17.971571593923443,
+        17.89764638444447,
+        17.77982360793516
       ],
       "retransmits_samples": [
-        147,
-        26,
-        268
+        3,
+        3,
+        388
       ],
       "seconds_per_trial": 5,
       "sender_gbps_samples": [
-        17.558882519284268,
-        18.7894305554968,
-        18.26238136539016
+        17.971851873475543,
+        17.903453771044223,
+        17.780371119409043
       ],
       "trials": 3,
       "xdp_map_count_samples": [
@@ -90,79 +90,79 @@
     {
       "bench": "count",
       "implementation": "kernelscript",
-      "max_receiver_gbps": 18.28490517247412,
-      "median_receiver_gbps": 17.768753985216236,
-      "median_sender_gbps": 17.769613811485776,
-      "median_xdp_map_mpps": 1.5414709424375317,
-      "min_receiver_gbps": 16.95103952805946,
+      "max_receiver_gbps": 17.598925462966204,
+      "median_receiver_gbps": 17.288869245713254,
+      "median_sender_gbps": 17.28925297288586,
+      "median_xdp_map_mpps": 1.4996342898184205,
+      "min_receiver_gbps": 16.20294034585458,
       "name": "ks_count",
       "object": "results/build/xdp_traffic_stress/ks_count/perf_count.ebpf.o",
       "oracle_passed": true,
       "receiver_gbps_samples": [
-        17.768753985216236,
-        16.95103952805946,
-        18.28490517247412
+        17.598925462966204,
+        17.288869245713254,
+        16.20294034585458
       ],
       "retransmits_samples": [
-        129,
-        442,
-        48
+        194,
+        160,
+        7
       ],
       "seconds_per_trial": 5,
       "sender_gbps_samples": [
-        17.769613811485776,
-        16.95116493387381,
-        18.286023882231166
+        17.602594001296023,
+        17.28925297288586,
+        16.203760167414355
       ],
       "trials": 3,
       "xdp_map_count_samples": [
-        7709354,
-        7352841,
-        7936672
+        7635590,
+        7500013,
+        7027524
       ],
       "xdp_map_mpps_samples": [
-        1.5414709424375317,
-        1.4701835999702477,
-        1.5867742686831547
+        1.526594378128302,
+        1.4996342898184205,
+        1.4053527408334416
       ]
     },
     {
       "bench": "count",
       "implementation": "handwritten_c",
-      "max_receiver_gbps": 18.191627458743973,
-      "median_receiver_gbps": 18.127208736102403,
-      "median_sender_gbps": 18.127930606683627,
-      "median_xdp_map_mpps": 1.5727407691777062,
-      "min_receiver_gbps": 18.05398221818994,
+      "max_receiver_gbps": 17.287031850455286,
+      "median_receiver_gbps": 15.301045129197622,
+      "median_sender_gbps": 15.305395620531359,
+      "median_xdp_map_mpps": 1.3278700586207723,
+      "min_receiver_gbps": 10.653754170341347,
       "name": "c_count",
       "object": "results/build/xdp_traffic_stress/handwritten/c_count.o",
       "oracle_passed": true,
       "receiver_gbps_samples": [
-        18.127208736102403,
-        18.05398221818994,
-        18.191627458743973
+        17.287031850455286,
+        15.301045129197622,
+        10.653754170341347
       ],
       "retransmits_samples": [
-        358,
-        177,
-        0
+        301,
+        114,
+        4
       ],
       "seconds_per_trial": 5,
       "sender_gbps_samples": [
-        18.127930606683627,
-        18.054555858123223,
-        18.191581474435772
+        17.287156289284972,
+        15.305395620531359,
+        10.657494241198643
       ],
       "trials": 3,
       "xdp_map_count_samples": [
-        7865772,
-        7837202,
-        7894577
+        7497796,
+        6641528,
+        4623981
       ],
       "xdp_map_mpps_samples": [
-        1.5727407691777062,
-        1.5668597217871059,
-        1.5786868061504695
+        1.4992134813711957,
+        1.3278700586207723,
+        0.9245060899889614
       ]
     }
   ],

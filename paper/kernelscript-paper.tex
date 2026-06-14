@@ -62,9 +62,10 @@ namespaces.  For struct\_ops, shared libbpf runners distinguish direct object
 load/attach/detach, loopback TCP byte-transfer behavior, callback reachability
 under clean and loss-trigger profiles, and a local skeleton-header repair that
 builds \KSStructOpsRepairBuildOK{}/\KSStructOpsRepairExamples{} affected
-generated userspace projects.  A scheduler-extension diagnostic adds a negative
-boundary: without attaching a scheduler, the hand-written C/eBPF object
-verifier-loads while the generated object fails in \texttt{select\_cpu}.  The
+generated userspace projects.  A scheduler-extension diagnostic adds
+load-only evidence: without attaching a scheduler, both the hand-written C/eBPF
+object and the generated object verifier-load and pin programs, but the test
+stops before scheduler installation or workload behavior.  The
 results support an artifact/prototype
 claim: \tool{} centralizes recurring project structure for this repository
 corpus and exposes concrete compatibility limits, but it does not yet establish
@@ -304,8 +305,9 @@ libbpf 1.3.0, OCaml 4.14, and dune 3.14.  The host CPU is a
 \KSCPUModel{} with \KSCPUCount{} CPUs, CPU0 governor \KSCPUGovernor{}, turbo
 \KSTurboState{}, and virtualization reported as \KSVirtualization{}.  The
 microbenchmarks and object workloads do not pin CPUs or change the governor, so
-their nanosecond and event-rate values should be read as local comparisons
-rather than general performance claims.  The evaluated commit is
+their nanosecond and event-rate differences are not statistically interpreted
+and should be read as local comparisons rather than general performance claims.
+The evaluated commit is
 \KSCommitShort{}.  The artifact contains nineteen measurement scripts under
 \texttt{experiments/}.  They cover compiler tests and example builds,
 static-check cases, strict verifier loading, isolated XDP attach/detach, XDP and
@@ -318,7 +320,11 @@ rerun, and two map-update lowering ablations.  The paper reports the
 compiler-source patch ablation as the canonical mechanism-isolation result
 because it changes the compiler path
 rather than editing generated output.  The traffic scripts compare generated
-objects with matched hand-written C/eBPF baselines.  The perf-event counter,
+objects with hand-written C/eBPF baselines built with the same clang/libbpf
+toolchain and matched for program type, map schema, attachment point, and
+observable counter or byte-transfer semantics.  We do not hand-tune the
+baselines beyond the minimal idiomatic C/eBPF needed for those semantics.  The
+perf-event counter,
 ring-buffer, and struct\_ops scripts use one libbpf runner for both objects and
 check BPF map counts, submitted/received event counts, load/attach/detach
 outcomes, TCP socket byte-transfer oracles, or callback-reachability flags.
@@ -366,10 +372,10 @@ or TCP-performance sweep.
 generated struct\_ops userspace projects, detecting whether the installed
 libbpf skeleton header exposes map-link fields, and applying a minimal
 generated-header repair only when that field is absent.
-\textbf{Scheduler-extension verifier boundary} is measured by comparing the
+\textbf{Scheduler-extension verifier diagnostic} is measured by comparing the
 generated \texttt{sched\_ext\_simple} object with a five-callback C/eBPF control
 object under \texttt{bpftool prog loadall} only, recording pinned-program
-counts, failure class, and scheduler-extension state without attaching a
+counts, load status, and scheduler-extension state without attaching a
 scheduler.
 \textbf{Generated-loader lifecycle}
 is measured by a perf-event loader latency check that requires successful
@@ -390,7 +396,9 @@ Project generation & Repository examples lowered to generated projects & Compile
 Early checks & Unit tests and targeted invalid programs & Dune and static-check harnesses & Test success and expected diagnostic categories & Selected cases, not soundness \\
 Compatibility & Generated objects and generated perf loader & Local kernel/toolchain & Pinned-program load criterion, attach state, loader attach/read/detach and invocation timing & Local host only \\
 Runtime sanity & Generated XDP, TC, perf-counter, and ring-buffer objects & Matched C/eBPF objects or shared libbpf runner & iperf3 JSON, positive map counts, perf-counter equality, submitted/received/drop counts & Local workloads only \\
-Struct\_ops compatibility & Generated tcp-congestion and scheduler-extension objects plus generated skeleton projects & Minimal C/eBPF controls and installed libbpf header & Shared libbpf runner load/attach/detach, loopback TCP byte-transfer, clean and loss-injected callback flags, scheduler-extension five-callback verifier diagnostic, and repaired userspace build status & Local tcp-congestion object compatibility, socket workload, callback reachability for two clean functions and four loss-injected functions, scheduler-extension load boundary, and skeleton build repair only, with no scheduler workload \\
+Tcp-congestion struct\_ops & Generated and C/eBPF tcp-congestion objects & Shared libbpf runner and socket workload & Load/attach/detach, loopback TCP byte-transfer, clean and loss-injected callback flags & One local tcp-congestion object and selected callback profiles only \\
+Struct\_ops skeleton repair & Generated userspace skeleton projects & Installed libbpf header & Detect absent map-link field, remove incompatible assignments, rebuild & Local generated-userspace build repair only \\
+Scheduler-extension diagnostic & Generated \texttt{sched\_ext} object and five-callback C/eBPF control & Local kernel/toolchain & \texttt{bpftool prog loadall}, pinned programs, sched\_ext state & Load-only evidence, with no scheduler attach or workload \\
 \bottomrule
 \end{tabular}
 \end{table*}
@@ -514,12 +522,12 @@ userspace builds succeed in
 \KSStructOpsRepairBaselineBuildOK{}/\KSStructOpsRepairExamples{} cases.  After
 the repair, \KSStructOpsRepairBuildOK{}/\KSStructOpsRepairExamples{} build.
 The script removes \KSStructOpsRepairRemovedAssignments{} assignments across
-the two examples.  This is a version-aware local build repair for the observed
-map-link mismatch, not a scheduler workload or a portability result across
-libbpf versions.
+the two examples.  This is a local generated-userspace build repair for the
+observed map-link mismatch.  It does not run the repaired binaries, integrate
+the decision into the compiler, or prove portability across libbpf versions.
 
-\textbf{Scheduler-extension struct\_ops verifier diagnostic.}  To test whether
-the tcp-congestion struct\_ops result generalizes to scheduler extensions,
+\textbf{Scheduler-extension struct\_ops verifier diagnostic.}  As a load-only
+boundary diagnostic for scheduler-extension lowering,
 \texttt{run\_sched\_ext\_verifier.py} compiles
 \texttt{sched\_ext\_simple.ks}, compiles a hand-written C/eBPF control baseline
 using \texttt{BPF\_PROG} wrappers for five active \texttt{sched\_ext\_ops}
@@ -531,11 +539,10 @@ enable sequence remains
 \KSSchedExtEnableSeqBefore{} to \KSSchedExtEnableSeqAfter{}, so the diagnostic
 does not install a scheduler.  The C/eBPF object verifier-loads and pins
 \KSSchedExtCPinnedProgramCount{} programs, while the generated object pins
-\KSSchedExtKsPinnedProgramCount{} programs and fails in
-\texttt{select\_cpu} with failure class \KSSchedExtKsFailureClass{}.  This is a
-negative boundary result: it shows local scheduler-extension kernel support for
-a properly wrapped five-callback C control object, but the current \tool{}
-lowering does not produce a verifier-clean sched\_ext object on this host.
+\KSSchedExtKsPinnedProgramCount{} programs.  This is a load-only diagnostic:
+it shows that the current \tool{} lowering now produces a verifier-clean
+sched\_ext object on this host, but it does not show that the generated
+scheduler can be attached safely or execute correct scheduling behavior.
 
 \textbf{Struct\_ops TCP workload.}  To move beyond load/attach/detach,
 \texttt{run\_struct\_ops\_workload.py} uses one runner for the generated object
@@ -602,9 +609,9 @@ reference-ownership failure, \KSVerifierMapCreateFailed{} map creation failure,
 \KSVerifierMissingBTF{} missing kfunc symbol in kernel BTF, and
 \KSVerifierNoProgramPinned{} object for which no program is pinned.  Across all
 generated objects, including those from generated projects that did not fully
-build, the matrix also records \KSVerifierStructOpsArg{} struct\_ops
-argument-type rejection.  The current run has \KSVerifierRejected{} other
-verifier rejections.  This result narrows the compatibility claim from
+build, the matrix records no struct\_ops argument-type rejection in this run.
+The current run has \KSVerifierRejected{} other verifier rejections.  This
+result narrows the compatibility claim from
 ``builds'' to a measured split between verifier-clean objects and generated
 objects that still need backend fixes.
 
@@ -746,10 +753,13 @@ This result is still local-host evidence, but it directly addresses the
 XDP-only limitation of the earlier runtime checks.
 
 \textbf{Longer traffic stress.}  To check whether the one-second traffic
-trials hide immediate instability, \texttt{run\_traffic\_stress.py} reruns the
+trials hide immediate failures, \texttt{run\_traffic\_stress.py} reruns the
 same XDP and TC pass/count objects for \KSTrafficStressTrials{} trials of
 \KSTrafficStressSeconds{}s each.  The stress harness reports iperf3 success for
-all pass/count runs and positive map-count oracles for all count variants.  In
+all pass/count runs and positive map-count oracles for all count variants, but
+the XDP stress rows include retransmits and one low generated pass sample.  We
+therefore use this run as short-run sanity evidence, not as a stability claim
+or throughput ranking.  In
 the count benchmarks, XDP reports \KSTrafficStressXDPKsCountGbps{} Gb/s for
 \tool{} and \KSTrafficStressXDPCCountGbps{} Gb/s for C/eBPF, while TC reports
 \KSTrafficStressTCKsCountGbps{} Gb/s and \KSTrafficStressTCCCountGbps{} Gb/s.
@@ -759,11 +769,11 @@ In this local run, the XDP and TC count medians differ by
 The count-map invocation rates remain positive at \KSTrafficStressXDPKsCountMpps{} and
 \KSTrafficStressXDPCCountMpps{} Mpps for XDP, and
 \KSTrafficStressTCKsCountMpps{} and \KSTrafficStressTCCCountMpps{} Mpps for
-TC.  This is still a short local stress check, but it reduces the risk that the
-traffic evidence is only a one-second artifact.
+TC.  This is still a short local stress check with local-host noise.
 
 \textbf{Perf-event loader and counter workloads.}  To check generated userspace
-coordination beyond XDP attachment, the perf-event loader script compiles
+coordination beyond XDP attachment in one generated-loader path, the
+perf-event loader script compiles
 \texttt{perf\_page\_fault.ks}, compiles a matched hand-written C/libbpf loader,
 and runs each binary with \texttt{sudo -n}.  Over \KSPerfLoaderTrials{} trials,
 both loaders attach two perf-event programs, read page-fault and branch-miss
@@ -806,9 +816,10 @@ ring-buffer evidence, and it does not measure generated userspace
 dispatch-loop throughput.
 
 \textbf{Generated code size.}  Among the \KSMakeOK{} successful repository
-examples with disassembly, the median generated eBPF object contains
-\KSMedianInstructions{} instructions.  Small examples compile to tiny programs,
-while map-heavy examples generate much larger objects.  The metric helps
+examples with disassembly, the median generated eBPF instruction count is
+\KSMedianInstructions{}, the midpoint of the two middle objects.  Small
+examples compile to tiny programs, while map-heavy examples generate much
+larger objects.  The metric helps
 choose where runtime work is needed: examples with many generated map
 operations are the most likely to diverge from hand-written C.
 
@@ -860,8 +871,9 @@ skeleton-repair experiment shows that one local map-link mismatch can be
 handled with a version-aware generated-header repair, but a production compiler
 would still need to integrate that decision into generation, dependency checks,
 or containerized toolchains.  The scheduler-extension verifier diagnostic adds
-a sharper boundary: a \texttt{BPF\_PROG}-wrapped C/eBPF sched\_ext object
-verifier-loads on the same host, but the generated sched\_ext object does not.
+a sharper boundary: a \texttt{BPF\_PROG}-wrapped C/eBPF sched\_ext object and
+the generated sched\_ext object both verifier-load on the same host, but the
+experiment intentionally avoids scheduler attachment and workload behavior.
 From a
 systems-research perspective, this is part of the contribution: the artifact
 exposes where a unified model centralizes structure and where the underlying
@@ -967,9 +979,8 @@ compiled rather than interpreted, targets more domains than tracing-only
 languages, and is more opinionated than host-language bindings.  Its closest research question is whether eBPF
 application structure can be made explicit enough for a compiler to generate
 the low-level project while preserving compatibility with the Linux BPF
-toolchain.  The public \tool{} repository~\cite{kernelscript} is therefore
-best read as both an implementation and a concrete design artifact for this
-space.
+toolchain.  The evaluated \tool{} implementation is therefore best read as both
+an implementation and a concrete design artifact for this space.
 
 \section{Conclusion}
 
@@ -993,7 +1004,7 @@ finished eBPF replacement.  It shows how a compiler-checked unified programming
 model can make selected cross-boundary eBPF structure explicit while still
 lowering through libbpf and bpftool.  The remaining gates are also clear:
 version-aware skeleton handling needs upstream integration and broader version
-coverage, scheduler-extension support is currently a negative verifier
+coverage, scheduler-extension support is currently a load-only verifier
 diagnostic rather than workload evidence, broader callback-level TCP behavior
 remains incompletely tested, generated-loader dispatch-loop throughput needs
 stronger workloads, and the experimental map-update compiler patch needs

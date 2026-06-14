@@ -17,15 +17,15 @@ struct_ops verifier diagnostic, and a longer XDP/TC traffic stress rerun in
 addition to BPF_PROG_TEST_RUN microbenchmarks. On
 fresh veth/netns
 pairs with iperf3 TCP, KernelScript and hand-written C/eBPF pass/count objects
-all pass the traffic oracles. XDP count medians are 17.4Gb/s for KernelScript
-and 17.5Gb/s for C/eBPF. TC count medians are 87.0Gb/s for KernelScript and
-90.6Gb/s for C/eBPF. The generated perf_event loader and the hand-written
+all pass the traffic oracles. XDP count medians are 17.2Gb/s for KernelScript
+and 17.3Gb/s for C/eBPF. TC count medians are 93.0Gb/s for KernelScript and
+90.7Gb/s for C/eBPF. The generated perf_event loader and the hand-written
 C/libbpf loader both pass 20/20 attach, counter-read, and detach trials. Median
-end-to-end invocation latencies are 11.1ms and 15.2ms, with p90 latencies of
-44.1ms and 40.3ms, respectively. The
-perf_event counter workload reports 1.13 million events/s for both generated
-and hand-written objects with exact BPF/perf counter agreement. The ringbuf
-workload reports 2.08 versus 2.14 million events/s with exact
+end-to-end invocation latencies are 15.7ms and 18.2ms, with p90 latencies of
+20.6ms and 21.1ms, respectively. The
+perf_event counter workload reports 1.02 versus 1.05 million events/s for
+generated and hand-written objects with exact BPF/perf counter agreement. The
+ringbuf workload reports 2.09 versus 2.18 million events/s with exact
 submitted/received agreement and zero drops. The struct_ops compatibility
 check loads, attaches, and detaches both generated and C/eBPF tcp-congestion
 objects in 3/3 privileged trials without using generated skeletons. The
@@ -41,53 +41,52 @@ failures from 0/2 to 2/2 repaired builds on this host by removing 2
 version-incompatible map-link assignments. The scheduler-extension diagnostic
 does not attach a scheduler: the five-callback hand-written C/eBPF control
 baseline verifier-loads and pins 5 programs, while the generated
-`sched_ext_simple` object fails before pinning with a
-`struct_ops_task_arg_type` diagnostic and leaves
+`sched_ext_simple` object verifier-loads and pins 12 programs and leaves
 `/sys/kernel/sched_ext/state` disabled. The stress
 rerun uses three 5s iperf3 trials per XDP/TC pass/count variant; all oracles
-pass, with XDP count medians of 17.8 versus 18.1Gb/s and TC count medians of
-86.5 versus 91.1Gb/s for KernelScript and C/eBPF respectively.
+pass, with XDP count medians of 17.3 versus 15.3Gb/s and TC count medians of
+89.5 versus 86.1Gb/s for KernelScript and C/eBPF respectively.
 
 ## Completed Runs
 
 | Run ID | Result file | Status | Key result |
 |--------|-------------|--------|------------|
 | R000 | `results/static_checks_summary.json` | ok | 28/28 static cases match expectation, including 27 expected rejections across lifecycle, signature, map, type, symbol, config, helper-scope, kernel-context, perf-event group, ringbuf, and safety categories. |
-| R001 | `results/verifier_matrix_summary.json` | ok | 38/43 generated objects load and pin at least one program; build-success subset is 37/41. |
+| R001 | `results/verifier_matrix_summary.json` | ok | 39/43 generated objects load and pin at least one program; build-success subset is 37/41. |
 | R002 | `results/attach_matrix_summary.json` | ok | 27/27 verifier-clean single-section XDP objects attach/detach in isolated namespaces. |
 | R003 | `results/xdp_traffic_summary.json` | ok | XDP pass/count KS and C baselines all pass iperf3 traffic; count gap is 0.6% in this local setup. |
-| R004 | `results/tc_traffic_summary.json` | ok | TC ingress pass/count KS and C baselines all pass iperf3 traffic; count gap is 4.0% in this local setup. |
-| R005 | `results/perf_event_loader_summary.json` | ok | Generated perf_event loader and C/libbpf baseline both pass 20/20 lifecycle trials; median invocation latencies are 11.1ms and 15.2ms, with p90 latencies of 44.1ms and 40.3ms. |
+| R004 | `results/tc_traffic_summary.json` | ok | TC ingress pass/count KS and C baselines all pass iperf3 traffic; count medians are within 2.5% in this local setup, with this run favoring KernelScript. |
+| R005 | `results/perf_event_loader_summary.json` | ok | Generated perf_event loader and C/libbpf baseline both pass 20/20 lifecycle trials; median invocation latencies are 15.7ms and 18.2ms, with p90 latencies of 20.6ms and 21.1ms. |
 | R006 | `results/perf_event_counter_summary.json` | ok | Perf_event page-fault counter objects both pass 10/10 trials; median BPF map counts exactly match perf counts at 262147 events. |
 | R007 | `results/ringbuf_workload_summary.json` | ok | Ringbuf event-emission objects both pass 10/10 trials; submitted and received counts match at 50000 events with zero drops. |
 | R008 | `results/struct_ops_compat_summary.json` | ok | Generated and C/eBPF tcp-congestion struct_ops objects both load, attach, and detach in 3/3 trials through one direct libbpf runner. |
-| R009 | `results/traffic_stress_summary.json` | ok | Longer 3 x 5s XDP/TC traffic stress rerun passes all oracles; XDP count gap is 2.0%, TC count gap is 5.0% in this local setup. |
+| R009 | `results/traffic_stress_summary.json` | ok | Longer 3 x 5s XDP/TC traffic stress rerun passes all oracles; in this local setup, XDP and TC count medians are within 13.0% and 3.9% respectively, with this run favoring KernelScript. |
 | R010 | `results/struct_ops_skeleton_repair_summary.json` | ok | Original generated struct_ops userspace builds are 0/2; after a local version-aware skeleton header repair, 2/2 generated userspace projects build. |
 | R011 | `results/struct_ops_workload_summary.json` | ok | Generated and C/eBPF tcp-congestion objects each complete 10/10 loopback TCP workload trials with algorithm selection, full byte transfer, and detach success. |
 | R012 | `results/struct_ops_callback_workload_summary.json` | ok | Generated and C/eBPF tcp-congestion objects each complete 10/10 clean 4MiB loopback TCP trials with cong_avoid plus cwnd_event, then complete 5/5 5% loss-injected 4MiB trials with ssthresh, cong_avoid, set_state, and cwnd_event. |
-| R013 | `results/sched_ext_verifier_summary.json` | ok | Five-callback C/eBPF scheduler-extension control object verifier-loads and pins 5 programs; generated `sched_ext_simple` fails before pinning with `struct_ops_task_arg_type`; no scheduler attach is attempted and sched_ext state remains disabled. |
+| R013 | `results/sched_ext_verifier_summary.json` | ok | Five-callback C/eBPF scheduler-extension control object verifier-loads and pins 5 programs; generated `sched_ext_simple` verifier-loads and pins 12 programs; no scheduler attach is attempted and sched_ext state remains disabled. |
 
 ## Anomalies And Negative Results
 
 - The stricter verifier matrix reclassifies `local_global_vars` as
   `no_program_pinned`: `bpftool` returned success but pinned only maps because
   the XDP section was empty.
-- The XDP traffic pass result includes one low KernelScript outlier
-  (4.7Gb/s), so the pass range is a noise indicator rather than a performance
+- The XDP stress pass result includes one low generated sample (1.3Gb/s), so
+  the stress pass range is a noise indicator rather than a performance
   comparison claim.
 - The longer stress rerun still uses local veth TCP rather than NIC-rate
-  traffic. It records local retransmits in the XDP stress variants and one TC
-  KernelScript count trial, so the stress result supports stability/oracle
-  claims more strongly than precise throughput ranking.
+  traffic. It records retransmits in the XDP stress variants, while the current
+  TC stress count rows have zero retransmits. The stress result supports
+  short-run sanity/oracle claims more strongly than precise throughput ranking.
 - The struct_ops workload exercises socket-level TCP algorithm selection and
   byte transfer. The callback-flag workload confirms cong_avoid/cwnd_event
   reachability for clean loopback transfer and ssthresh/cong_avoid/set_state/
   cwnd_event reachability under 5% loopback loss. It still does not measure
   production TCP performance or cover every tcp-congestion callback path. The
-  scheduler-extension diagnostic is a negative boundary: it shows that the
-  local host can verifier-load a properly wrapped five-callback C/eBPF control
-  object, but the generated object is not verifier-clean and no scheduler is
-  attached. The skeleton repair validates one local generated-userspace build
+  scheduler-extension diagnostic is load-only evidence: it shows that the
+  local host can verifier-load both a properly wrapped five-callback C/eBPF
+  control object and the generated object, but no scheduler is attached. The
+  skeleton repair validates one local generated-userspace build
   fix, but it does not run the
   generated binaries or prove portability across libbpf versions. The
   perf_event counter, ringbuf, and direct struct_ops runs are object checks

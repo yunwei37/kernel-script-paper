@@ -26,7 +26,7 @@ libbpf: prog 'packet_inspector': -- BEGIN PROG LOAD LOG --
 ;  @ object_allocation.ebpf.c:0
 3: (07) r2 += -4                      ; R2_w=fp-4
 ; __map_lookup_0 = bpf_map_lookup_elem(&conn_tracker, &src_ip); @ object_allocation.ebpf.c:90
-4: (18) r1 = 0xffff89769f050800       ; R1_w=map_ptr(map=conn_tracker,ks=4,vs=8)"
+4: (18) r1 = 0xffff8ec6d0e1bc00       ; R1_w=map_ptr(map=conn_tracker,ks=4,vs=8)"
 packet_filter,examples/packet_filter.ks,ok,success,results/build/examples/packet_filter/packet_filter.ebpf.o,xdp,xdp,1,1,ok,,
 packet_matching,examples/packet_matching.ks,ok,success,results/build/examples/packet_matching/packet_matching.ebpf.o,xdp tc/ingress,tc xdp,2,7,ok,,
 pattern_test,examples/pattern_test.ks,ok,success,results/build/examples/pattern_test/pattern_test.ebpf.o,xdp,xdp,1,1,ok,,
@@ -42,18 +42,7 @@ ringbuf_demo,examples/ringbuf_demo.ks,ok,success,results/build/examples/ringbuf_
 libbpf: map '__pinned_globals': failed to create: -EINVAL
 Error: failed to load object file"
 ringbuf_on_event_demo,examples/ringbuf_on_event_demo.ks,ok,success,results/build/examples/ringbuf_on_event_demo/ringbuf_on_event_demo.ebpf.o,xdp fentry/do_sys_open,fentry xdp,2,2,ok,,
-sched_ext_simple,examples/sched_ext_simple.ks,failed,libbpf_struct_ops_skeleton_api_mismatch,results/build/examples/sched_ext_simple/sched_ext_simple.ebpf.o,struct_ops/select_cpu struct_ops/enqueue struct_ops/dispatch struct_ops/runnable struct_ops/running struct_ops/stopping struct_ops/quiescent struct_ops/init_task struct_ops/exit_task struct_ops/enable struct_ops/init struct_ops/exit,struct_ops,12,0,failed,struct_ops_argument_type,"libbpf: prog 'select_cpu': BPF program load failed: -EINVAL
-libbpf: prog 'select_cpu': -- BEGIN PROG LOAD LOG --
-0: R1=ctx() R10=fp0
-; __s32 select_cpu(struct task_struct* p, __s32 prev_cpu, __u64 wake_flags) { @ sched_ext_simple.ebpf.c:16
-0: (bf) r6 = r1                       ; R1=ctx() R6_w=ctx()
-1: (b7) r1 = 0                        ; R1_w=0
-; __u8 direct = 0; @ sched_ext_simple.ebpf.c:18
-2: (73) *(u8 *)(r10 -1) = r1          ; R1_w=0 R10=fp0 fp-8=0???????
-3: (bf) r4 = r10                      ; R4_w=fp0 R10=fp0
-;  @ sched_ext_simple.ebpf.c:0
-4: (07) r4 += -1                      ; R4_w=fp-1
-; cpu = scx_bpf_select_cpu_dfl(p, prev_cpu, wake_flags, __unop_0); @ sched_ext_simple.ebpf.c:21"
+sched_ext_simple,examples/sched_ext_simple.ks,failed,libbpf_struct_ops_skeleton_api_mismatch,results/build/examples/sched_ext_simple/sched_ext_simple.ebpf.o,struct_ops/select_cpu struct_ops/enqueue struct_ops/dispatch struct_ops/runnable struct_ops/running struct_ops/stopping struct_ops/quiescent struct_ops/init_task struct_ops/exit_task struct_ops/enable struct_ops/init struct_ops/exit,struct_ops,12,12,ok,,
 simple_gfp_test,examples/simple_gfp_test.ks,ok,success,results/build/examples/simple_gfp_test/simple_gfp_test.ebpf.o,xdp,xdp,1,1,ok,,
 simple_program_lifecycle,examples/simple_program_lifecycle.ks,ok,success,results/build/examples/simple_program_lifecycle/simple_program_lifecycle.ebpf.o,xdp,xdp,1,1,ok,,
 string_test,examples/string_test.ks,ok,success,results/build/examples/string_test/string_test.ebpf.o,xdp,xdp,1,1,ok,,

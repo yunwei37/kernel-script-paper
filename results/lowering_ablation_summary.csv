@@ -1,4 +1,4 @@
 name,object,object_bytes,instructions,repeat,trials,expected_count,observed_counts,median_avg_ns,min_avg_ns,max_avg_ns,samples_avg_ns
-ks_count_current,results/build/lowering_ablation/ks_count_current/perf_count.ebpf.o,7536,21,100000,7,100000,100000 100000 100000 100000 100000 100000 100000,12.0,12.0,12.0,12.0 12.0 12.0 12.0 12.0 12.0 12.0
-ks_count_atomic,results/build/lowering_ablation/ks_count_atomic/perf_count.ebpf.o,6520,11,100000,7,100000,100000 100000 100000 100000 100000 100000 100000,9.0,8.0,10.0,9.0 10.0 9.0 9.0 8.0 9.0 9.0
-c_count,results/build/lowering_ablation/handwritten/c_count.o,6488,11,100000,7,100000,100000 100000 100000 100000 100000 100000 100000,9.0,9.0,9.0,9.0 9.0 9.0 9.0 9.0 9.0 9.0
+ks_count_current,results/build/lowering_ablation/ks_count_current/perf_count.ebpf.o,7536,21,100000,7,100000,100000 100000 100000 100000 100000 100000 100000,12.0,12.0,13.0,12.0 12.0 12.0 13.0 13.0 12.0 12.0
+ks_count_atomic,results/build/lowering_ablation/ks_count_atomic/perf_count.ebpf.o,6520,11,100000,7,100000,100000 100000 100000 100000 100000 100000 100000,9.0,8.0,10.0,9.0 9.0 9.0 10.0 9.0 9.0 8.0
+c_count,results/build/lowering_ablation/handwritten/c_count.o,6488,11,100000,7,100000,100000 100000 100000 100000 100000 100000 100000,9.0,9.0,10.0,10.0 10.0 9.0 9.0 9.0 9.0 9.0

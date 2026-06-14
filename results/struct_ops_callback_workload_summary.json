@@ -121,11 +121,11 @@
         1
       ],
       "elapsed_sec_samples": [
-        15.27012,
-        1.294616,
-        0.050752,
-        1.120915,
-        5.463973
+        11.96966,
+        0.778448,
+        15.059595,
+        0.039293,
+        0.253641
       ],
       "flags_map": "callback_flags",
       "implementation": "kernelscript",
@@ -138,8 +138,8 @@
       ],
       "loss_percent": "5%",
       "map_name": "minimal_congestion_control",
-      "median_elapsed_sec": 1.294616,
-      "median_mib_per_sec": 3.089719,
+      "median_elapsed_sec": 0.778448,
+      "median_mib_per_sec": 5.138429,
       "name": "ks_generated",
       "network_profile": "loopback_netem_loss",
       "object": "results/build/struct_ops_callback_workload/kernelscript/struct_ops_callback_count.ebpf.o",
@@ -211,9 +211,9 @@
           1
         ],
         [
+          0,
+          0,
           1,
-          0,
-          0,
           0,
           0
         ],
@@ -254,9 +254,9 @@
         1
       ],
       "callback_positive_slots_samples": [
+        4,
+        4,
         5,
-        4,
-        4,
         4,
         4
       ],
@@ -283,11 +283,11 @@
         1
       ],
       "elapsed_sec_samples": [
-        0.045786,
-        0.253963,
-        12.017398,
-        10.726005,
-        5.245195
+        5.590633,
+        0.033289,
+        0.693677,
+        5.052681,
+        0.448078
       ],
       "flags_map": "callback_flags",
       "implementation": "handwritten_c",
@@ -300,8 +300,8 @@
       ],
       "loss_percent": "5%",
       "map_name": "ks_paper_cb_cc",
-      "median_elapsed_sec": 5.245195,
-      "median_mib_per_sec": 0.762603,
+      "median_elapsed_sec": 0.693677,
+      "median_mib_per_sec": 5.766373,
       "name": "c_libbpf",
       "network_profile": "loopback_netem_loss",
       "object": "results/build/struct_ops_callback_workload/handwritten/struct_ops_tcp_callback_flags.o",
@@ -522,16 +522,16 @@
         1
       ],
       "elapsed_sec_samples": [
-        0.040386,
-        0.040319,
-        0.035801,
-        0.049858,
-        0.033332,
-        0.035487,
-        0.036804,
-        0.027606,
-        0.030791,
-        0.035919
+        0.032775,
+        0.038332,
+        0.038026,
+        0.029698,
+        0.028719,
+        0.034713,
+        0.036894,
+        0.030509,
+        0.026815,
+        0.036102
       ],
       "flags_map": "callback_flags",
       "implementation": "kernelscript",
@@ -549,8 +549,8 @@
       ],
       "loss_percent": "",
       "map_name": "minimal_congestion_control",
-      "median_elapsed_sec": 0.03586,
-      "median_mib_per_sec": 111.545199,
+      "median_elapsed_sec": 0.033744,
+      "median_mib_per_sec": 118.637423,
       "name": "ks_generated",
       "network_profile": "clean_loopback",
       "object": "results/build/struct_ops_callback_workload/kernelscript/struct_ops_callback_count.ebpf.o",
@@ -775,16 +775,16 @@
         1
       ],
       "elapsed_sec_samples": [
-        0.028591,
-        0.046867,
-        0.0345,
-        0.036915,
-        0.038921,
-        0.040308,
-        0.031652,
-        0.034872,
-        0.036475,
-        0.033853
+        0.04261,
+        0.030485,
+        0.035765,
+        0.033723,
+        0.037822,
+        0.038881,
+        0.039591,
+        0.045822,
+        0.037697,
+        0.037647
       ],
       "flags_map": "callback_flags",
       "implementation": "handwritten_c",
@@ -802,8 +802,8 @@
       ],
       "loss_percent": "",
       "map_name": "ks_paper_cb_cc",
-      "median_elapsed_sec": 0.035673,
-      "median_mib_per_sec": 112.184681,
+      "median_elapsed_sec": 0.03776,
+      "median_mib_per_sec": 105.933896,
       "name": "c_libbpf",
       "network_profile": "clean_loopback",
       "object": "results/build/struct_ops_callback_workload/handwritten/struct_ops_tcp_callback_flags.o",

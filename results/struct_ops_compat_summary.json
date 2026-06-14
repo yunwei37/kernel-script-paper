@@ -15,9 +15,9 @@
         1
       ],
       "elapsed_sec_samples": [
-        0.031711,
-        0.051105,
-        0.040005
+        0.033715,
+        0.039797,
+        0.033388
       ],
       "implementation": "kernelscript",
       "load_ok_samples": [
@@ -48,9 +48,9 @@
         1
       ],
       "elapsed_sec_samples": [
-        0.033703,
-        0.038823,
-        0.031676
+        0.037681,
+        0.03174,
+        0.028727
       ],
       "implementation": "handwritten_c",
       "load_ok_samples": [

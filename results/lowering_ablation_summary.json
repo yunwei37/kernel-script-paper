@@ -20,7 +20,7 @@
     {
       "expected_count": 100000,
       "instructions": 21,
-      "max_avg_ns": 12.0,
+      "max_avg_ns": 13.0,
       "median_avg_ns": 12.0,
       "min_avg_ns": 12.0,
       "name": "ks_count_current",
@@ -40,8 +40,8 @@
         12.0,
         12.0,
         12.0,
-        12.0,
-        12.0,
+        13.0,
+        13.0,
         12.0,
         12.0
       ],
@@ -68,19 +68,19 @@
       "repeat": 100000,
       "samples_avg_ns": [
         9.0,
+        9.0,
+        9.0,
         10.0,
         9.0,
         9.0,
-        8.0,
-        9.0,
-        9.0
+        8.0
       ],
       "trials": 7
     },
     {
       "expected_count": 100000,
       "instructions": 11,
-      "max_avg_ns": 9.0,
+      "max_avg_ns": 10.0,
       "median_avg_ns": 9.0,
       "min_avg_ns": 9.0,
       "name": "c_count",
@@ -97,8 +97,8 @@
       ],
       "repeat": 100000,
       "samples_avg_ns": [
-        9.0,
-        9.0,
+        10.0,
+        10.0,
         9.0,
         9.0,
         9.0,

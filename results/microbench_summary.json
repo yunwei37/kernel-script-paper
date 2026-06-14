@@ -10,12 +10,12 @@
       "trials": 7,
       "samples_avg_ns": [
         5.0,
-        5.0,
-        5.0,
         6.0,
         5.0,
         5.0,
-        5.0
+        5.0,
+        5.0,
+        6.0
       ],
       "median_avg_ns": 5.0,
       "min_avg_ns": 5.0,
@@ -29,15 +29,15 @@
       "repeat": 100000,
       "trials": 7,
       "samples_avg_ns": [
-        13.0,
-        13.0,
+        12.0,
         12.0,
         13.0,
         13.0,
         13.0,
-        13.0
+        12.0,
+        12.0
       ],
-      "median_avg_ns": 13.0,
+      "median_avg_ns": 12.0,
       "min_avg_ns": 12.0,
       "max_avg_ns": 13.0
     },
@@ -50,14 +50,14 @@
       "trials": 7,
       "samples_avg_ns": [
         5.0,
-        5.0,
-        5.0,
         6.0,
         5.0,
         5.0,
-        5.0
+        6.0,
+        6.0,
+        6.0
       ],
-      "median_avg_ns": 5.0,
+      "median_avg_ns": 6.0,
       "min_avg_ns": 5.0,
       "max_avg_ns": 6.0
     },
@@ -71,9 +71,9 @@
       "samples_avg_ns": [
         9.0,
         9.0,
+        9.0,
+        9.0,
         8.0,
-        9.0,
-        9.0,
         9.0,
         9.0
       ],
@@ -85,15 +85,15 @@
   "comparisons": {
     "pass": {
       "ks_median_avg_ns": 5.0,
-      "c_median_avg_ns": 5.0,
-      "delta_ns": 0.0,
-      "overhead_pct": 0.0
+      "c_median_avg_ns": 6.0,
+      "delta_ns": -1.0,
+      "overhead_pct": -16.666666666666664
     },
     "count": {
-      "ks_median_avg_ns": 13.0,
+      "ks_median_avg_ns": 12.0,
       "c_median_avg_ns": 9.0,
-      "delta_ns": 4.0,
-      "overhead_pct": 44.44444444444444
+      "delta_ns": 3.0,
+      "overhead_pct": 33.33333333333333
     }
   }
 }

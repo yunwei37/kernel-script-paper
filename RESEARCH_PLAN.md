@@ -268,9 +268,9 @@ one libbpf runner.
    - Compiles `kernelscript/examples/sched_ext_simple.ks` with KernelScript and
      a five-callback hand-written scheduler-extension C/eBPF control baseline.
    - Uses `bpftool prog loadall` only, with no scheduler attach or registration.
-   - Requires the C/eBPF baseline to verifier-load and records generated-object
-     load status, failure class, pinned-program counts, and sched_ext state
-     before and after the diagnostic.
+   - Requires the C/eBPF baseline and generated object to verifier-load, and
+     records load status, pinned-program counts, and sched_ext state before and
+     after the diagnostic.
    - Writes `results/sched_ext_verifier_summary.csv` and
      `results/sched_ext_verifier_summary.json`.
 
@@ -296,17 +296,16 @@ one libbpf runner.
 
 ## Current Results
 
-At commit `ccb15b4`, on Linux `6.15.11-061511-generic`:
+At commit `87a0130`, on Linux `6.15.11-061511-generic`:
 
 - 85 unit test suites and 1095 unit tests pass.
 - 43 of 44 examples compile from KernelScript.
 - 41 examples build fully into generated C/eBPF artifacts.
-- The verifier-load matrix loads 38 of 43 generated eBPF objects and confirms
+- The verifier-load matrix loads 39 of 43 generated eBPF objects and confirms
   that each loadable object pins at least one BPF program. Among the 41 objects
   from full generated-project build successes, 37 load successfully and 4 expose
   reference-ownership, map-creation, local BTF-symbol, or no-program-pinned
-  failures. Across all generated objects, one additional struct_ops object
-  exposes an argument-type rejection.
+  failures.
 - The isolated attach matrix attaches and detaches 27 of 27 verifier-clean
   single-section XDP objects on fresh veth devices inside network namespaces.
 - The one KernelScript rejection is an intentional safety rejection for stack
@@ -336,41 +335,42 @@ At commit `ccb15b4`, on Linux `6.15.11-061511-generic`:
   and rebuilds 2 of 2 generated userspace projects successfully.
 - The scheduler-extension struct_ops verifier diagnostic confirms that a
   five-callback hand-written C/eBPF control baseline verifier-loads and pins 5
-  programs while the generated `sched_ext_simple` object fails before pinning
-  with a `struct_ops_task_arg_type` diagnostic. The script does not attach a
-  scheduler: `/sys/kernel/sched_ext/state` remains `disabled`, and `enable_seq`
-  remains `0`.
+  programs while the generated `sched_ext_simple` object verifier-loads and
+  pins 12 programs. The script does not attach a scheduler:
+  `/sys/kernel/sched_ext/state` remains `disabled`, and `enable_seq` remains
+  `0`.
 - Successful examples have median 31 KernelScript SLOC and median 472 generated
   source/build SLOC, a median expansion factor of 11.3x.
 - The smoke test successfully attaches and detaches an XDP program on `lo`.
-- XDP microbenchmarks show 0ns median overhead for a trivial pass program
-  compared with hand-written C/eBPF, and 4ns median overhead for an array-map
+- XDP microbenchmarks show a 5ns median for the trivial KernelScript pass
+  program versus 6ns for hand-written C/eBPF, and 3ns median overhead for an array-map
   counter because the generated code emits a lookup plus update helper rather
   than an in-place atomic add.
 - The XDP traffic benchmark runs matched KernelScript and hand-written C/eBPF
   pass/count objects over iperf3 TCP on fresh veth/netns pairs. Pass medians are
-  17.8Gb/s for KernelScript and 18.1Gb/s for C/eBPF. Count medians are 17.4Gb/s
-  for KernelScript and 17.5Gb/s for C/eBPF, with positive count-map invocation
-  rates of 1.51 and 1.52 Mpps respectively.
+  17.4Gb/s for KernelScript and 17.8Gb/s for C/eBPF. Count medians are 17.2Gb/s
+  for KernelScript and 17.3Gb/s for C/eBPF, with positive count-map invocation
+  rates of 1.50 and 1.50 Mpps respectively.
 - The TC traffic benchmark runs matched KernelScript and hand-written C/eBPF
   ingress pass/count objects over iperf3 TCP on fresh veth/netns pairs. Pass
-  medians are 86.7Gb/s for KernelScript and 87.4Gb/s for C/eBPF. Count medians
-  are 87.0Gb/s for KernelScript and 90.6Gb/s for C/eBPF, with positive
-  count-map invocation rates of 0.25 and 0.26 Mpps respectively.
+  medians are 89.9Gb/s for KernelScript and 92.0Gb/s for C/eBPF. Count medians
+  are 93.0Gb/s for KernelScript and 90.7Gb/s for C/eBPF, with positive
+  count-map invocation rates of 0.27 and 0.26 Mpps respectively.
 - The longer traffic stress rerun uses 3 trials of 5s per XDP/TC pass/count
-  variant. All stress oracles pass. XDP count medians are 17.8Gb/s for
-  KernelScript and 18.1Gb/s for C/eBPF, and TC count medians are 86.5Gb/s for
-  KernelScript and 91.1Gb/s for C/eBPF.
+  variant. All stress oracles pass, but XDP stress includes retransmits and one
+  low generated pass sample. XDP count medians are 17.3Gb/s for KernelScript
+  and 15.3Gb/s for C/eBPF, and TC count medians are 89.5Gb/s for KernelScript
+  and 86.1Gb/s for C/eBPF.
 - The perf_event loader lifecycle test runs a generated KernelScript loader and
   a hand-written C/libbpf loader for 20 privileged trials. Both attach two
   perf_event programs, read counters, and detach cleanly in every trial.
 - The perf_event page-fault counter workload runs matched KernelScript and
   hand-written C/eBPF objects for 10 privileged trials. Both report median
-  262147 BPF map updates matching perf counter reads, at 1.13 and 1.13 million
+  262147 BPF map updates matching perf counter reads, at 1.02 and 1.05 million
   events/s respectively.
 - The ring-buffer event-emission workload runs matched KernelScript and
   hand-written C/eBPF objects for 10 privileged trials. Both submit and receive
-  50000 events per trial with zero drops, at 2.08 and 2.14 million events/s
+  50000 events per trial with zero drops, at 2.09 and 2.18 million events/s
   respectively.
 - The compiler-patch lowering ablation reduces the generated count object from
   21 to 11 instructions and from 12ns to 9ns median, matching the hand-written
@@ -399,13 +399,14 @@ callback-flag workload checks clean-loopback cong_avoid/cwnd_event reachability
 and loss-injected ssthresh/cong_avoid/set_state/cwnd_event reachability. The
 repair checks one local generated userspace build fix but does not run the
 repaired binaries. The scheduler-extension verifier diagnostic shows that the
-local kernel/toolchain accepts a five-callback C/eBPF control object but rejects
-the generated object before any scheduler attach. The evaluation still does not validate
-NIC-rate throughput, scheduler-extension workload behavior, every
+local kernel/toolchain accepts both the five-callback C/eBPF control object and
+the generated object for verifier load, but it still does not attach a
+scheduler. The evaluation still does not validate NIC-rate throughput,
+scheduler-extension workload behavior, every
 tcp-congestion callback path, broader skeleton version coverage, broader
 perf_event workloads, or generated-loader throughput.
 A full runtime comparison should add scheduler-extension workload evidence
-after fixing the generated lowering gap, more tcp-congestion callback coverage,
+after adding a safe attach/workload harness, more tcp-congestion callback coverage,
 upstream-integrated skeleton generation across libbpf versions, broader
 perf_event workloads, and larger or non-local XDP/TC stress runs with `pktgen`
 or `xdp-bench` that report throughput, tail latency, verifier log size, and CPU

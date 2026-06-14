@@ -76,15 +76,21 @@ callback-flag workload results, and a scheduler-extension verifier diagnostic.
     experiment plan, changed generated-SLOC wording away from developer-effort
     savings, and renamed the runner's clean-profile callback field so the JSON
     profile oracle is not easy to misread.
-15. Integrated the scheduler-extension struct_ops verifier diagnostic as a
-    negative boundary: the paper now says a five-callback C/eBPF control object
-    verifier-loads, the generated object fails before pinning, and no scheduler
+15. Integrated the scheduler-extension struct_ops verifier diagnostic as
+    load-only evidence: the paper now says a five-callback C/eBPF control
+    object and the generated object both verifier-load, and no scheduler
     attach, workload evidence, or full callback-set equivalence is claimed.
 16. Applied a delegated top-systems review after the scheduler-extension
     diagnostic. The follow-up pass corrected the scheduler-extension baseline
     wording from matched callback-set language to a five-callback control
     baseline, and updated the method summary to nineteen measurement scripts
     and thirteen outcomes.
+17. Applied a delegated top-systems review after the scheduler-extension
+    verifier-load fix. The follow-up pass removed the scheduler "generalizes"
+    framing, split overloaded struct_ops claim-scope rows, refreshed stale
+    research-plan numbers, added the stress outlier/retransmit caveat, narrowed
+    generated-loader and skeleton-repair claims, and anonymized the paper-facing
+    KernelScript artifact reference.
 
 ## Remaining Accepted Limits
 
@@ -98,7 +104,7 @@ callback-flag workload results, and a scheduler-extension verifier diagnostic.
   loopback TCP socket workload, clean cong_avoid/cwnd_event callback flags,
   loss-injected ssthresh/cong_avoid/set_state/cwnd_event flags, and a local
   generated-userspace skeleton build repair. Scheduler-extension evidence is a
-  negative verifier diagnostic only, not scheduler workload behavior. The paper
+  load-only verifier diagnostic, not scheduler workload behavior. The paper
   still does not cover every callback path, running repaired generated
   binaries, production TCP performance, or broad libbpf-version portability.
 - Generated-structure evidence is a corpus artifact result, not a developer
@@ -107,8 +113,8 @@ callback-flag workload results, and a scheduler-extension verifier diagnostic.
 ## Follow-Up Gate
 
 The next scientific-strength gate is additional evidence rather than prose:
-broader generated-dispatch-loop throughput, fixing the generated
-scheduler-extension verifier gap and adding workload evidence, every
+broader generated-dispatch-loop throughput, scheduler-extension attach/workload
+evidence after the verifier-load fix, every
 tcp-congestion callback path beyond the two tested profiles,
 upstream-integrated skeleton generation across libbpf versions, or non-local
 deployment/longer-duration workload evidence.

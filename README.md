@@ -199,18 +199,17 @@ make -C paper
 
 ## Current Result Snapshot
 
-The current run evaluates KernelScript commit `ccb15b4` on Linux
+The current run evaluates KernelScript commit `87a0130` on Linux
 `6.15.11-061511-generic`.
 
 - Unit tests: 85 suites, 1095 tests, 0 reported failures.
 - Examples: 44 total, 43 KernelScript compile successes, 41 full generated
   C/eBPF build successes.
-- Verifier-load matrix: 38 of 43 generated eBPF objects load with
+- Verifier-load matrix: 39 of 43 generated eBPF objects load with
   `bpftool prog loadall` and pin at least one BPF program. Among the 41 objects
   from full generated-project build successes, 37 load successfully and 4 fail
   with recorded reference ownership, map-creation, local BTF-symbol, or
-  no-program-pinned diagnostics. Across all generated objects, one additional
-  struct_ops object exposes an argument-type rejection.
+  no-program-pinned diagnostics.
 - Attach matrix: 27 of 27 verifier-clean single-section XDP objects attach and
   detach on a fresh veth inside an isolated network namespace.
 - Static checks: 28 total cases, including 27 expected compiler rejections and
@@ -226,46 +225,46 @@ The current run evaluates KernelScript commit `ccb15b4` on Linux
   version-incompatible map-link assignments from the generated skeleton headers,
   2 of 2 generated userspace projects build.
 - Scheduler-extension struct_ops verifier diagnostic: the hand-written C/eBPF
-  `sched_ext` baseline verifier-loads and pins 5 programs, while the generated
-  `sched_ext_simple` object fails before pinning with a struct_ops task-argument
-  verifier diagnostic. The script does not attach a scheduler;
-  `/sys/kernel/sched_ext/state` remains `disabled`.
+  `sched_ext` baseline verifier-loads and pins 5 programs, and the generated
+  `sched_ext_simple` object verifier-loads and pins 12 programs. The script
+  does not attach a scheduler; `/sys/kernel/sched_ext/state` remains
+  `disabled`.
 - Struct_ops TCP workload: over ten privileged trials, both the generated
   tcp-congestion object and the C/eBPF object are selected with `TCP_CONGESTION`
   on a loopback sender socket, transfer 1MiB, and detach successfully in 10 of
   10 trials.
 - Smoke test: `smoke_lo` attaches and detaches an XDP pass program on `lo`.
-- Microbenchmarks: XDP pass has the same median as C/eBPF in this harness
-  at 5ns average runtime and 2 instructions. XDP array-map count is 13ns and 21
+- Microbenchmarks: XDP pass is 5ns for KernelScript and 6ns for C/eBPF in this
+  harness, with 2 instructions in each object. XDP array-map count is 12ns and 21
   instructions for KernelScript versus 9ns and 11 instructions for
   hand-written C/eBPF.
 - Traffic-driven XDP benchmark: over ten 1s iperf3 TCP trials on fresh
-  veth/netns pairs, pass medians are 17.8Gb/s for KernelScript and 18.1Gb/s for
-  hand-written C/eBPF. Count medians are 17.4Gb/s for KernelScript and 17.5Gb/s
-  for C/eBPF, with positive `counts` map invocation rates at 1.51 and 1.52 Mpps
+  veth/netns pairs, pass medians are 17.4Gb/s for KernelScript and 17.8Gb/s for
+  hand-written C/eBPF. Count medians are 17.2Gb/s for KernelScript and 17.3Gb/s
+  for C/eBPF, with positive `counts` map invocation rates at 1.50 and 1.50 Mpps
   respectively.
 - Traffic-driven TC benchmark: over ten 1s iperf3 TCP trials on fresh
-  veth/netns pairs, pass medians are 86.7Gb/s for KernelScript and 87.4Gb/s for
-  C/eBPF. Count medians are 87.0Gb/s for KernelScript and 90.6Gb/s for C/eBPF,
-  with positive `counts` map invocation rates at 0.25 and 0.26 Mpps
+  veth/netns pairs, pass medians are 89.9Gb/s for KernelScript and 92.0Gb/s for
+  C/eBPF. Count medians are 93.0Gb/s for KernelScript and 90.7Gb/s for C/eBPF,
+  with positive `counts` map invocation rates at 0.27 and 0.26 Mpps
   respectively.
 - Longer traffic stress: over three 5s iperf3 TCP trials per variant, all XDP
-  and TC pass/count stress oracles pass. XDP count medians are 17.8Gb/s for
-  KernelScript and 18.1Gb/s for C/eBPF. TC count medians are 86.5Gb/s for
-  KernelScript and 91.1Gb/s for C/eBPF.
+  and TC pass/count stress oracles pass. XDP count medians are 17.3Gb/s for
+  KernelScript and 15.3Gb/s for C/eBPF. TC count medians are 89.5Gb/s for
+  KernelScript and 86.1Gb/s for C/eBPF.
 - Perf_event generated-loader lifecycle latency: over twenty privileged trials,
   both the generated `perf_page_fault` loader and a hand-written C/libbpf loader
   attach two perf_event programs, read positive page-fault counters, read
   branch-miss counters, and detach cleanly. Median end-to-end invocation
-  latencies are 11.1ms and 15.2ms, with p90 latencies of 44.1ms and 40.3ms,
+  latencies are 15.7ms and 18.2ms, with p90 latencies of 20.6ms and 21.1ms,
   respectively.
 - Perf_event page-fault counter workload: over ten privileged trials, both
   KernelScript and C/eBPF objects report median 262147 BPF map updates matching
-  perf counter reads. Median event rates are 1.13 and 1.13 million events/s,
+  perf counter reads. Median event rates are 1.02 and 1.05 million events/s,
   respectively.
 - Ring-buffer event-emission workload: over ten privileged trials, both
   KernelScript and C/eBPF objects submit and receive 50000 events per trial with
-  zero drops. Median event rates are 2.08 and 2.14 million events/s,
+  zero drops. Median event rates are 2.09 and 2.18 million events/s,
   respectively.
 - Struct_ops compatibility: over three privileged trials, one direct libbpf
   runner loads, attaches, and detaches both the generated tcp-congestion
@@ -280,9 +279,9 @@ The current run evaluates KernelScript commit `ccb15b4` on Linux
 - Scheduler-extension struct_ops verifier diagnostic:
   `run_sched_ext_verifier.py` compiles `sched_ext_simple.ks` and a
   five-callback hand-written C/eBPF control baseline, then runs
-  `bpftool prog loadall` only. The C/eBPF object loads and pins 5 programs,
-  while the generated object fails at `select_cpu`; this is a negative boundary
-  result, not scheduler workload evidence or full callback-set equivalence.
+  `bpftool prog loadall` only. The C/eBPF object loads and pins 5 programs, and
+  the generated object loads and pins 12 programs. This is load-only evidence,
+  not scheduler workload evidence or full callback-set equivalence.
 - Struct_ops TCP workload: `run_struct_ops_workload.py` attaches the generated
   and C/eBPF tcp-congestion objects, selects the registered BPF algorithm on a
   loopback TCP sender socket, transfers 1MiB, and detaches. This is a local
