@@ -69,9 +69,9 @@ clean loopback transfers, then adds a loss-injected profile that reaches
 ssthresh, cong_avoid, set_state, and cwnd_event in both generated and C/eBPF
 objects. `experiments/run_sched_ext_verifier.py` adds a scheduler-extension
 struct_ops verifier diagnostic that compiles `sched_ext_simple.ks` and a
-matched hand-written C/eBPF baseline, runs `bpftool prog loadall` only, records
-`/sys/kernel/sched_ext` state before and after, and does not attach a
-scheduler.
+five-callback hand-written C/eBPF control baseline, runs `bpftool prog loadall`
+only, records `/sys/kernel/sched_ext` state before and after, and does not
+attach a scheduler.
 
 RQ6. Is the XDP map-update gap caused by the unified source model or by a
 specific lowering choice?
@@ -266,7 +266,7 @@ one libbpf runner.
 
 18. `experiments/run_sched_ext_verifier.py`
    - Compiles `kernelscript/examples/sched_ext_simple.ks` with KernelScript and
-     a matched hand-written scheduler-extension C/eBPF baseline.
+     a five-callback hand-written scheduler-extension C/eBPF control baseline.
    - Uses `bpftool prog loadall` only, with no scheduler attach or registration.
    - Requires the C/eBPF baseline to verifier-load and records generated-object
      load status, failure class, pinned-program counts, and sched_ext state
@@ -335,11 +335,11 @@ At commit `ccb15b4`, on Linux `6.15.11-061511-generic`:
   version-incompatible map-link assignments from generated skeleton headers,
   and rebuilds 2 of 2 generated userspace projects successfully.
 - The scheduler-extension struct_ops verifier diagnostic confirms that a
-  matched hand-written C/eBPF baseline verifier-loads and pins 5 programs while
-  the generated `sched_ext_simple` object fails before pinning with a
-  `struct_ops_task_arg_type` diagnostic. The script does not attach a scheduler:
-  `/sys/kernel/sched_ext/state` remains `disabled`, and `enable_seq` remains
-  `0`.
+  five-callback hand-written C/eBPF control baseline verifier-loads and pins 5
+  programs while the generated `sched_ext_simple` object fails before pinning
+  with a `struct_ops_task_arg_type` diagnostic. The script does not attach a
+  scheduler: `/sys/kernel/sched_ext/state` remains `disabled`, and `enable_seq`
+  remains `0`.
 - Successful examples have median 31 KernelScript SLOC and median 472 generated
   source/build SLOC, a median expansion factor of 11.3x.
 - The smoke test successfully attaches and detaches an XDP program on `lo`.
@@ -399,8 +399,8 @@ callback-flag workload checks clean-loopback cong_avoid/cwnd_event reachability
 and loss-injected ssthresh/cong_avoid/set_state/cwnd_event reachability. The
 repair checks one local generated userspace build fix but does not run the
 repaired binaries. The scheduler-extension verifier diagnostic shows that the
-local kernel/toolchain accepts a matched C/eBPF object but rejects the generated
-object before any scheduler attach. The evaluation still does not validate
+local kernel/toolchain accepts a five-callback C/eBPF control object but rejects
+the generated object before any scheduler attach. The evaluation still does not validate
 NIC-rate throughput, scheduler-extension workload behavior, every
 tcp-congestion callback path, broader skeleton version coverage, broader
 perf_event workloads, or generated-loader throughput.

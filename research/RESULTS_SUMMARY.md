@@ -39,9 +39,10 @@ cwnd_event for both variants. The
 struct_ops skeleton repair changes the two original generated userspace build
 failures from 0/2 to 2/2 repaired builds on this host by removing 2
 version-incompatible map-link assignments. The scheduler-extension diagnostic
-does not attach a scheduler: the hand-written C/eBPF baseline verifier-loads
-and pins 5 programs, while the generated `sched_ext_simple` object fails before
-pinning with a `struct_ops_task_arg_type` diagnostic and leaves
+does not attach a scheduler: the five-callback hand-written C/eBPF control
+baseline verifier-loads and pins 5 programs, while the generated
+`sched_ext_simple` object fails before pinning with a
+`struct_ops_task_arg_type` diagnostic and leaves
 `/sys/kernel/sched_ext/state` disabled. The stress
 rerun uses three 5s iperf3 trials per XDP/TC pass/count variant; all oracles
 pass, with XDP count medians of 17.8 versus 18.1Gb/s and TC count medians of
@@ -64,7 +65,7 @@ pass, with XDP count medians of 17.8 versus 18.1Gb/s and TC count medians of
 | R010 | `results/struct_ops_skeleton_repair_summary.json` | ok | Original generated struct_ops userspace builds are 0/2; after a local version-aware skeleton header repair, 2/2 generated userspace projects build. |
 | R011 | `results/struct_ops_workload_summary.json` | ok | Generated and C/eBPF tcp-congestion objects each complete 10/10 loopback TCP workload trials with algorithm selection, full byte transfer, and detach success. |
 | R012 | `results/struct_ops_callback_workload_summary.json` | ok | Generated and C/eBPF tcp-congestion objects each complete 10/10 clean 4MiB loopback TCP trials with cong_avoid plus cwnd_event, then complete 5/5 5% loss-injected 4MiB trials with ssthresh, cong_avoid, set_state, and cwnd_event. |
-| R013 | `results/sched_ext_verifier_summary.json` | ok | Matched C/eBPF scheduler-extension object verifier-loads and pins 5 programs; generated `sched_ext_simple` fails before pinning with `struct_ops_task_arg_type`; no scheduler attach is attempted and sched_ext state remains disabled. |
+| R013 | `results/sched_ext_verifier_summary.json` | ok | Five-callback C/eBPF scheduler-extension control object verifier-loads and pins 5 programs; generated `sched_ext_simple` fails before pinning with `struct_ops_task_arg_type`; no scheduler attach is attempted and sched_ext state remains disabled. |
 
 ## Anomalies And Negative Results
 
@@ -84,9 +85,10 @@ pass, with XDP count medians of 17.8 versus 18.1Gb/s and TC count medians of
   cwnd_event reachability under 5% loopback loss. It still does not measure
   production TCP performance or cover every tcp-congestion callback path. The
   scheduler-extension diagnostic is a negative boundary: it shows that the
-  local host can verifier-load a matched C/eBPF object, but the generated object
-  is not verifier-clean and no scheduler is attached. The skeleton repair
-  validates one local generated-userspace build fix, but it does not run the
+  local host can verifier-load a properly wrapped five-callback C/eBPF control
+  object, but the generated object is not verifier-clean and no scheduler is
+  attached. The skeleton repair validates one local generated-userspace build
+  fix, but it does not run the
   generated binaries or prove portability across libbpf versions. The
   perf_event counter, ringbuf, and direct struct_ops runs are object checks
   through a shared libbpf runner, and the generated-loader latency check is one

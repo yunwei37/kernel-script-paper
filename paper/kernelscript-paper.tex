@@ -306,7 +306,7 @@ libbpf 1.3.0, OCaml 4.14, and dune 3.14.  The host CPU is a
 microbenchmarks and object workloads do not pin CPUs or change the governor, so
 their nanosecond and event-rate values should be read as local comparisons
 rather than general performance claims.  The evaluated commit is
-\KSCommitShort{}.  The artifact contains eighteen measurement scripts under
+\KSCommitShort{}.  The artifact contains nineteen measurement scripts under
 \texttt{experiments/}.  They cover compiler tests and example builds,
 static-check cases, strict verifier loading, isolated XDP attach/detach, XDP and
 TC traffic over fresh veth/netns pairs, perf-event loader and counter workloads,
@@ -328,7 +328,7 @@ compiler source, applies a tracked compiler-source patch for array-map
 increment lowering, rebuilds the patched compiler, and reruns the same count
 benchmark.
 
-We measure twelve outcomes.  \textbf{Compiler regression coverage} is
+We measure thirteen outcomes.  \textbf{Compiler regression coverage} is
 approximated by the repository test suite.  \textbf{Early rejection} is
 measured by static cases whose expected diagnostics are checked by the harness.
 \textbf{Example marker coverage} is
@@ -366,6 +366,11 @@ or TCP-performance sweep.
 generated struct\_ops userspace projects, detecting whether the installed
 libbpf skeleton header exposes map-link fields, and applying a minimal
 generated-header repair only when that field is absent.
+\textbf{Scheduler-extension verifier boundary} is measured by comparing the
+generated \texttt{sched\_ext\_simple} object with a five-callback C/eBPF control
+object under \texttt{bpftool prog loadall} only, recording pinned-program
+counts, failure class, and scheduler-extension state without attaching a
+scheduler.
 \textbf{Generated-loader lifecycle}
 is measured by a perf-event loader latency check that requires successful
 load/attach, positive page-fault counter reads, clean detach, and end-to-end
@@ -385,7 +390,7 @@ Project generation & Repository examples lowered to generated projects & Compile
 Early checks & Unit tests and targeted invalid programs & Dune and static-check harnesses & Test success and expected diagnostic categories & Selected cases, not soundness \\
 Compatibility & Generated objects and generated perf loader & Local kernel/toolchain & Pinned-program load criterion, attach state, loader attach/read/detach and invocation timing & Local host only \\
 Runtime sanity & Generated XDP, TC, perf-counter, and ring-buffer objects & Matched C/eBPF objects or shared libbpf runner & iperf3 JSON, positive map counts, perf-counter equality, submitted/received/drop counts & Local workloads only \\
-Struct\_ops compatibility & Generated tcp-congestion and scheduler-extension objects plus generated skeleton projects & Minimal C/eBPF objects with matched function sets and installed libbpf header & Shared libbpf runner load/attach/detach, loopback TCP byte-transfer, clean and loss-injected callback flags, scheduler-extension verifier diagnostic, and repaired userspace build status & Local tcp-congestion object compatibility, socket workload, callback reachability for two clean functions and four loss-injected functions, scheduler-extension load boundary, and skeleton build repair only, with no scheduler workload \\
+Struct\_ops compatibility & Generated tcp-congestion and scheduler-extension objects plus generated skeleton projects & Minimal C/eBPF controls and installed libbpf header & Shared libbpf runner load/attach/detach, loopback TCP byte-transfer, clean and loss-injected callback flags, scheduler-extension five-callback verifier diagnostic, and repaired userspace build status & Local tcp-congestion object compatibility, socket workload, callback reachability for two clean functions and four loss-injected functions, scheduler-extension load boundary, and skeleton build repair only, with no scheduler workload \\
 \bottomrule
 \end{tabular}
 \end{table*}
@@ -516,10 +521,10 @@ libbpf versions.
 \textbf{Scheduler-extension struct\_ops verifier diagnostic.}  To test whether
 the tcp-congestion struct\_ops result generalizes to scheduler extensions,
 \texttt{run\_sched\_ext\_verifier.py} compiles
-\texttt{sched\_ext\_simple.ks}, compiles a hand-written C/eBPF baseline using
-\texttt{BPF\_PROG} wrappers for the same minimal
-\texttt{sched\_ext\_ops} callbacks, and runs \texttt{bpftool prog loadall}
-without attaching a scheduler.  The script records
+\texttt{sched\_ext\_simple.ks}, compiles a hand-written C/eBPF control baseline
+using \texttt{BPF\_PROG} wrappers for five active \texttt{sched\_ext\_ops}
+callbacks including \texttt{select\_cpu}, and runs
+\texttt{bpftool prog loadall} without attaching a scheduler.  The script records
 \texttt{/sys/kernel/sched\_ext/state} before and after the run.  On this host,
 the state remains \KSSchedExtStateBefore{} to \KSSchedExtStateAfter{} and the
 enable sequence remains
@@ -529,8 +534,8 @@ does not install a scheduler.  The C/eBPF object verifier-loads and pins
 \KSSchedExtKsPinnedProgramCount{} programs and fails in
 \texttt{select\_cpu} with failure class \KSSchedExtKsFailureClass{}.  This is a
 negative boundary result: it shows local scheduler-extension kernel support for
-the matched C baseline, but the current \tool{} lowering does not produce a
-verifier-clean sched\_ext object on this host.
+a properly wrapped five-callback C control object, but the current \tool{}
+lowering does not produce a verifier-clean sched\_ext object on this host.
 
 \textbf{Struct\_ops TCP workload.}  To move beyond load/attach/detach,
 \texttt{run\_struct\_ops\_workload.py} uses one runner for the generated object

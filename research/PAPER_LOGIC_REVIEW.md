@@ -77,9 +77,14 @@ callback-flag workload results, and a scheduler-extension verifier diagnostic.
     savings, and renamed the runner's clean-profile callback field so the JSON
     profile oracle is not easy to misread.
 15. Integrated the scheduler-extension struct_ops verifier diagnostic as a
-    negative boundary: the paper now says the matched C/eBPF object
+    negative boundary: the paper now says a five-callback C/eBPF control object
     verifier-loads, the generated object fails before pinning, and no scheduler
-    attach or workload evidence is claimed.
+    attach, workload evidence, or full callback-set equivalence is claimed.
+16. Applied a delegated top-systems review after the scheduler-extension
+    diagnostic. The follow-up pass corrected the scheduler-extension baseline
+    wording from matched callback-set language to a five-callback control
+    baseline, and updated the method summary to nineteen measurement scripts
+    and thirteen outcomes.
 
 ## Remaining Accepted Limits
 

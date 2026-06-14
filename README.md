@@ -278,11 +278,11 @@ The current run evaluates KernelScript commit `ccb15b4` on Linux
   generated userspace projects successfully. This is a local build repair, not
   a scheduler workload or cross-version portability claim.
 - Scheduler-extension struct_ops verifier diagnostic:
-  `run_sched_ext_verifier.py` compiles `sched_ext_simple.ks` and a matched
-  hand-written C/eBPF baseline, then runs `bpftool prog loadall` only. The C/eBPF
-  object loads and pins 5 programs, while the generated object fails at
-  `select_cpu`; this is a negative boundary result, not scheduler workload
-  evidence.
+  `run_sched_ext_verifier.py` compiles `sched_ext_simple.ks` and a
+  five-callback hand-written C/eBPF control baseline, then runs
+  `bpftool prog loadall` only. The C/eBPF object loads and pins 5 programs,
+  while the generated object fails at `select_cpu`; this is a negative boundary
+  result, not scheduler workload evidence or full callback-set equivalence.
 - Struct_ops TCP workload: `run_struct_ops_workload.py` attaches the generated
   and C/eBPF tcp-congestion objects, selects the registered BPF algorithm on a
   loopback TCP sender socket, transfers 1MiB, and detaches. This is a local

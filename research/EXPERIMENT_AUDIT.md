@@ -91,9 +91,10 @@ build completes from those macros.
 - Struct_ops skeleton repair results require the original generated userspace
   failures to match the local map-link field mismatch and the repaired
   generated userspace projects to build successfully.
-- Scheduler-extension verifier diagnostic results require the matched C/eBPF
-  object to verifier-load and pin programs, record the generated-object failure
-  class when it fails, and confirm no scheduler attach is attempted.
+- Scheduler-extension verifier diagnostic results require the five-callback
+  C/eBPF control object to verifier-load and pin programs, record the
+  generated-object failure class when it fails, and confirm no scheduler attach
+  is attempted.
 
 ## Metric And Normalization Review
 
@@ -128,8 +129,9 @@ scheduler workload evidence.
 3. The struct_ops checks cover tcp-congestion object load/attach/detach, a
    loopback socket workload, clean cong_avoid/cwnd_event callback flags,
    loss-injected ssthresh/cong_avoid/set_state/cwnd_event flags, and one
-   scheduler-extension verifier diagnostic where the C/eBPF baseline loads but
-   the generated object does not. The skeleton repair covers local generated
+   scheduler-extension verifier diagnostic where the five-callback C/eBPF
+   control object loads but the generated object does not. The skeleton repair
+   covers local generated
    userspace builds only. These checks do not cover scheduler-extension workload
    behavior, every tcp-congestion callback path, running the repaired binaries,
    or broad libbpf-version portability.
