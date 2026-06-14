@@ -28,8 +28,8 @@
       "returncode": 0
     }
   ],
-  "sched_ext_enable_seq_after": "0",
-  "sched_ext_enable_seq_before": "0",
+  "sched_ext_enable_seq_after": "11",
+  "sched_ext_enable_seq_before": "11",
   "sched_ext_nr_rejected_after": "0",
   "sched_ext_nr_rejected_before": "0",
   "sched_ext_state_after": "disabled",

@@ -27,7 +27,11 @@ void BPF_PROG(ks_paper_scx_dispatch, s32 cpu, struct task_struct *prev)
 {
     (void)cpu;
     (void)prev;
-    scx_bpf_dsq_move_to_local(SCX_DSQ_GLOBAL);
+    /*
+     * Tasks are inserted into the built-in global DSQ in enqueue().  sched_ext
+     * automatically falls back to the built-in global DSQ after dispatch()
+     * returns, so no explicit DSQ move is needed here.
+     */
 }
 
 SEC("struct_ops/init")

@@ -26,7 +26,7 @@ libbpf: prog 'packet_inspector': -- BEGIN PROG LOAD LOG --
 ;  @ object_allocation.ebpf.c:0
 3: (07) r2 += -4                      ; R2_w=fp-4
 ; __map_lookup_0 = bpf_map_lookup_elem(&conn_tracker, &src_ip); @ object_allocation.ebpf.c:90
-4: (18) r1 = 0xffff8ec6d0e1bc00       ; R1_w=map_ptr(map=conn_tracker,ks=4,vs=8)"
+4: (18) r1 = 0xffff8ec953115000       ; R1_w=map_ptr(map=conn_tracker,ks=4,vs=8)"
 packet_filter,examples/packet_filter.ks,ok,success,results/build/examples/packet_filter/packet_filter.ebpf.o,xdp,xdp,1,1,ok,,
 packet_matching,examples/packet_matching.ks,ok,success,results/build/examples/packet_matching/packet_matching.ebpf.o,xdp tc/ingress,tc xdp,2,7,ok,,
 pattern_test,examples/pattern_test.ks,ok,success,results/build/examples/pattern_test/pattern_test.ebpf.o,xdp,xdp,1,1,ok,,

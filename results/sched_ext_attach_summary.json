@@ -1,0 +1,104 @@
+{
+  "experiment": "sched_ext_attach",
+  "status": "ok",
+  "overall_status": "ok",
+  "host_kernel": "6.15.11-061511-generic",
+  "allow_env": "KERNELSCRIPT_ALLOW_SCHED_EXT_ATTACH",
+  "workload_seconds": 0.75,
+  "workload_max_workers": 4,
+  "rows": [
+    {
+      "name": "c_libbpf",
+      "implementation": "C/libbpf",
+      "object": "results/build/sched_ext_attach/handwritten/sched_ext_simple.o",
+      "link_dir": "/sys/fs/bpf/kernelscript-paper/sched-ext-attach/240748-c_libbpf",
+      "attach_attempted": true,
+      "status": "ok",
+      "register_returncode": 0,
+      "unregister_returncode": "0",
+      "workload_returncode": 0,
+      "state_before": "disabled",
+      "state_after_register": "enabled",
+      "state_after_workload": "enabled",
+      "state_after_unregister": "disabled",
+      "enable_seq_before": "11",
+      "enable_seq_after_register": "12",
+      "enable_seq_after_unregister": "12",
+      "nr_rejected_before": "0",
+      "nr_rejected_after": "0",
+      "failure_excerpt": "",
+      "program_sections": [
+        "struct_ops/select_cpu",
+        "struct_ops/enqueue",
+        "struct_ops/dispatch",
+        "struct_ops/init",
+        "struct_ops/exit"
+      ],
+      "new_struct_ops_maps": [
+        {
+          "id": 7313,
+          "name": "ks_paper_scx",
+          "kernel_struct_ops": "sched_ext_ops"
+        }
+      ],
+      "unregister_attempts": [
+        {
+          "target": "id 7313",
+          "returncode": "0",
+          "stdout": "",
+          "stderr": "Unregistered sched_ext_ops ks_paper_scx id 7313"
+        }
+      ]
+    },
+    {
+      "name": "ks_generated",
+      "implementation": "KernelScript",
+      "object": "results/build/sched_ext_attach/kernelscript/sched_ext_attach_safe.ebpf.o",
+      "link_dir": "/sys/fs/bpf/kernelscript-paper/sched-ext-attach/240748-ks_generated",
+      "attach_attempted": true,
+      "status": "ok",
+      "register_returncode": 0,
+      "unregister_returncode": "0",
+      "workload_returncode": 0,
+      "state_before": "disabled",
+      "state_after_register": "enabled",
+      "state_after_workload": "enabled",
+      "state_after_unregister": "disabled",
+      "enable_seq_before": "12",
+      "enable_seq_after_register": "13",
+      "enable_seq_after_unregister": "13",
+      "nr_rejected_before": "0",
+      "nr_rejected_after": "0",
+      "failure_excerpt": "",
+      "program_sections": [
+        "struct_ops/select_cpu",
+        "struct_ops/enqueue",
+        "struct_ops/dispatch",
+        "struct_ops/runnable",
+        "struct_ops/running",
+        "struct_ops/stopping",
+        "struct_ops/quiescent",
+        "struct_ops/init_task",
+        "struct_ops/exit_task",
+        "struct_ops/enable",
+        "struct_ops/init",
+        "struct_ops/exit"
+      ],
+      "new_struct_ops_maps": [
+        {
+          "id": 7314,
+          "name": "simple_fifo_sch",
+          "kernel_struct_ops": "sched_ext_ops"
+        }
+      ],
+      "unregister_attempts": [
+        {
+          "target": "id 7314",
+          "returncode": "0",
+          "stdout": "",
+          "stderr": "Unregistered sched_ext_ops simple_fifo_sch id 7314"
+        }
+      ]
+    }
+  ]
+}

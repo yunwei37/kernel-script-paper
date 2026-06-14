@@ -1,61 +1,61 @@
 name,source,ks_status,make_status,classification,ks_time_sec,make_time_sec,ks_sloc,generated_sloc,userspace_c_sloc,ebpf_c_sloc,module_c_sloc,makefile_sloc,ebpf_object_bytes,ebpf_instruction_count,generated_to_ks_ratio,feature_xdp,feature_tc,feature_probe,feature_tracepoint,feature_perf_event,feature_kfunc,feature_struct_ops,feature_ringbuf,feature_tail_call,feature_dynptr,feature_maps,feature_userspace,failure_excerpt
-basic_match,examples/basic_match.ks,ok,ok,success,0.004,0.3756,60,551,413,101,0,37,8136,15,9.18,True,False,False,False,False,False,False,False,True,False,False,True,
-break_continue_unbound,examples/break_continue_unbound.ks,ok,ok,success,0.003,0.3424,37,512,390,85,0,37,9744,37,13.84,True,False,False,False,False,False,False,False,False,False,True,True,
-dynptr,examples/dynptr.ks,ok,ok,success,0.0024,0.3002,25,122,5,80,0,37,11536,59,4.88,True,False,False,False,False,False,False,False,False,True,True,False,
-error_handling_demo,examples/error_handling_demo.ks,ok,ok,success,0.0027,0.3163,26,143,47,59,0,37,7840,22,5.5,True,False,False,False,False,False,False,False,False,False,True,True,
-extern_kfunc_demo,examples/extern_kfunc_demo.ks,ok,ok,success,0.0023,0.3054,15,112,27,48,0,37,5728,7,7.47,True,False,False,False,False,True,False,False,False,False,False,True,
-functions,examples/functions.ks,ok,ok,success,0.0027,0.3156,43,151,65,49,0,37,6048,7,3.51,True,False,False,False,False,False,False,False,False,False,False,True,
-import_demo,examples/import_demo.ks,ok,ok,success,0.0026,0.4684,30,572,469,64,0,39,7136,14,19.07,True,False,False,False,False,False,False,False,False,False,False,True,
-include_demo,examples/include_demo.ks,ok,ok,success,0.0025,0.3042,17,127,30,60,0,37,6200,8,7.47,True,False,False,False,False,False,False,False,False,False,False,True,
-local_global_vars,examples/local_global_vars.ks,ok,ok,success,0.0023,0.3568,27,472,378,57,0,37,5536,0,17.48,True,False,False,False,False,False,False,False,False,False,False,True,
-map_operations_demo,examples/map_operations_demo.ks,ok,ok,success,0.0175,0.5436,123,2292,531,1724,0,37,1057200,1882,18.63,True,True,True,True,False,False,False,True,False,False,True,True,
-maps_demo,examples/maps_demo.ks,ok,ok,success,0.0028,0.3608,80,746,535,174,0,37,21896,123,9.32,True,True,False,False,False,False,False,False,False,False,True,True,
-multi_programs,examples/multi_programs.ks,ok,ok,success,0.0022,0.3567,26,551,451,63,0,37,11456,26,21.19,True,True,False,False,False,False,False,False,False,False,True,True,
-named_return,examples/named_return.ks,ok,ok,success,0.003,0.3173,114,266,150,79,0,37,7448,23,2.33,True,False,False,False,False,False,False,False,False,False,False,True,
-object_allocation,examples/object_allocation.ks,ok,ok,success,0.0023,0.3568,48,544,389,118,0,37,10944,50,11.33,True,False,False,False,False,False,False,False,False,False,True,True,
-packet_filter,examples/packet_filter.ks,ok,ok,success,0.0021,0.3495,17,458,374,47,0,37,5704,7,26.94,True,False,False,False,False,False,False,False,False,False,False,True,
-packet_matching,examples/packet_matching.ks,ok,ok,success,0.0046,0.2999,255,556,5,514,0,37,21104,58,2.18,True,True,False,False,False,False,False,False,False,False,False,False,
-pattern_test,examples/pattern_test.ks,ok,ok,success,0.0028,0.3538,25,469,378,54,0,37,6024,7,18.76,True,False,False,False,False,False,False,False,False,False,False,True,
-perf_cache_miss,examples/perf_cache_miss.ks,ok,ok,success,0.0029,0.4002,43,998,954,7,0,37,6744,2,23.21,False,False,False,False,True,False,False,False,False,False,False,True,
-perf_page_fault,examples/perf_page_fault.ks,ok,ok,success,0.0028,0.3956,23,949,905,7,0,37,6744,2,41.26,False,False,False,False,True,False,False,False,False,False,False,True,
-pointer_simple,examples/pointer_simple.ks,ok,ok,success,0.0028,0.2988,15,96,5,54,0,37,6200,12,6.4,True,False,False,False,False,False,False,False,False,False,False,False,
-print_demo,examples/print_demo.ks,ok,ok,success,0.0025,0.3484,22,495,394,64,0,37,7616,14,22.5,True,False,False,False,False,False,False,False,False,False,False,True,
-private_kfunc,examples/private_kfunc.ks,ok,ok,success,0.0026,1.7202,30,561,420,44,49,48,5512,9,18.7,True,False,False,False,False,True,False,False,False,False,False,True,
-probe_do_exit,examples/probe_do_exit.ks,ok,ok,success,0.0024,0.3505,19,429,381,11,0,37,5232,6,22.58,False,False,True,False,False,False,False,False,False,False,False,True,
-rate_limiter,examples/rate_limiter.ks,ok,ok,success,0.0047,0.3614,37,588,444,107,0,37,10816,52,15.89,True,False,False,False,False,False,False,False,False,False,True,True,
-ringbuf_demo,examples/ringbuf_demo.ks,ok,ok,success,0.0031,0.3648,128,744,529,178,0,37,19680,188,5.81,True,False,True,False,False,False,False,True,False,False,True,True,
-ringbuf_on_event_demo,examples/ringbuf_on_event_demo.ks,ok,ok,success,0.0025,0.3358,42,278,147,94,0,37,10544,48,6.62,True,False,True,False,False,False,False,True,False,False,True,True,
-safety_demo,examples/safety_demo.ks,failed,not_run,safety_rejected_stack_limit,0.0022,0.0,66,0,0,0,0,0,0,0,0.0,True,False,False,False,False,False,False,False,False,False,True,False,"Phase 4.5: Safety Analysis
+basic_match,examples/basic_match.ks,ok,ok,success,0.0026,0.3713,60,551,413,101,0,37,8136,15,9.18,True,False,False,False,False,False,False,False,True,False,False,True,
+break_continue_unbound,examples/break_continue_unbound.ks,ok,ok,success,0.0038,0.3488,37,512,390,85,0,37,9744,37,13.84,True,False,False,False,False,False,False,False,False,False,True,True,
+dynptr,examples/dynptr.ks,ok,ok,success,0.0022,0.2967,25,122,5,80,0,37,11536,59,4.88,True,False,False,False,False,False,False,False,False,True,True,False,
+error_handling_demo,examples/error_handling_demo.ks,ok,ok,success,0.0023,0.3041,26,143,47,59,0,37,7840,22,5.5,True,False,False,False,False,False,False,False,False,False,True,True,
+extern_kfunc_demo,examples/extern_kfunc_demo.ks,ok,ok,success,0.002,0.3196,15,112,27,48,0,37,5728,7,7.47,True,False,False,False,False,True,False,False,False,False,False,True,
+functions,examples/functions.ks,ok,ok,success,0.0022,0.3086,43,151,65,49,0,37,6048,7,3.51,True,False,False,False,False,False,False,False,False,False,False,True,
+import_demo,examples/import_demo.ks,ok,ok,success,0.0024,0.4453,30,572,469,64,0,39,7136,14,19.07,True,False,False,False,False,False,False,False,False,False,False,True,
+include_demo,examples/include_demo.ks,ok,ok,success,0.0022,0.3111,17,127,30,60,0,37,6200,8,7.47,True,False,False,False,False,False,False,False,False,False,False,True,
+local_global_vars,examples/local_global_vars.ks,ok,ok,success,0.0025,0.3485,27,472,378,57,0,37,5536,0,17.48,True,False,False,False,False,False,False,False,False,False,False,True,
+map_operations_demo,examples/map_operations_demo.ks,ok,ok,success,0.0163,0.552,123,2292,531,1724,0,37,1057200,1882,18.63,True,True,True,True,False,False,False,True,False,False,True,True,
+maps_demo,examples/maps_demo.ks,ok,ok,success,0.0027,0.3648,80,746,535,174,0,37,21896,123,9.32,True,True,False,False,False,False,False,False,False,False,True,True,
+multi_programs,examples/multi_programs.ks,ok,ok,success,0.0022,0.3661,26,551,451,63,0,37,11456,26,21.19,True,True,False,False,False,False,False,False,False,False,True,True,
+named_return,examples/named_return.ks,ok,ok,success,0.0028,0.3235,114,266,150,79,0,37,7448,23,2.33,True,False,False,False,False,False,False,False,False,False,False,True,
+object_allocation,examples/object_allocation.ks,ok,ok,success,0.0027,0.3482,48,544,389,118,0,37,10944,50,11.33,True,False,False,False,False,False,False,False,False,False,True,True,
+packet_filter,examples/packet_filter.ks,ok,ok,success,0.0022,0.3454,17,458,374,47,0,37,5704,7,26.94,True,False,False,False,False,False,False,False,False,False,False,True,
+packet_matching,examples/packet_matching.ks,ok,ok,success,0.0043,0.3152,255,556,5,514,0,37,21104,58,2.18,True,True,False,False,False,False,False,False,False,False,False,False,
+pattern_test,examples/pattern_test.ks,ok,ok,success,0.0046,0.3495,25,469,378,54,0,37,6024,7,18.76,True,False,False,False,False,False,False,False,False,False,False,True,
+perf_cache_miss,examples/perf_cache_miss.ks,ok,ok,success,0.0024,0.4046,43,998,954,7,0,37,6744,2,23.21,False,False,False,False,True,False,False,False,False,False,False,True,
+perf_page_fault,examples/perf_page_fault.ks,ok,ok,success,0.0025,0.3979,23,949,905,7,0,37,6744,2,41.26,False,False,False,False,True,False,False,False,False,False,False,True,
+pointer_simple,examples/pointer_simple.ks,ok,ok,success,0.0024,0.3001,15,96,5,54,0,37,6200,12,6.4,True,False,False,False,False,False,False,False,False,False,False,False,
+print_demo,examples/print_demo.ks,ok,ok,success,0.0021,0.3553,22,495,394,64,0,37,7616,14,22.5,True,False,False,False,False,False,False,False,False,False,False,True,
+private_kfunc,examples/private_kfunc.ks,ok,ok,success,0.0026,1.5849,30,561,420,44,49,48,5512,9,18.7,True,False,False,False,False,True,False,False,False,False,False,True,
+probe_do_exit,examples/probe_do_exit.ks,ok,ok,success,0.0022,0.3483,19,429,381,11,0,37,5232,6,22.58,False,False,True,False,False,False,False,False,False,False,False,True,
+rate_limiter,examples/rate_limiter.ks,ok,ok,success,0.0024,0.3609,37,588,444,107,0,37,10816,52,15.89,True,False,False,False,False,False,False,False,False,False,True,True,
+ringbuf_demo,examples/ringbuf_demo.ks,ok,ok,success,0.003,0.3606,128,744,529,178,0,37,19680,188,5.81,True,False,True,False,False,False,False,True,False,False,True,True,
+ringbuf_on_event_demo,examples/ringbuf_on_event_demo.ks,ok,ok,success,0.0022,0.3319,42,278,147,94,0,37,10544,48,6.62,True,False,True,False,False,False,False,True,False,False,True,True,
+safety_demo,examples/safety_demo.ks,failed,not_run,safety_rejected_stack_limit,0.0034,0.0,66,0,0,0,0,0,0,0,0.0,True,False,False,False,False,False,False,False,False,False,True,False,"Phase 4.5: Safety Analysis
 ⚠️  Safety Analysis Issues:
 ❌ Stack overflow detected: 608 bytes exceeds eBPF limit of 512 bytes
    Stack usage 608 exceeds eBPF limit 512
    Suggestion: Use BPF per-cpu array maps for large data structures
 
 ❌ Compilation halted due to safety violations"
-sched_ext_simple,examples/sched_ext_simple.ks,ok,failed,libbpf_struct_ops_skeleton_api_mismatch,0.0023,0.3854,54,539,363,139,0,37,948152,39,9.98,False,False,False,False,False,True,True,False,False,False,False,True,"In file included from sched_ext_simple.c:32:
+sched_ext_simple,examples/sched_ext_simple.ks,ok,failed,libbpf_struct_ops_skeleton_api_mismatch,0.0035,0.3809,51,532,363,132,0,37,947480,37,10.43,False,False,False,False,False,True,True,False,False,False,False,True,"In file included from sched_ext_simple.c:32:
 sched_ext_simple.skel.h: In function ‘sched_ext_simple_ebpf__create_skeleton’:
 sched_ext_simple.skel.h:221:12: error: ‘struct bpf_map_skeleton’ has no member named ‘link’
   221 |         map->link = &obj->links.simple_fifo_scheduler;
       |            ^~
 make: *** [Makefile:52: sched_ext_simple] Error 1"
-simple_gfp_test,examples/simple_gfp_test.ks,ok,ok,success,0.0025,1.5399,24,189,38,60,43,48,6112,9,7.88,True,False,False,False,False,True,False,False,False,False,False,True,
-simple_program_lifecycle,examples/simple_program_lifecycle.ks,ok,ok,success,0.002,0.3389,13,446,374,35,0,37,4744,2,34.31,True,False,False,False,False,False,False,False,False,False,False,True,
-string_test,examples/string_test.ks,ok,ok,success,0.0027,0.3218,37,248,88,123,0,37,6384,2,6.7,True,False,False,False,False,False,False,False,False,False,False,True,
-struct_ops_simple,examples/struct_ops_simple.ks,ok,failed,libbpf_struct_ops_skeleton_api_mismatch,0.0026,0.3868,20,451,357,57,0,37,937128,7,22.55,False,False,False,False,False,False,True,False,False,False,False,True,"In file included from struct_ops_simple.c:32:
+simple_gfp_test,examples/simple_gfp_test.ks,ok,ok,success,0.0025,1.5447,24,189,38,60,43,48,6112,9,7.88,True,False,False,False,False,True,False,False,False,False,False,True,
+simple_program_lifecycle,examples/simple_program_lifecycle.ks,ok,ok,success,0.002,0.3443,13,446,374,35,0,37,4744,2,34.31,True,False,False,False,False,False,False,False,False,False,False,True,
+string_test,examples/string_test.ks,ok,ok,success,0.0026,0.3182,37,248,88,123,0,37,6384,2,6.7,True,False,False,False,False,False,False,False,False,False,False,True,
+struct_ops_simple,examples/struct_ops_simple.ks,ok,failed,libbpf_struct_ops_skeleton_api_mismatch,0.0024,0.3868,20,451,357,57,0,37,937128,7,22.55,False,False,False,False,False,False,True,False,False,False,False,True,"In file included from struct_ops_simple.c:32:
 struct_ops_simple.skel.h: In function ‘struct_ops_simple_ebpf__create_skeleton’:
 struct_ops_simple.skel.h:186:12: error: ‘struct bpf_map_skeleton’ has no member named ‘link’
   186 |         map->link = &obj->links.minimal_congestion_control;
       |            ^~
 make: *** [Makefile:52: struct_ops_simple] Error 1"
-symbols,examples/symbols.ks,ok,ok,success,0.0025,0.3333,51,294,127,130,0,37,20592,134,5.76,True,True,False,False,False,False,False,False,False,False,True,True,
-sysctl_demo,examples/sysctl_demo.ks,ok,ok,success,0.0026,0.3361,11,183,111,35,0,37,4648,2,16.64,True,False,False,False,False,False,False,False,False,False,False,True,
-tail_call,examples/tail_call.ks,ok,ok,success,0.0026,0.3596,24,496,396,63,0,37,7464,12,20.67,True,False,False,False,False,False,False,False,True,False,False,True,
-test_config,examples/test_config.ks,ok,ok,success,0.0024,0.3623,30,576,448,91,0,37,9792,37,19.2,True,False,False,False,False,False,False,False,False,False,True,True,
-test_error_handling,examples/test_error_handling.ks,ok,ok,success,0.0049,0.3542,49,501,374,90,0,37,10416,52,10.22,True,False,False,False,False,False,False,False,False,False,True,True,
-test_exec,examples/test_exec.ks,ok,ok,success,0.0028,0.3521,32,450,332,81,0,37,10360,40,14.06,True,False,False,False,False,False,False,False,False,False,True,True,
-test_functions,examples/test_functions.ks,ok,ok,success,0.0022,0.3547,55,468,379,52,0,37,5712,7,8.51,True,False,False,False,False,False,False,False,False,False,False,True,
-tracepoint_sched_switch,examples/tracepoint_sched_switch.ks,ok,ok,success,0.0027,0.3567,46,486,383,66,0,37,12552,70,10.57,False,False,False,True,False,False,False,False,False,False,False,True,
-type_alias,examples/type_alias.ks,ok,ok,success,0.0024,0.356,18,454,377,40,0,37,4832,2,25.22,True,False,False,False,False,False,False,False,False,False,False,True,
-type_checking,examples/type_checking.ks,ok,ok,success,0.0031,0.3745,101,632,452,143,0,37,14176,81,6.26,True,False,False,False,False,False,False,False,False,False,True,True,
-types_demo,examples/types_demo.ks,ok,ok,success,0.0032,0.2976,87,228,5,186,0,37,18296,118,2.62,True,False,False,False,False,False,False,False,False,False,True,False,
-userspace_example,examples/userspace_example.ks,ok,ok,success,0.0023,0.3602,31,496,415,44,0,37,4704,2,16.0,True,False,False,False,False,False,False,False,False,False,False,True,
+symbols,examples/symbols.ks,ok,ok,success,0.0026,0.3266,51,294,127,130,0,37,20592,134,5.76,True,True,False,False,False,False,False,False,False,False,True,True,
+sysctl_demo,examples/sysctl_demo.ks,ok,ok,success,0.002,0.325,11,183,111,35,0,37,4648,2,16.64,True,False,False,False,False,False,False,False,False,False,False,True,
+tail_call,examples/tail_call.ks,ok,ok,success,0.0023,0.3549,24,496,396,63,0,37,7464,12,20.67,True,False,False,False,False,False,False,False,True,False,False,True,
+test_config,examples/test_config.ks,ok,ok,success,0.0028,0.3748,30,576,448,91,0,37,9792,37,19.2,True,False,False,False,False,False,False,False,False,False,True,True,
+test_error_handling,examples/test_error_handling.ks,ok,ok,success,0.0027,0.3694,49,501,374,90,0,37,10416,52,10.22,True,False,False,False,False,False,False,False,False,False,True,True,
+test_exec,examples/test_exec.ks,ok,ok,success,0.0024,0.3678,32,450,332,81,0,37,10360,40,14.06,True,False,False,False,False,False,False,False,False,False,True,True,
+test_functions,examples/test_functions.ks,ok,ok,success,0.0028,0.3675,55,468,379,52,0,37,5712,7,8.51,True,False,False,False,False,False,False,False,False,False,False,True,
+tracepoint_sched_switch,examples/tracepoint_sched_switch.ks,ok,ok,success,0.0024,0.3702,46,486,383,66,0,37,12552,70,10.57,False,False,False,True,False,False,False,False,False,False,False,True,
+type_alias,examples/type_alias.ks,ok,ok,success,0.0023,0.3668,18,454,377,40,0,37,4832,2,25.22,True,False,False,False,False,False,False,False,False,False,False,True,
+type_checking,examples/type_checking.ks,ok,ok,success,0.0031,0.3852,101,632,452,143,0,37,14176,81,6.26,True,False,False,False,False,False,False,False,False,False,True,True,
+types_demo,examples/types_demo.ks,ok,ok,success,0.0027,0.3214,87,228,5,186,0,37,18296,118,2.62,True,False,False,False,False,False,False,False,False,False,True,False,
+userspace_example,examples/userspace_example.ks,ok,ok,success,0.0021,0.3754,31,496,415,44,0,37,4704,2,16.0,True,False,False,False,False,False,False,False,False,False,False,True,

@@ -70,8 +70,11 @@ ssthresh, cong_avoid, set_state, and cwnd_event in both generated and C/eBPF
 objects. `experiments/run_sched_ext_verifier.py` adds a scheduler-extension
 struct_ops verifier diagnostic that compiles `sched_ext_simple.ks` and a
 five-callback hand-written C/eBPF control baseline, runs `bpftool prog loadall`
-only, records `/sys/kernel/sched_ext` state before and after, and does not
-attach a scheduler.
+only, and records `/sys/kernel/sched_ext` state before and after without
+attaching a scheduler. `experiments/run_sched_ext_attach.py` adds a separate
+opt-in host-scheduler check that registers generated and C/eBPF toy FIFO
+schedulers, runs a bounded CPU workload, unregisters them, and checks that
+sched_ext returns to disabled with zero rejected tasks.
 
 RQ6. Is the XDP map-update gap caused by the unified source model or by a
 specific lowering choice?
@@ -274,7 +277,17 @@ one libbpf runner.
    - Writes `results/sched_ext_verifier_summary.csv` and
      `results/sched_ext_verifier_summary.json`.
 
-19. `experiments/run_lowering_ablation.py`
+19. `experiments/run_sched_ext_attach.py`
+   - Compiles the same C/eBPF control scheduler and a timeout-bounded
+     generated scheduler-extension variant.
+   - Requires explicit host-scheduler opt-in before calling
+     `bpftool struct_ops register`.
+   - Requires sched_ext to reach `enabled`, runs a bounded CPU workload, then
+     unregisters and checks that sched_ext returns to `disabled`.
+   - Writes `results/sched_ext_attach_summary.csv` and
+     `results/sched_ext_attach_summary.json`.
+
+20. `experiments/run_lowering_ablation.py`
    - Compiles the KernelScript XDP count benchmark.
    - Copies the generated project and patches the map update lowering from
      lookup plus update helper to in-place atomic add.
@@ -296,7 +309,7 @@ one libbpf runner.
 
 ## Current Results
 
-At commit `87a0130`, on Linux `6.15.11-061511-generic`:
+At commit `3b19cd2`, on Linux `6.15.11-061511-generic`:
 
 - 85 unit test suites and 1095 unit tests pass.
 - 43 of 44 examples compile from KernelScript.
@@ -336,9 +349,11 @@ At commit `87a0130`, on Linux `6.15.11-061511-generic`:
 - The scheduler-extension struct_ops verifier diagnostic confirms that a
   five-callback hand-written C/eBPF control baseline verifier-loads and pins 5
   programs while the generated `sched_ext_simple` object verifier-loads and
-  pins 12 programs. The script does not attach a scheduler:
-  `/sys/kernel/sched_ext/state` remains `disabled`, and `enable_seq` remains
-  `0`.
+  pins 12 programs. The opt-in scheduler-extension attach harness then
+  registers the generated and C/eBPF toy FIFO schedulers, keeps sched_ext
+  enabled through a bounded CPU workload, unregisters both, and returns
+  `/sys/kernel/sched_ext/state` to `disabled` with zero rejected sched_ext
+  tasks.
 - Successful examples have median 31 KernelScript SLOC and median 472 generated
   source/build SLOC, a median expansion factor of 11.3x.
 - The smoke test successfully attaches and detaches an XDP program on `lo`.
@@ -398,15 +413,16 @@ workload checks socket-level algorithm selection and byte transfer, and the
 callback-flag workload checks clean-loopback cong_avoid/cwnd_event reachability
 and loss-injected ssthresh/cong_avoid/set_state/cwnd_event reachability. The
 repair checks one local generated userspace build fix but does not run the
-repaired binaries. The scheduler-extension verifier diagnostic shows that the
-local kernel/toolchain accepts both the five-callback C/eBPF control object and
-the generated object for verifier load, but it still does not attach a
-scheduler. The evaluation still does not validate NIC-rate throughput,
-scheduler-extension workload behavior, every
+repaired binaries. The scheduler-extension diagnostics show that the local
+kernel/toolchain accepts both the five-callback C/eBPF control object and the
+generated object for verifier load, and that both toy FIFO schedulers can be
+registered, kept enabled through a bounded CPU workload, and unregistered
+cleanly. The evaluation still does not validate NIC-rate throughput,
+scheduler-extension policy quality or performance, every
 tcp-congestion callback path, broader skeleton version coverage, broader
 perf_event workloads, or generated-loader throughput.
-A full runtime comparison should add scheduler-extension workload evidence
-after adding a safe attach/workload harness, more tcp-congestion callback coverage,
+A full runtime comparison should add scheduler-extension workloads beyond the
+current toy FIFO policy, more tcp-congestion callback coverage,
 upstream-integrated skeleton generation across libbpf versions, broader
 perf_event workloads, and larger or non-local XDP/TC stress runs with `pktgen`
 or `xdp-bench` that report throughput, tail latency, verifier log size, and CPU

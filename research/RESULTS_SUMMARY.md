@@ -1,6 +1,6 @@
 Last updated: 2026-06-13
 Stage at update: analyze
-Source/command: `./experiments/run_xdp_traffic.py`, `./experiments/run_tc_traffic.py`, `./experiments/run_traffic_stress.py`, `./experiments/run_perf_event_loader.py`, `./experiments/run_perf_event_counter.py`, `./experiments/run_ringbuf_workload.py`, `./experiments/run_struct_ops_workload.py`, `./experiments/run_struct_ops_callback_workload.py`, `./experiments/run_sched_ext_verifier.py`, and checked-in result summaries
+Source/command: `./experiments/run_xdp_traffic.py`, `./experiments/run_tc_traffic.py`, `./experiments/run_traffic_stress.py`, `./experiments/run_perf_event_loader.py`, `./experiments/run_perf_event_counter.py`, `./experiments/run_ringbuf_workload.py`, `./experiments/run_struct_ops_workload.py`, `./experiments/run_struct_ops_callback_workload.py`, `./experiments/run_sched_ext_verifier.py`, `./experiments/run_sched_ext_attach.py --allow-host-scheduler`, and checked-in result summaries
 
 # Results Summary
 
@@ -13,8 +13,9 @@ event-emission workload, direct tcp-congestion struct_ops load/attach/detach
 compatibility, a loopback TCP workload through selected BPF tcp-congestion
 algorithms, a callback-flag workload with clean and loss-injected reachability
 profiles, a version-aware struct_ops skeleton build repair, a scheduler-extension
-struct_ops verifier diagnostic, and a longer XDP/TC traffic stress rerun in
-addition to BPF_PROG_TEST_RUN microbenchmarks. On
+struct_ops verifier diagnostic, an opt-in scheduler-extension attach/workload
+check, and a longer XDP/TC traffic stress rerun in addition to
+BPF_PROG_TEST_RUN microbenchmarks. On
 fresh veth/netns
 pairs with iperf3 TCP, KernelScript and hand-written C/eBPF pass/count objects
 all pass the traffic oracles. XDP count medians are 17.2Gb/s for KernelScript
@@ -38,11 +39,14 @@ generated and C/eBPF variants. Its 5% loss-injected profile transfers 4MiB in
 cwnd_event for both variants. The
 struct_ops skeleton repair changes the two original generated userspace build
 failures from 0/2 to 2/2 repaired builds on this host by removing 2
-version-incompatible map-link assignments. The scheduler-extension diagnostic
-does not attach a scheduler: the five-callback hand-written C/eBPF control
-baseline verifier-loads and pins 5 programs, while the generated
-`sched_ext_simple` object verifier-loads and pins 12 programs and leaves
-`/sys/kernel/sched_ext/state` disabled. The stress
+version-incompatible map-link assignments. The scheduler-extension diagnostics
+show that the five-callback hand-written C/eBPF control baseline
+verifier-loads and pins 5 programs, while the generated `sched_ext_simple`
+object verifier-loads and pins 12 programs without scheduler attachment. The
+separate opt-in attach harness registers both toy FIFO schedulers, runs a
+bounded 0.75s CPU workload, unregisters both, and returns
+`/sys/kernel/sched_ext/state` to disabled with zero rejected sched_ext tasks.
+The stress
 rerun uses three 5s iperf3 trials per XDP/TC pass/count variant; all oracles
 pass, with XDP count medians of 17.3 versus 15.3Gb/s and TC count medians of
 89.5 versus 86.1Gb/s for KernelScript and C/eBPF respectively.
@@ -65,6 +69,7 @@ pass, with XDP count medians of 17.3 versus 15.3Gb/s and TC count medians of
 | R011 | `results/struct_ops_workload_summary.json` | ok | Generated and C/eBPF tcp-congestion objects each complete 10/10 loopback TCP workload trials with algorithm selection, full byte transfer, and detach success. |
 | R012 | `results/struct_ops_callback_workload_summary.json` | ok | Generated and C/eBPF tcp-congestion objects each complete 10/10 clean 4MiB loopback TCP trials with cong_avoid plus cwnd_event, then complete 5/5 5% loss-injected 4MiB trials with ssthresh, cong_avoid, set_state, and cwnd_event. |
 | R013 | `results/sched_ext_verifier_summary.json` | ok | Five-callback C/eBPF scheduler-extension control object verifier-loads and pins 5 programs; generated `sched_ext_simple` verifier-loads and pins 12 programs; no scheduler attach is attempted and sched_ext state remains disabled. |
+| R014 | `results/sched_ext_attach_summary.json` | ok | Opt-in scheduler-extension attach harness registers the C/eBPF and generated toy FIFO schedulers, keeps sched_ext enabled during a bounded 0.75s CPU workload, unregisters both, and returns sched_ext to disabled with zero rejected tasks. |
 
 ## Anomalies And Negative Results
 
@@ -83,10 +88,10 @@ pass, with XDP count medians of 17.3 versus 15.3Gb/s and TC count medians of
   reachability for clean loopback transfer and ssthresh/cong_avoid/set_state/
   cwnd_event reachability under 5% loopback loss. It still does not measure
   production TCP performance or cover every tcp-congestion callback path. The
-  scheduler-extension diagnostic is load-only evidence: it shows that the
-  local host can verifier-load both a properly wrapped five-callback C/eBPF
-  control object and the generated object, but no scheduler is attached. The
-  skeleton repair validates one local generated-userspace build
+  scheduler-extension verifier diagnostic is load-only evidence, while the
+  separate attach harness exercises only one toy FIFO scheduler policy and does
+  not measure scheduler quality or performance. The skeleton repair validates
+  one local generated-userspace build
   fix, but it does not run the
   generated binaries or prove portability across libbpf versions. The
   perf_event counter, ringbuf, and direct struct_ops runs are object checks
@@ -119,6 +124,7 @@ pass, with XDP count medians of 17.3 versus 15.3Gb/s and TC count medians of
 - `results/struct_ops_callback_workload_summary.json`
 - `results/struct_ops_skeleton_repair_summary.json`
 - `results/sched_ext_verifier_summary.json`
+- `results/sched_ext_attach_summary.json`
 - `results/traffic_stress_summary.json`
 - `results/xdp_traffic_stress_summary.json`
 - `results/tc_traffic_stress_summary.json`

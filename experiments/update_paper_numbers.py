@@ -131,6 +131,7 @@ def main() -> int:
     struct_ops_workload = load_json("struct_ops_workload_summary.json")
     struct_ops_callback = load_json("struct_ops_callback_workload_summary.json")
     sched_ext_verifier = load_json("sched_ext_verifier_summary.json")
+    sched_ext_attach = load_json("sched_ext_attach_summary.json")
 
     if unit.get("returncode") != 0 or unit.get("reported_failures") != 0:
         raise SystemExit("unit tests are not clean; refusing to generate paper numbers")
@@ -170,6 +171,8 @@ def main() -> int:
         raise SystemExit("struct_ops callback workload check did not complete successfully")
     if sched_ext_verifier.get("status") != "ok":
         raise SystemExit("sched_ext verifier diagnostic did not complete successfully")
+    if sched_ext_attach.get("status") != "ok":
+        raise SystemExit("sched_ext attach workload did not complete successfully")
 
     content = ""
     content += macro("KSCommitShort", str(env["kernelscript_git_head"])[:7])
@@ -413,6 +416,23 @@ def main() -> int:
     content += macro("KSSchedExtKsPinnedProgramCount", sched_ext_rows["ks_generated"]["pinned_program_count"])
     content += macro("KSSchedExtCPinnedProgramCount", sched_ext_rows["c_libbpf"]["pinned_program_count"])
     content += macro("KSSchedExtKsFailureClass", latex_texttt(sched_ext_rows["ks_generated"]["failure_class"]))
+    sched_ext_attach_rows = {row["name"]: row for row in sched_ext_attach["rows"]}
+    content += macro("KSSchedExtAttachVariants", len(sched_ext_attach_rows))
+    content += macro("KSSchedExtAttachOK", sum(1 for row in sched_ext_attach_rows.values() if row["status"] == "ok"))
+    content += macro("KSSchedExtAttachWorkloadSeconds", sched_ext_attach["workload_seconds"])
+    content += macro("KSSchedExtAttachWorkloadWorkers", sched_ext_attach["workload_max_workers"])
+    content += macro("KSSchedExtAttachKsOK", 1 if sched_ext_attach_rows["ks_generated"]["status"] == "ok" else 0)
+    content += macro("KSSchedExtAttachCOK", 1 if sched_ext_attach_rows["c_libbpf"]["status"] == "ok" else 0)
+    content += macro("KSSchedExtAttachKsProgramCount", len(sched_ext_attach_rows["ks_generated"]["program_sections"]))
+    content += macro("KSSchedExtAttachCProgramCount", len(sched_ext_attach_rows["c_libbpf"]["program_sections"]))
+    content += macro("KSSchedExtAttachKsStateAfterRegister", sched_ext_attach_rows["ks_generated"]["state_after_register"])
+    content += macro("KSSchedExtAttachCStateAfterRegister", sched_ext_attach_rows["c_libbpf"]["state_after_register"])
+    content += macro("KSSchedExtAttachKsStateAfterWorkload", sched_ext_attach_rows["ks_generated"]["state_after_workload"])
+    content += macro("KSSchedExtAttachCStateAfterWorkload", sched_ext_attach_rows["c_libbpf"]["state_after_workload"])
+    content += macro("KSSchedExtAttachKsStateAfterCleanup", sched_ext_attach_rows["ks_generated"]["state_after_unregister"])
+    content += macro("KSSchedExtAttachCStateAfterCleanup", sched_ext_attach_rows["c_libbpf"]["state_after_unregister"])
+    content += macro("KSSchedExtAttachKsRejectedAfter", sched_ext_attach_rows["ks_generated"]["nr_rejected_after"])
+    content += macro("KSSchedExtAttachCRejectedAfter", sched_ext_attach_rows["c_libbpf"]["nr_rejected_after"])
     struct_ops_workload_rows = {row["name"]: row for row in struct_ops_workload["rows"]}
     content += macro("KSStructOpsWorkloadTrials", struct_ops_workload["trials"])
     content += macro("KSStructOpsWorkloadBytes", struct_ops_workload["bytes_per_trial"])

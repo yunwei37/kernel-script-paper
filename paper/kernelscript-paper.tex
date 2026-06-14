@@ -63,9 +63,10 @@ load/attach/detach, loopback TCP byte-transfer behavior, callback reachability
 under clean and loss-trigger profiles, and a local skeleton-header repair that
 builds \KSStructOpsRepairBuildOK{}/\KSStructOpsRepairExamples{} affected
 generated userspace projects.  A scheduler-extension diagnostic adds
-load-only evidence: without attaching a scheduler, both the hand-written C/eBPF
-object and the generated object verifier-load and pin programs, but the test
-stops before scheduler installation or workload behavior.  The
+evidence for both verifier loading and bounded attachment: both the
+hand-written C/eBPF object and the generated object verifier-load and pin
+programs, and an opt-in harness registers both toy schedulers, runs a bounded
+CPU workload, and unregisters them cleanly.  The
 results support an artifact/prototype
 claim: \tool{} centralizes recurring project structure for this repository
 corpus and exposes concrete compatibility limits, but it does not yet establish
@@ -133,7 +134,7 @@ This paper makes three contributions.  First, it formulates \tool{}'s central
 systems idea as a typed unified-source model for multi-artifact eBPF
 applications, where programs, maps, loaders, pinning choices, and optional
 kernel-extension code are represented before artifact boundaries are split.
-Second, it analyzes how the public compiler uses that model to check selected
+Second, it analyzes how the implementation uses that model to check selected
 cross-boundary invariants, including program-handle use, program signatures,
 map access types, ring-buffer API use, config mutability, helper-scope
 restrictions, kernel-context allocation checks, perf-event group bounds, and
@@ -261,7 +262,7 @@ stabilize.
 
 \section{Implementation}
 
-The public implementation is an OCaml compiler built with dune.  It parses
+The evaluated implementation is an OCaml compiler built with dune.  It parses
 \tool{} source, resolves imports and includes, builds symbol tables, performs
 multi-program analysis and type checking, runs safety analysis, generates an
 intermediate representation, and emits C artifacts.  For an input
@@ -398,7 +399,7 @@ Compatibility & Generated objects and generated perf loader & Local kernel/toolc
 Runtime sanity & Generated XDP, TC, perf-counter, and ring-buffer objects & Matched C/eBPF objects or shared libbpf runner & iperf3 JSON, positive map counts, perf-counter equality, submitted/received/drop counts & Local workloads only \\
 Tcp-congestion struct\_ops & Generated and C/eBPF tcp-congestion objects & Shared libbpf runner and socket workload & Load/attach/detach, loopback TCP byte-transfer, clean and loss-injected callback flags & One local tcp-congestion object and selected callback profiles only \\
 Struct\_ops skeleton repair & Generated userspace skeleton projects & Installed libbpf header & Detect absent map-link field, remove incompatible assignments, rebuild & Local generated-userspace build repair only \\
-Scheduler-extension diagnostic & Generated \texttt{sched\_ext} object and five-callback C/eBPF control & Local kernel/toolchain & \texttt{bpftool prog loadall}, pinned programs, sched\_ext state & Load-only evidence, with no scheduler attach or workload \\
+Scheduler extension & Generated \texttt{sched\_ext} object and five-callback C/eBPF control & Local kernel/toolchain & \texttt{bpftool prog loadall}, pinned programs, register/workload/unregister state & Toy FIFO workload only, not scheduler policy quality \\
 \bottomrule
 \end{tabular}
 \end{table*}
@@ -526,24 +527,6 @@ the two examples.  This is a local generated-userspace build repair for the
 observed map-link mismatch.  It does not run the repaired binaries, integrate
 the decision into the compiler, or prove portability across libbpf versions.
 
-\textbf{Scheduler-extension struct\_ops verifier diagnostic.}  As a load-only
-boundary diagnostic for scheduler-extension lowering,
-\texttt{run\_sched\_ext\_verifier.py} compiles
-\texttt{sched\_ext\_simple.ks}, compiles a hand-written C/eBPF control baseline
-using \texttt{BPF\_PROG} wrappers for five active \texttt{sched\_ext\_ops}
-callbacks including \texttt{select\_cpu}, and runs
-\texttt{bpftool prog loadall} without attaching a scheduler.  The script records
-\texttt{/sys/kernel/sched\_ext/state} before and after the run.  On this host,
-the state remains \KSSchedExtStateBefore{} to \KSSchedExtStateAfter{} and the
-enable sequence remains
-\KSSchedExtEnableSeqBefore{} to \KSSchedExtEnableSeqAfter{}, so the diagnostic
-does not install a scheduler.  The C/eBPF object verifier-loads and pins
-\KSSchedExtCPinnedProgramCount{} programs, while the generated object pins
-\KSSchedExtKsPinnedProgramCount{} programs.  This is a load-only diagnostic:
-it shows that the current \tool{} lowering now produces a verifier-clean
-sched\_ext object on this host, but it does not show that the generated
-scheduler can be attached safely or execute correct scheduling behavior.
-
 \textbf{Struct\_ops TCP workload.}  To move beyond load/attach/detach,
 \texttt{run\_struct\_ops\_workload.py} uses one runner for the generated object
 and the C/eBPF object.  After attaching each tcp-congestion struct\_ops map, the
@@ -614,6 +597,33 @@ The current run has \KSVerifierRejected{} other verifier rejections.  This
 result narrows the compatibility claim from
 ``builds'' to a measured split between verifier-clean objects and generated
 objects that still need backend fixes.
+
+\textbf{Scheduler-extension attach workload.}  Scheduler extensions are more
+dangerous to test than packet filters because a successful registration changes
+the host scheduler.  We therefore split this check into a load-only diagnostic
+and an opt-in attach workload.  \texttt{run\_sched\_ext\_verifier.py} compiles a
+five-callback C/eBPF control scheduler and the generated scheduler-extension
+object, then runs \texttt{bpftool prog loadall} without scheduler attachment.
+Both objects verifier-load on this host: the generated object pins
+\KSSchedExtKsPinnedProgramCount{} programs and the C/eBPF control pins
+\KSSchedExtCPinnedProgramCount{} programs, while sched\_ext remains
+\KSSchedExtStateAfter{}.
+
+\texttt{run\_sched\_ext\_attach.py} is intentionally excluded from the default
+pipeline unless the caller passes an explicit host-scheduler opt-in.  The
+script requires sched\_ext to start disabled, registers each scheduler with
+\texttt{bpftool struct\_ops register}, runs a bounded
+\KSSchedExtAttachWorkloadSeconds{}s CPU workload with up to
+\KSSchedExtAttachWorkloadWorkers{} workers, requires sched\_ext to remain
+enabled after registration and after the workload, unregisters the struct\_ops
+map, and checks that sched\_ext returns to disabled.  In the checked-in run,
+both the \KSSchedExtAttachCProgramCount{}-callback C/eBPF control and the
+\KSSchedExtAttachKsProgramCount{}-callback generated object pass this oracle:
+\KSSchedExtAttachOK{} of \KSSchedExtAttachVariants{} variants register, keep
+sched\_ext enabled during the workload, unregister cleanly, and leave
+\KSSchedExtAttachKsRejectedAfter{} rejected sched\_ext tasks for the generated
+variant.  This is attach and bounded-workload evidence for a toy FIFO
+scheduler, not a scheduling-policy performance result.
 
 \textbf{Isolated XDP attach matrix.}  Verifier acceptance is still weaker than
 attachability.  \texttt{run\_attach\_matrix.py} therefore takes the
@@ -853,6 +863,8 @@ callback-instrumented struct\_ops checks strengthen the local deployment,
 generated-loader lifecycle, object-workload, object-compatibility, and
 callback-reachability evidence across five program classes, and the longer
 traffic rerun adds a small stress check for the XDP and TC cases.  The
+scheduler-extension attach harness adds a bounded host-scheduler workload for
+one toy FIFO policy.  The
 artifact still does not establish broad runtime equivalence with hand-written
 C/libbpf.
 
@@ -870,10 +882,13 @@ algorithm, or entirely unreached callback path.  The
 skeleton-repair experiment shows that one local map-link mismatch can be
 handled with a version-aware generated-header repair, but a production compiler
 would still need to integrate that decision into generation, dependency checks,
-or containerized toolchains.  The scheduler-extension verifier diagnostic adds
-a sharper boundary: a \texttt{BPF\_PROG}-wrapped C/eBPF sched\_ext object and
-the generated sched\_ext object both verifier-load on the same host, but the
-experiment intentionally avoids scheduler attachment and workload behavior.
+or containerized toolchains.  The scheduler-extension experiments add a sharper
+boundary: a \texttt{BPF\_PROG}-wrapped C/eBPF sched\_ext object and the
+generated sched\_ext object both verifier-load, and an opt-in harness can
+register both toy schedulers, run a bounded CPU workload, and unregister them
+cleanly on this host.  This removes the previous load-only gap for the toy
+scheduler, but it is still not a scheduler-performance or production-policy
+study.
 From a
 systems-research perspective, this is part of the contribution: the artifact
 exposes where a unified model centralizes structure and where the underlying
@@ -898,8 +913,8 @@ programs.  Conversely, generated code omits comments and may be denser than
 maintainable production C.  The right interpretation is therefore ``generated
 project structure centralized by the compiler,'' not ``exact lines saved.''
 
-\textbf{Repository examples may be biased.}  The corpus comes from the public
-\tool{} repository, so it naturally reflects the features the implementation
+\textbf{Repository examples may be biased.}  The corpus comes from the
+\tool{} artifact repository, so it naturally reflects the features the implementation
 authors wanted to demonstrate.  The corpus is useful for an artifact study because it
 is reproducible and covers many features, but it is not a representative sample
 of all eBPF applications.  A stronger corpus would include programs from
@@ -942,10 +957,10 @@ validates that a clean loopback transfer reaches \texttt{cong\_avoid} and
 \texttt{ssthresh}, \texttt{cong\_avoid}, \texttt{set\_state}, and
 \texttt{cwnd\_event}.  The skeleton repair validates a local
 generated-userspace build fix for the observed map-link mismatch.  The
-scheduler-extension diagnostic uses \texttt{bpftool prog loadall} only.  It
-does not attach a scheduler or measure scheduler behavior.  These
-checks do not measure production TCP performance, cover every
-tcp-congestion-control callback, provide a scheduler-extension workload, prove
+scheduler-extension attach harness registers the generated and C/eBPF toy FIFO
+schedulers and runs a short CPU workload under sched\_ext before unregistering
+them.  These checks do not measure production TCP performance, cover every
+tcp-congestion-control callback, evaluate scheduler-policy quality, prove
 compatibility across libbpf versions, or measure generated-loader behavior.
 However, the traffic runs, including the \KSTrafficStressSeconds{}s stress
 rerun, are local-host veth evidence, not NIC-rate performance or long-duration
@@ -986,7 +1001,7 @@ an implementation and a concrete design artifact for this space.
 
 \tool{} is an early but useful prototype for studying typed unified-source
 eBPF development.  The checked-in artifact supports three bounded claims.  First,
-the public compiler can centralize recurring project structure for this
+the evaluated compiler can centralize recurring project structure for this
 repository corpus: \KSKSCompileOK{} of \KSTotalExamples{} examples compile,
 \KSMakeOK{} build, and the median successful example expands from
 \KSMedianKSSloc{} \tool{} source lines to \KSMedianGeneratedSloc{} generated
@@ -997,15 +1012,16 @@ those diagnostics executable.  Third, the generated artifacts are not merely
 syntactic outputs on this host: verifier loading, isolated XDP attachment,
 matched XDP/TC, perf-event, ring-buffer, and tcp-congestion struct\_ops checks
 exercise local load, attach, event, traffic, and callback paths against explicit
-oracles.
+oracles, and the scheduler-extension harness exercises one bounded
+host-scheduler attach/workload path.
 
 The contribution is therefore a reproducible prototype study rather than a
 finished eBPF replacement.  It shows how a compiler-checked unified programming
 model can make selected cross-boundary eBPF structure explicit while still
 lowering through libbpf and bpftool.  The remaining gates are also clear:
 version-aware skeleton handling needs upstream integration and broader version
-coverage, scheduler-extension support is currently a load-only verifier
-diagnostic rather than workload evidence, broader callback-level TCP behavior
+coverage, scheduler-extension support now has only a toy bounded workload
+rather than policy or performance evidence, broader callback-level TCP behavior
 remains incompletely tested, generated-loader dispatch-loop throughput needs
 stronger workloads, and the experimental map-update compiler patch needs
 upstream integration plus broader semantic and runtime validation.

@@ -39,6 +39,8 @@ evaluation scripts, generated results, and a paper draft.
 - `experiments/run_sched_ext_verifier.py`: scheduler-extension struct_ops
   verifier diagnostic against a hand-written C/eBPF baseline without attaching a
   scheduler.
+- `experiments/run_sched_ext_attach.py`: opt-in scheduler-extension
+  attach/workload check against a hand-written C/eBPF baseline.
 - `experiments/run_compiler_patch_ablation.py`: applies a tracked
   compiler-source patch for array-map increment lowering and reruns the XDP
   count benchmark.
@@ -179,6 +181,13 @@ requires `sudo -n` but does not attach a scheduler:
 ./experiments/run_sched_ext_verifier.py
 ```
 
+Run the optional scheduler-extension attach/workload check only on a host where
+temporarily registering a toy scheduler is acceptable:
+
+```bash
+./experiments/run_sched_ext_attach.py --allow-host-scheduler
+```
+
 Run the compiler-patch lowering ablation, which also requires `sudo -n`:
 
 ```bash
@@ -199,7 +208,7 @@ make -C paper
 
 ## Current Result Snapshot
 
-The current run evaluates KernelScript commit `87a0130` on Linux
+The current run evaluates KernelScript commit `3b19cd2` on Linux
 `6.15.11-061511-generic`.
 
 - Unit tests: 85 suites, 1095 tests, 0 reported failures.
@@ -224,11 +233,13 @@ The current run evaluates KernelScript commit `87a0130` on Linux
   succeed for 0 of 2 affected struct_ops examples; after removing 2
   version-incompatible map-link assignments from the generated skeleton headers,
   2 of 2 generated userspace projects build.
-- Scheduler-extension struct_ops verifier diagnostic: the hand-written C/eBPF
+- Scheduler-extension struct_ops diagnostics: the hand-written C/eBPF
   `sched_ext` baseline verifier-loads and pins 5 programs, and the generated
-  `sched_ext_simple` object verifier-loads and pins 12 programs. The script
-  does not attach a scheduler; `/sys/kernel/sched_ext/state` remains
-  `disabled`.
+  `sched_ext_simple` object verifier-loads and pins 12 programs without
+  scheduler attachment. The opt-in attach harness then registers both toy FIFO
+  schedulers, runs a bounded 0.75s CPU workload, unregisters them, and returns
+  `/sys/kernel/sched_ext/state` to `disabled` with zero rejected sched_ext
+  tasks.
 - Struct_ops TCP workload: over ten privileged trials, both the generated
   tcp-congestion object and the C/eBPF object are selected with `TCP_CONGESTION`
   on a loopback sender socket, transfer 1MiB, and detach successfully in 10 of
@@ -276,12 +287,15 @@ The current run evaluates KernelScript commit `87a0130` on Linux
   map-link assignment from each affected skeleton header, and rebuilds both
   generated userspace projects successfully. This is a local build repair, not
   a scheduler workload or cross-version portability claim.
-- Scheduler-extension struct_ops verifier diagnostic:
+- Scheduler-extension struct_ops verifier and attach diagnostics:
   `run_sched_ext_verifier.py` compiles `sched_ext_simple.ks` and a
   five-callback hand-written C/eBPF control baseline, then runs
   `bpftool prog loadall` only. The C/eBPF object loads and pins 5 programs, and
-  the generated object loads and pins 12 programs. This is load-only evidence,
-  not scheduler workload evidence or full callback-set equivalence.
+  the generated object loads and pins 12 programs. `run_sched_ext_attach.py` is
+  a separate opt-in check that registers both toy schedulers, runs a bounded CPU
+  workload, and unregisters them cleanly. This is local attach/workload
+  evidence for one toy policy, not scheduler-performance evidence or full
+  callback-set equivalence.
 - Struct_ops TCP workload: `run_struct_ops_workload.py` attaches the generated
   and C/eBPF tcp-congestion objects, selects the registered BPF algorithm on a
   loopback TCP sender socket, transfers 1MiB, and detaches. This is a local

@@ -1,0 +1,3 @@
+name,implementation,status,attach_attempted,register_returncode,unregister_returncode,workload_returncode,state_before,state_after_register,state_after_workload,state_after_unregister,enable_seq_before,enable_seq_after_register,enable_seq_after_unregister,nr_rejected_before,nr_rejected_after,failure_excerpt,object,link_dir
+c_libbpf,C/libbpf,ok,True,0,0,0,disabled,enabled,enabled,disabled,11,12,12,0,0,,results/build/sched_ext_attach/handwritten/sched_ext_simple.o,/sys/fs/bpf/kernelscript-paper/sched-ext-attach/240748-c_libbpf
+ks_generated,KernelScript,ok,True,0,0,0,disabled,enabled,enabled,disabled,12,13,13,0,0,,results/build/sched_ext_attach/kernelscript/sched_ext_attach_safe.ebpf.o,/sys/fs/bpf/kernelscript-paper/sched-ext-attach/240748-ks_generated

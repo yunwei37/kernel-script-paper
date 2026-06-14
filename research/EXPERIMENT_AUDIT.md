@@ -1,6 +1,6 @@
 Last updated: 2026-06-13
 Stage at update: audit
-Source/command: manual/fallback experiment audit after scheduler-extension verifier diagnostic
+Source/command: manual/fallback experiment audit after scheduler-extension attach workload
 Completeness: complete
 
 # Experiment Audit
@@ -18,7 +18,7 @@ general runtime-equivalence or production-deployment claim.
 | Check | Evidence | Result |
 |---|---|---|
 | Required result files exist | Python audit over `results/*.json` inputs used by `experiments/update_paper_numbers.py` | pass |
-| Required status fields are clean | `smoke`, `microbench`, `static`, `lowering`, `compiler_patch`, `verifier`, `attach`, `xdp_traffic`, `tc_traffic`, `traffic_stress`, `perf_event_loader`, `perf_event_counter`, `ringbuf`, `struct_ops`, `struct_ops_workload`, `struct_ops_callback_workload`, `struct_ops_skeleton_repair`, and `sched_ext_verifier` summaries all report `ok` | pass |
+| Required status fields are clean | `smoke`, `microbench`, `static`, `lowering`, `compiler_patch`, `verifier`, `attach`, `xdp_traffic`, `tc_traffic`, `traffic_stress`, `perf_event_loader`, `perf_event_counter`, `ringbuf`, `struct_ops`, `struct_ops_workload`, `struct_ops_callback_workload`, `struct_ops_skeleton_repair`, `sched_ext_verifier`, and `sched_ext_attach` summaries all report `ok` | pass |
 | Example corpus present | `results/examples_summary.json` contains 44 rows | pass |
 | Paper macro coverage | Parsed `paper/kernelscript-paper.tex` and `results/paper_numbers.tex`: all used `KS...` macros are defined | pass |
 | Paper-number reproducibility | `./experiments/update_paper_numbers.py && git diff --exit-code -- results/paper_numbers.tex` | pass |
@@ -53,6 +53,7 @@ The audit checked these paper-number inputs:
 - `results/struct_ops_callback_workload_summary.json`
 - `results/struct_ops_skeleton_repair_summary.json`
 - `results/sched_ext_verifier_summary.json`
+- `results/sched_ext_attach_summary.json`
 
 ## Number-To-Paper Consistency
 
@@ -94,6 +95,10 @@ build completes from those macros.
 - Scheduler-extension verifier diagnostic results require the five-callback
   C/eBPF control object and generated object to verifier-load and pin programs,
   and confirm no scheduler attach is attempted.
+- Scheduler-extension attach results require explicit opt-in, a disabled
+  starting state, successful struct_ops registration, sched_ext still enabled
+  after a bounded CPU workload, successful unregister, return to disabled, and
+  zero rejected sched_ext tasks for both generated and C/eBPF toy schedulers.
 
 ## Metric And Normalization Review
 
@@ -106,15 +111,15 @@ paper keeps generated SLOC expansion separate from developer-effort claims.
 ## Scope Language Review
 
 The paper explicitly states that it does not establish broad runtime
-equivalence, NIC-rate performance, scheduler-extension struct_ops portability,
-or full generated-dispatch-loop throughput. It also labels traffic results as
+equivalence, NIC-rate performance, scheduler-extension policy/performance or
+portability, or full generated-dispatch-loop throughput. It also labels traffic results as
 local-host veth evidence, labels the direct struct_ops result as object
 compatibility, labels the struct_ops workload as socket-level loopback evidence,
 labels the callback workload as clean and loss-injected local reachability
 evidence rather than full callback coverage, labels the skeleton repair as a
 local generated-userspace build repair rather than cross-version portability,
-and labels the scheduler-extension result as a verifier diagnostic rather than
-scheduler workload evidence.
+and labels the scheduler-extension attach result as one toy bounded workload
+rather than scheduler-policy or performance evidence.
 
 ## Accepted Warnings
 
@@ -129,11 +134,11 @@ scheduler workload evidence.
    loopback socket workload, clean cong_avoid/cwnd_event callback flags,
    loss-injected ssthresh/cong_avoid/set_state/cwnd_event flags, and one
    scheduler-extension verifier diagnostic where both the five-callback C/eBPF
-   control object and generated object load. The skeleton repair
-   covers local generated
-   userspace builds only. These checks do not cover scheduler-extension workload
-   behavior, every tcp-congestion callback path, running the repaired binaries,
-   or broad libbpf-version portability.
+   control object and generated object load, plus one toy scheduler-extension
+   attach workload. The skeleton repair covers local generated userspace builds
+   only. These checks do not cover scheduler-extension policy quality or
+   performance, every tcp-congestion callback path, running the repaired
+   binaries, or broad libbpf-version portability.
 4. The generated-structure result is a corpus artifact result, not a
    developer-effort study against an expert C implementation.
 

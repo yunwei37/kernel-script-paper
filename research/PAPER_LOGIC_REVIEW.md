@@ -91,6 +91,10 @@ callback-flag workload results, and a scheduler-extension verifier diagnostic.
     research-plan numbers, added the stress outlier/retransmit caveat, narrowed
     generated-loader and skeleton-repair claims, and anonymized the paper-facing
     KernelScript artifact reference.
+18. Added an opt-in scheduler-extension attach/workload harness. The paper now
+    distinguishes the load-only verifier diagnostic from the bounded toy FIFO
+    attach workload, and keeps scheduler-policy quality and performance as
+    remaining limits.
 
 ## Remaining Accepted Limits
 
@@ -103,10 +107,11 @@ callback-flag workload results, and a scheduler-extension verifier diagnostic.
 - Struct_ops evidence covers tcp-congestion object load/attach/detach, a
   loopback TCP socket workload, clean cong_avoid/cwnd_event callback flags,
   loss-injected ssthresh/cong_avoid/set_state/cwnd_event flags, and a local
-  generated-userspace skeleton build repair. Scheduler-extension evidence is a
-  load-only verifier diagnostic, not scheduler workload behavior. The paper
-  still does not cover every callback path, running repaired generated
-  binaries, production TCP performance, or broad libbpf-version portability.
+  generated-userspace skeleton build repair. Scheduler-extension evidence now
+  includes one toy bounded attach workload, but not scheduler-policy quality or
+  performance. The paper still does not cover every callback path, running
+  repaired generated binaries, production TCP performance, or broad
+  libbpf-version portability.
 - Generated-structure evidence is a corpus artifact result, not a developer
   effort study against expert-written C/libbpf.
 

@@ -197,7 +197,7 @@
     {
       "classification": "success",
       "failure_class": "verifier_reference_leak",
-      "failure_excerpt": "libbpf: prog 'packet_inspector': BPF program load failed: -EINVAL\nlibbpf: prog 'packet_inspector': -- BEGIN PROG LOAD LOG --\n0: R1=ctx() R10=fp0\n; enum xdp_action packet_inspector(struct xdp_md* ctx) { @ object_allocation.ebpf.c:79\n0: (b7) r1 = 134744072                ; R1_w=0x8080808\n; __u32 src_ip = 0x08080808; @ object_allocation.ebpf.c:88\n1: (63) *(u32 *)(r10 -4) = r1         ; R1_w=0x8080808 R10=fp0 fp-8=mmmm????\n2: (bf) r2 = r10                      ; R2_w=fp0 R10=fp0\n;  @ object_allocation.ebpf.c:0\n3: (07) r2 += -4                      ; R2_w=fp-4\n; __map_lookup_0 = bpf_map_lookup_elem(&conn_tracker, &src_ip); @ object_allocation.ebpf.c:90\n4: (18) r1 = 0xffff8ec6d0e1bc00       ; R1_w=map_ptr(map=conn_tracker,ks=4,vs=8)",
+      "failure_excerpt": "libbpf: prog 'packet_inspector': BPF program load failed: -EINVAL\nlibbpf: prog 'packet_inspector': -- BEGIN PROG LOAD LOG --\n0: R1=ctx() R10=fp0\n; enum xdp_action packet_inspector(struct xdp_md* ctx) { @ object_allocation.ebpf.c:79\n0: (b7) r1 = 134744072                ; R1_w=0x8080808\n; __u32 src_ip = 0x08080808; @ object_allocation.ebpf.c:88\n1: (63) *(u32 *)(r10 -4) = r1         ; R1_w=0x8080808 R10=fp0 fp-8=mmmm????\n2: (bf) r2 = r10                      ; R2_w=fp0 R10=fp0\n;  @ object_allocation.ebpf.c:0\n3: (07) r2 += -4                      ; R2_w=fp-4\n; __map_lookup_0 = bpf_map_lookup_elem(&conn_tracker, &src_ip); @ object_allocation.ebpf.c:90\n4: (18) r1 = 0xffff8ec953115000       ; R1_w=map_ptr(map=conn_tracker,ks=4,vs=8)",
       "load_status": "failed",
       "make_status": "ok",
       "name": "object_allocation",
