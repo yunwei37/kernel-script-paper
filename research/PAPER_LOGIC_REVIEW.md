@@ -114,6 +114,14 @@ callback-flag workload results, and a scheduler-extension verifier diagnostic.
     provenance and semantic-equivalence oracles, rewrote the evaluation overview
     around C1--C4 rather than a raw script list, added a table-caption takeaway,
     and rounded toy scheduler iteration prose in the artifact summary.
+23. Added one external port/build/runtime check for C1 with a semantic runtime
+    oracle, not C4 performance evidence. The paper now reports
+    a manual KernelScript port of pinned `xdp-tutorial/basic03-map-counter`
+    against the original external C/eBPF source: the port builds through its
+    generated Makefile, the original source compiles directly with clang, and
+    both objects attach, pass traffic, and increment the XDP_PASS map key over
+    five local trials. The wording keeps this as one hand port rather than
+    automated translation, broad portability, or a performance ranking.
 
 ## Remaining Accepted Limits
 
@@ -132,14 +140,16 @@ callback-flag workload results, and a scheduler-extension verifier diagnostic.
   repaired generated binaries, production TCP performance, or broad
   libbpf-version portability.
 - Generated-structure, source-footprint, and external source-corpus evidence are
-  corpus artifact results. The external scan is source-only feature context, not
-  a developer-time study or external application portability/runtime result.
+  corpus artifact results. The external scan is source-only feature context. The
+  added external port is one hand port of one XDP map-counter, not a
+  developer-time study, automated translator result, or broad external
+  application portability/runtime result.
 
 ## Follow-Up Gate
 
 The next scientific-strength gate is additional evidence rather than prose:
-external application translation/build/runtime evidence or a developer-time
-study, broader generated-dispatch-loop throughput, scheduler-extension
+broader external application translation/build/runtime evidence or a
+developer-time study, broader generated-dispatch-loop throughput, scheduler-extension
 policy/performance evidence after the verifier-load and attach fixes, every
 tcp-congestion callback path beyond the two tested profiles,
 upstream-integrated skeleton generation across libbpf versions, or non-local

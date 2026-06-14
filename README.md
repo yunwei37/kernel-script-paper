@@ -11,6 +11,8 @@ evaluation scripts, generated results, and a paper draft.
   hand-written C/eBPF and C/libbpf baseline source files.
 - `experiments/run_external_corpus.py`: pinned external eBPF source-corpus
   feature scan for source-only context.
+- `experiments/run_external_port.py`: one pinned external XDP map-counter
+  port/build/runtime check against its original C/eBPF source.
 - `experiments/run_verifier_matrix.py`: bpftool verifier-load matrix for
   generated eBPF objects.
 - `experiments/run_attach_matrix.py`: isolated network-namespace XDP
@@ -83,6 +85,13 @@ Run the pinned external eBPF source-corpus scan:
 
 ```bash
 ./experiments/run_external_corpus.py
+```
+
+Run the external port/build/runtime check, which requires `sudo -n`, `iperf3`,
+and local veth/netns support:
+
+```bash
+./experiments/run_external_port.py
 ```
 
 Run the verifier-load matrix, which requires `sudo -n` and the generated
@@ -244,6 +253,15 @@ The current run evaluates KernelScript commit `3b19cd2` on Linux
   families, and a seven-file manual spot-check matches the expected markers with
   zero false-positive or false-negative feature labels. This is feature-context
   evidence only, not translation, build, verifier, attach, or runtime evidence.
+- External port/build/runtime check: a manual KernelScript port of
+  `xdp-tutorial` `basic03-map-counter` at `4e2bf5658434` builds through its
+  generated Makefile, while the original external C/eBPF source compiles
+  directly to a BPF object with clang. Both XDP objects attach on isolated veth
+  devices, pass iperf3 traffic, and increment the XDP_PASS map key in 5
+  one-second trials. Median receiver throughput is 16.1 Gb/s for the
+  KernelScript port and 16.1 Gb/s for the original C/eBPF object. These numbers
+  are descriptive local samples, not a performance ranking. This is one manual
+  external port, not an automated translation or broad portability claim.
 - Verifier-load matrix: 39 of 43 generated eBPF objects load with
   `bpftool prog loadall` and pin at least one BPF program. Among the 41 objects
   from full generated-project build successes, 37 load successfully and 4 fail
@@ -282,19 +300,19 @@ The current run evaluates KernelScript commit `3b19cd2` on Linux
   instructions for KernelScript versus 9ns and 11 instructions for
   hand-written C/eBPF.
 - Traffic-driven XDP benchmark: over ten 1s iperf3 TCP trials on fresh
-  veth/netns pairs, pass medians are 17.4Gb/s for KernelScript and 17.8Gb/s for
-  hand-written C/eBPF. Count medians are 17.2Gb/s for KernelScript and 17.3Gb/s
+  veth/netns pairs, pass medians are 17.4 Gb/s for KernelScript and 17.8 Gb/s for
+  hand-written C/eBPF. Count medians are 17.2 Gb/s for KernelScript and 17.3 Gb/s
   for C/eBPF, with positive `counts` map invocation rates at 1.50 and 1.50 Mpps
   respectively.
 - Traffic-driven TC benchmark: over ten 1s iperf3 TCP trials on fresh
-  veth/netns pairs, pass medians are 89.9Gb/s for KernelScript and 92.0Gb/s for
-  C/eBPF. Count medians are 93.0Gb/s for KernelScript and 90.7Gb/s for C/eBPF,
+  veth/netns pairs, pass medians are 89.9 Gb/s for KernelScript and 92.0 Gb/s for
+  C/eBPF. Count medians are 93.0 Gb/s for KernelScript and 90.7 Gb/s for C/eBPF,
   with positive `counts` map invocation rates at 0.27 and 0.26 Mpps
   respectively.
 - Longer traffic stress: over three 5s iperf3 TCP trials per variant, all XDP
-  and TC pass/count stress oracles pass. XDP count medians are 17.3Gb/s for
-  KernelScript and 15.3Gb/s for C/eBPF. TC count medians are 89.5Gb/s for
-  KernelScript and 86.1Gb/s for C/eBPF.
+  and TC pass/count stress oracles pass. XDP count medians are 17.3 Gb/s for
+  KernelScript and 15.3 Gb/s for C/eBPF. TC count medians are 89.5 Gb/s for
+  KernelScript and 86.1 Gb/s for C/eBPF.
 - Perf_event generated-loader lifecycle latency: over twenty privileged trials,
   both the generated `perf_page_fault` loader and a hand-written C/libbpf loader
   attach two perf_event programs, read positive page-fault counters, read

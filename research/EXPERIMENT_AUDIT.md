@@ -1,6 +1,6 @@
 Last updated: 2026-06-13
 Stage at update: audit
-Source/command: manual/fallback experiment audit after external source-corpus scan
+Source/command: manual/fallback experiment audit after external port check
 Completeness: complete
 
 # Experiment Audit
@@ -18,7 +18,7 @@ general runtime-equivalence or production-deployment claim.
 | Check | Evidence | Result |
 |---|---|---|
 | Required result files exist | Python audit over `results/*.json` inputs used by `experiments/update_paper_numbers.py` | pass |
-| Required status fields are clean | `smoke`, `microbench`, `source_footprint`, `external_corpus`, `static`, `lowering`, `compiler_patch`, `verifier`, `attach`, `xdp_traffic`, `tc_traffic`, `traffic_stress`, `perf_event_loader`, `perf_event_counter`, `ringbuf`, `struct_ops`, `struct_ops_workload`, `struct_ops_callback_workload`, `struct_ops_skeleton_repair`, `sched_ext_verifier`, and `sched_ext_attach` summaries all report `ok` | pass |
+| Required status fields are clean | `smoke`, `microbench`, `source_footprint`, `external_corpus`, `external_port`, `static`, `lowering`, `compiler_patch`, `verifier`, `attach`, `xdp_traffic`, `tc_traffic`, `traffic_stress`, `perf_event_loader`, `perf_event_counter`, `ringbuf`, `struct_ops`, `struct_ops_workload`, `struct_ops_callback_workload`, `struct_ops_skeleton_repair`, `sched_ext_verifier`, and `sched_ext_attach` summaries all report `ok` | pass |
 | Example corpus present | `results/examples_summary.json` contains 44 rows | pass |
 | Paper macro coverage | Parsed `paper/kernelscript-paper.tex` and `results/paper_numbers.tex`: all used `KS...` macros are defined | pass |
 | Paper-number reproducibility | `./experiments/update_paper_numbers.py && git diff --exit-code -- results/paper_numbers.tex` | pass |
@@ -38,6 +38,7 @@ The audit checked these paper-number inputs:
 - `results/source_footprint_summary.json`
 - `results/external_corpus_summary.json`
 - `results/external_corpus_audit.csv`
+- `results/external_port_summary.json`
 - `results/smoke_summary.json`
 - `results/microbench_summary.json`
 - `results/static_checks_summary.json`
@@ -80,6 +81,11 @@ build completes from those macros.
   outputs, Rust userspace, and support libraries outside the selected paths. The
   classifier audit compares seven manually selected files against expected
   feature markers and records false-positive and false-negative feature labels.
+- External port results clone a pinned `xdp-tutorial` commit, build the manual
+  KernelScript port through its generated Makefile, compile the original
+  external XDP map-counter C/eBPF source directly with clang, attach both
+  objects on isolated veth devices, run iperf3 traffic, and require the XDP_PASS
+  map key to increase.
 - Static checks use explicit expected pass/fail programs and diagnostic
   category matching.
 - Verifier-load results use `bpftool prog loadall` and require at least one
@@ -126,6 +132,9 @@ separate from developer-time claims. External source-corpus numbers are labeled
 as source-only feature context rather than portability, build, verifier,
 attach, or runtime results. The classifier audit is labeled as a spot-check of
 selected marker rules rather than a statistical precision/recall estimate.
+External port numbers are labeled as one manual port/build/runtime check rather
+than a performance ranking, automated translation, or broad portability
+evidence.
 
 ## Scope Language Review
 
@@ -166,6 +175,9 @@ runtime evidence.
    are corpus artifact results. The external scan adds source-only feature
    context but is not a developer-effort study, translation/build corpus, or
    runtime portability result.
+5. The external port check adds runtime evidence for one hand-ported XDP
+   map-counter, but it is not an automated translator, broad external corpus, or
+   developer-effort result.
 
 ## Gate Status
 

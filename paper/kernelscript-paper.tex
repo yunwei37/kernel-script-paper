@@ -57,6 +57,10 @@ build into generated C/eBPF projects.  A source-only scan of
 traffic control (TC), tracing, maps, ring buffers, struct\_ops, and
 scheduler-extension code in the selected source paths, although it does not
 translate or build those applications.
+One manually ported external XDP map-counter from \texttt{xdp-tutorial} then
+compiles from \tool{}, builds to eBPF, attaches, passes traffic, and increments
+the same XDP\_PASS map key as the original external C/eBPF source over
+\KSExternalPortTrials{} local trials.
 The checked-in evaluation then tests selected early rejections, strict verifier
 loading, isolated XDP attachment, matched XDP and TC traffic, perf-event
 counters, ring-buffer event delivery, and tcp-congestion struct\_ops
@@ -147,11 +151,12 @@ restrictions, kernel-context allocation checks, perf-event group bounds, and
 stack-limit violations before load or attach time.  Third, it
 implements a reproducible artifact evaluation of test coverage, example
 buildability, generated-code expansion, example marker coverage, external
-source-corpus feature context, static rejection cases, strict verifier loading,
-isolated XDP attachment, matched XDP and TC traffic runs, perf-event loader and
-counter workloads, a ring-buffer event-emission workload, direct and
-callback-instrumented struct\_ops checks, and a compiler-source patch that
-isolates one map-update lowering mechanism.  The
+source-corpus feature context, one manual external port/build/runtime check,
+static rejection cases, strict verifier loading, isolated XDP attachment,
+matched XDP and TC traffic runs, perf-event loader and counter workloads, a
+ring-buffer event-emission workload, direct and callback-instrumented
+struct\_ops checks, and a compiler-source patch that isolates one map-update
+lowering mechanism.  The
 scientific contribution is not a new BPF verifier or a broad
 performance-equivalence result.  Instead, it is an executable case
 study of which selected cross-boundary eBPF invariants this prototype exposes
@@ -316,14 +321,16 @@ microbenchmarks and object workloads do not pin CPUs or change the governor, so
 their nanosecond and event-rate differences are not statistically interpreted
 and should be read as local comparisons rather than general performance claims.
 The evaluated commit is
-\KSCommitShort{}.  The evaluation comprises 22 measurement scripts under
-\texttt{experiments/}, organized around the four paper
-claims.  C1 uses the example build matrix, matched source-footprint proxy, and
-external source-only scan to measure generated structure and source context.  C2
-uses unit tests and a targeted static corpus for selected pre-load rejections.
-C3 uses strict verifier loading, isolated XDP attach/detach, generated-loader
-lifecycle checks, object-level perf-event/ring-buffer/struct\_ops workloads, and
-scheduler-extension diagnostics to test local compatibility boundaries.  C4
+\KSCommitShort{}.  The evaluation comprises 23 measurement scripts under
+\texttt{experiments/}, organized around four paper claims.  The
+generated-structure claim uses the example build matrix, matched
+source-footprint proxy, external source-only scan, and one manual external
+port/build/runtime check.  The early-checking claim uses unit tests and a
+targeted static corpus for selected pre-load rejections.  The compatibility
+claim uses strict verifier loading, isolated XDP attach/detach,
+generated-loader lifecycle checks, object-level
+perf-event/ring-buffer/struct\_ops workloads, and scheduler-extension
+diagnostics to test local compatibility boundaries.  The runtime-behavior claim
 uses BPF\_PROG\_TEST\_RUN microbenchmarks, matched XDP/TC traffic, longer traffic
 stress, and lowering ablations to isolate local runtime behavior and one
 map-update mechanism.  The paper reports the
@@ -334,7 +341,7 @@ objects with hand-written C/eBPF baselines built with the same clang/libbpf
 toolchain and matched for program type, map schema, attachment point, and
 observable counter or byte-transfer semantics.  The baseline policy permits only
 the idiomatic C/eBPF needed for those matched semantics.  The
-baseline sources are tracked under \texttt{experiments/baselines/}; their
+baseline sources are tracked under \texttt{experiments/baselines/}.  Their
 construction policy is to match the generated program's observable semantics
 and avoid C-only shortcuts outside the map operation, attach point, event, or
 socket behavior under test.  The oracles check semantic equivalence at the
@@ -351,7 +358,7 @@ compiler source, applies a tracked compiler-source patch for array-map
 increment lowering, rebuilds the patched compiler, and reruns the same count
 benchmark.
 
-We measure sixteen outcomes.  \textbf{Compiler regression coverage} is
+We measure seventeen outcomes.  \textbf{Compiler regression coverage} is
 approximated by the repository test suite.  \textbf{Early rejection} is
 measured by static cases whose expected diagnostics are checked by the harness.
 \textbf{Example marker coverage} is
@@ -371,6 +378,10 @@ and C/libbpf runners used by the corresponding baselines.
 of public eBPF example/application repositories, scanning selected
 application/example source paths, and counting feature markers without building,
 translating, or running those projects.
+\textbf{External port/build/runtime} is measured by manually porting one pinned
+\texttt{xdp-tutorial} XDP map-counter source to \tool{}, compiling both the port
+and the original external C/eBPF object, attaching each object to an isolated
+veth, running iperf3 traffic, and checking that map key XDP\_PASS increments.
 \textbf{Mechanism isolation} is measured by the map-update lowering ablation.
 \textbf{Runtime sanity} is measured by iperf3 over veth/netns for matched XDP
 and TC pass/count objects, by a perf-event page-fault counter workload, and by
@@ -424,6 +435,7 @@ Claim & Artifact under test & Baseline or actor & Oracle & Boundary \\
 Project generation & Repository examples lowered to generated projects & Compiler and make harness & Build rows, feature markers, generated source lines & Repository corpus only \\
 Source footprint & Matched local workload sources & Hand-written C/eBPF objects and C/libbpf runners & Nonblank noncomment source-line counts with explicit exclusions & Matched source-footprint proxy, not developer time \\
 External source corpus & Pinned public eBPF example/application repositories & Source-only feature classifier & File/SLOC counts, \texttt{SEC()} sections, and feature markers & No translation, build, verifier, attach, or runtime evidence \\
+External port & One pinned \texttt{xdp-tutorial} XDP map-counter source & Original external C/eBPF source & Compile/build, XDP attach, iperf3 traffic, and XDP\_PASS map-key increment & One manual port only, not automated or broad portability \\
 Early checks & Unit tests and targeted invalid programs & Dune and static-check harnesses & Test success and expected diagnostic categories & Selected cases, not soundness \\
 Compatibility & Generated objects and generated perf loader & Local kernel/toolchain & Pinned-program load criterion, attach state, loader attach/read/detach and invocation timing & Local host only \\
 Runtime sanity & Generated XDP, TC, perf-counter, and ring-buffer objects & Matched C/eBPF objects or shared libbpf runner & iperf3 JSON, positive map counts, perf-counter equality, submitted/received/drop counts & Local workloads only \\
@@ -479,6 +491,17 @@ expected feature markers with the lexical detector output and matches
 \KSExternalCorpusAuditFalseNegatives{} false-negative feature labels.  This is a
 reconstructability check for the selected marker rules, not a statistical
 precision/recall estimate.
+
+\texttt{run\_external\_port.py} adds one external port/build/runtime
+check.  It fetches \texttt{xdp-tutorial} commit
+\texttt{\KSExternalPortCommitShort{}}, builds the manually written \tool{} port
+through its generated Makefile, and compiles the original
+\texttt{basic03-map-counter/xdp\_prog\_kern.c} eBPF source directly with clang.
+It then attaches each object to a fresh veth in a network namespace, runs iperf3
+traffic, and reads the XDP\_PASS map key.  The oracle is deliberately semantic
+and narrow: traffic must pass and the counter key must increase.  The experiment
+does not claim automated translation, upstream-project build coverage, exact
+packet-count equivalence, or broad external application portability.
 
 \section{Results}
 
@@ -797,6 +820,24 @@ A manual spot-check of the lexical classifier matches
 with \KSExternalCorpusAuditFalsePositives{} false-positive feature labels and
 \KSExternalCorpusAuditFalseNegatives{} false-negative feature labels.
 
+\textbf{External port/build/runtime check.}
+The external port harness uses the pinned \texttt{xdp-tutorial}
+\texttt{basic03-map-counter} XDP program as a concrete check beyond
+source-only scanning.  The \tool{} port is \KSExternalPortKSSloc{} nonblank
+noncomment lines, while the original external C/eBPF program body is
+\KSExternalPortCSloc{} lines.  The \tool{} port builds through its generated
+Makefile, and the original external C/eBPF source compiles directly to a BPF
+object with clang.  Both objects attach to isolated veth devices, pass iperf3
+traffic, and increment the XDP\_PASS counter key in \KSExternalPortTrials{}
+one-second trials.  Median receiver throughput is
+\KSExternalPortKSMedianGbps{} Gb/s for the \tool{} port and
+\KSExternalPortCMedianGbps{} Gb/s for the original C/eBPF object.  Median map
+update rates are \KSExternalPortKSMedianMpps{} and
+\KSExternalPortCMedianMpps{} million updates/s, respectively.  These throughput
+and counter-rate numbers are descriptive local samples, not a ranking.  The
+oracle is only traffic pass plus counter increase.  This is a useful external
+port sanity check, but it remains one hand port of one XDP map-counter workload.
+
 \textbf{Runtime microbenchmarks and lowering ablation.}
 Table~\ref{tab:micro} uses BPF\_PROG\_TEST\_RUN for 100000 repetitions over
 seven trials and reports median average nanoseconds with min--max ranges.  The
@@ -1012,6 +1053,9 @@ developers can understand generated verifier failures.
 The external corpus scan should be interpreted just as carefully: it measures
 feature overlap in pinned public source trees, not whether \tool{} can compile
 those programs or preserve their behavior.
+The external port experiment improves that gap for one XDP map-counter workload
+by adding compile/build/attach/runtime evidence, but it is still a manual port
+and cannot justify a broad external-application portability claim.
 
 \section{Threats to Validity}
 
@@ -1033,7 +1077,8 @@ of all eBPF applications.  A stronger corpus would include programs from
 Cilium, bcc/libbpf-tools, production XDP filters, scheduler extensions, and
 observability agents, then reimplement each in \tool{} and C/libbpf.  The
 external source scan adds independent feature context, but it is source-only and
-does not remove this threat.
+does not remove this threat.  The single external port lowers the risk for one
+XDP map-counter workload but leaves the broader corpus threat in place.
 
 \textbf{Static checks are targeted, not complete.}  The static rejection
 corpus is a regression test for selected compiler checks, not a formal proof of
@@ -1126,7 +1171,11 @@ source and build lines.  A matched source-footprint proxy adds
 runners are included.  A pinned external source-corpus scan covers
 \KSExternalCorpusFiles{} files across \KSExternalCorpusRepos{} public eBPF
 repositories and observes \KSExternalCorpusFeatureCount{} tracked feature
-families, giving source-only context for the local evaluation scope.  Second,
+families, giving source-only context for the local evaluation scope.  One
+manual external port from \texttt{xdp-tutorial} also builds through \tool{}'s
+generated Makefile and runs alongside a directly compiled original external
+C/eBPF object over \KSExternalPortTrials{} traffic trials.
+Second,
 the implementation exposes selected errors
 before kernel loading: the targeted static corpus includes
 \KSStaticExpectedFailures{} expected invalid programs, and the evaluation keeps

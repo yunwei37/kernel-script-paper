@@ -1,0 +1,107 @@
+{
+  "comparison": {
+    "delta_gbps": 0.06836539921703988,
+    "external_c_median_receiver_gbps": 16.07888171742582,
+    "ks_median_receiver_gbps": 16.14724711664286,
+    "ks_over_external_c_ratio": 1.0042518752496914
+  },
+  "description": "Manual KernelScript port of a pinned xdp-tutorial XDP map-counter example, checked against the original external C/eBPF source under traffic.",
+  "rows": [
+    {
+      "implementation": "kernelscript",
+      "max_receiver_gbps": 17.385214719919468,
+      "median_receiver_gbps": 16.14724711664286,
+      "median_rx_mpps": 1.399318742570598,
+      "min_receiver_gbps": 0.020933985364241917,
+      "name": "kernelscript_port",
+      "object": "results/build/external_port/ks_xdp_tutorial_basic03/xdp_tutorial_basic03.ebpf.o",
+      "oracle_passed": true,
+      "receiver_gbps_samples": [
+        13.957826972076154,
+        0.020933985364241917,
+        17.385214719919468,
+        16.14724711664286,
+        17.05621335016191
+      ],
+      "retransmits_samples": [
+        0,
+        2,
+        0,
+        22,
+        0
+      ],
+      "rx_mpps_samples": [
+        1.2112134173279228,
+        0.001895601187071581,
+        1.508622971087656,
+        1.399318742570598,
+        1.4802475558453514
+      ],
+      "rx_packet_samples": [
+        1214560,
+        1899,
+        1510640,
+        1400844,
+        1482425
+      ],
+      "seconds_per_trial": 1,
+      "trials": 5
+    },
+    {
+      "implementation": "original_external_c",
+      "max_receiver_gbps": 17.667164464007367,
+      "median_receiver_gbps": 16.07888171742582,
+      "median_rx_mpps": 1.3965560080267345,
+      "min_receiver_gbps": 6.187911406290273,
+      "name": "external_c",
+      "object": "results/build/external_port/external_c/xdp_prog_kern.o",
+      "oracle_passed": true,
+      "receiver_gbps_samples": [
+        15.268062527728594,
+        16.07888171742582,
+        17.667164464007367,
+        6.187911406290273,
+        16.411612674425108
+      ],
+      "retransmits_samples": [
+        36,
+        166,
+        4,
+        15,
+        0
+      ],
+      "rx_mpps_samples": [
+        1.3230506049329918,
+        1.3965560080267345,
+        1.5332925254707965,
+        0.5372796895823468,
+        1.4236443365256355
+      ],
+      "rx_packet_samples": [
+        1324072,
+        1399560,
+        1535502,
+        537803,
+        1425888
+      ],
+      "seconds_per_trial": 1,
+      "trials": 5
+    }
+  ],
+  "scope": {
+    "external_c_source": "basic03-map-counter/xdp_prog_kern.c",
+    "interpretation": "one manual external application port/build/runtime check, not an automated translation, performance ranking, or broad portability claim",
+    "kernelscript_port_source": "experiments/external_ports/xdp_tutorial_basic03.ks",
+    "source_commit": "4e2bf5658434e8ae12f281b9b182bb188766a319",
+    "source_repo": "https://github.com/xdp-project/xdp-tutorial.git",
+    "source_workload": "basic03-map-counter"
+  },
+  "seconds_per_trial": 1,
+  "semantic_oracle": "Both objects attach as XDP programs, pass iperf3 traffic, and increment map key XDP_PASS for rx_packets.",
+  "source_sloc": {
+    "external_c_ebpf_sloc": 24,
+    "kernelscript_port_sloc": 22
+  },
+  "status": "ok",
+  "trials": 5
+}

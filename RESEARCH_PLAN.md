@@ -29,6 +29,9 @@ source-footprint proxy, not a developer-time study.
 Finally, scan pinned public eBPF source trees for feature overlap as external
 source-only context. This third metric does not translate, build, verifier-load,
 attach, or run external applications.
+Then add one manual external application port/build/runtime check that compiles
+and runs a pinned external XDP map-counter workload in both KernelScript and its
+original C/eBPF form.
 
 RQ3. Which classes of errors are rejected before load/attach time?
 
@@ -131,7 +134,19 @@ one libbpf runner.
    - Provides source-only feature context, not translation, build, verifier,
      attach, or runtime evidence.
 
-4. `experiments/run_static_checks.py`
+4. `experiments/run_external_port.py`
+   - Clones pinned commit `4e2bf5658434` of `xdp-tutorial`.
+   - Builds the manual KernelScript port in
+     `experiments/external_ports/xdp_tutorial_basic03.ks` through its generated
+     Makefile.
+   - Compiles the original `basic03-map-counter/xdp_prog_kern.c` C/eBPF source
+     directly to a BPF object with clang.
+   - Attaches each object on an isolated veth, runs iperf3 traffic, and checks
+     that XDP_PASS map key `rx_packets` increases.
+   - Writes `results/external_port_summary.csv` and
+     `results/external_port_summary.json`.
+
+5. `experiments/run_static_checks.py`
    - Compiles a static-check corpus with expected success or expected failure
      outcomes.
    - Verifies lifecycle API, program signature, map type/symbol, type-system,
@@ -140,7 +155,7 @@ one libbpf runner.
    - Writes `results/static_checks_summary.csv` and
      `results/static_checks_summary.json`.
 
-5. `experiments/run_verifier_matrix.py`
+6. `experiments/run_verifier_matrix.py`
    - Reads `results/examples_summary.csv` after `run_evaluation.py`.
    - Attempts `bpftool prog loadall` for every generated eBPF object under
      `results/build/examples`.
@@ -151,7 +166,7 @@ one libbpf runner.
    - Writes `results/verifier_matrix_summary.csv` and
      `results/verifier_matrix_summary.json`.
 
-6. `experiments/run_attach_matrix.py`
+7. `experiments/run_attach_matrix.py`
    - Reads `results/verifier_matrix_summary.csv`.
    - Selects verifier-clean, single-section XDP objects.
    - Creates a fresh network namespace and veth pair per object.
@@ -160,12 +175,12 @@ one libbpf runner.
    - Writes `results/attach_matrix_summary.csv` and
      `results/attach_matrix_summary.json`.
 
-7. `experiments/run_smoke.sh`
+8. `experiments/run_smoke.sh`
    - Compiles and builds `experiments/programs/smoke_lo.ks`.
    - Runs the generated binary with `sudo -n`.
    - Writes `results/smoke_summary.json` and logs under `results/logs/`.
 
-8. `experiments/run_microbench.py`
+9. `experiments/run_microbench.py`
    - Compiles two KernelScript XDP microbenchmarks and two hand-written C/eBPF
      baselines.
    - Loads each object with `bpftool prog load`.
@@ -174,7 +189,7 @@ one libbpf runner.
    - Writes `results/microbench_summary.csv` and
      `results/microbench_summary.json`.
 
-9. `experiments/run_compiler_patch_ablation.py`
+10. `experiments/run_compiler_patch_ablation.py`
    - Copies the KernelScript compiler source tree into `results/build`.
    - Applies `experiments/patches/kernelscript-map-increment-lowering.patch`.
    - Builds the patched compiler with `dune build`.
@@ -187,7 +202,7 @@ one libbpf runner.
    - Writes `results/compiler_patch_ablation_summary.csv` and
      `results/compiler_patch_ablation_summary.json`.
 
-10. `experiments/run_xdp_traffic.py`
+11. `experiments/run_xdp_traffic.py`
    - Compiles the same KernelScript XDP pass/count programs and hand-written
      C/eBPF baselines.
    - Creates a fresh network namespace and veth pair for each trial.
@@ -197,7 +212,7 @@ one libbpf runner.
    - Writes `results/xdp_traffic_summary.csv` and
      `results/xdp_traffic_summary.json`.
 
-11. `experiments/run_tc_traffic.py`
+12. `experiments/run_tc_traffic.py`
    - Compiles KernelScript TC ingress pass/count programs and hand-written
      C/eBPF baselines.
    - Creates a fresh network namespace and veth pair for each trial.
@@ -206,7 +221,7 @@ one libbpf runner.
    - Writes `results/tc_traffic_summary.csv` and
      `results/tc_traffic_summary.json`.
 
-12. `experiments/run_perf_event_loader.py`
+13. `experiments/run_perf_event_loader.py`
    - Compiles `kernelscript/examples/perf_page_fault.ks` into a generated
      loader.
    - Compiles a matched hand-written C/libbpf perf_event loader baseline.
@@ -216,7 +231,7 @@ one libbpf runner.
    - Writes `results/perf_event_loader_summary.csv` and
      `results/perf_event_loader_summary.json`.
 
-13. `experiments/run_traffic_stress.py`
+14. `experiments/run_traffic_stress.py`
    - Runs the XDP and TC traffic harnesses with a separate `stress` result
      label.
    - Uses 3 trials of 5 seconds by default for each XDP/TC pass/count variant.
@@ -226,7 +241,7 @@ one libbpf runner.
      `results/traffic_stress_summary.json`.
    - Requires all XDP and TC traffic oracles to pass.
 
-14. `experiments/run_perf_event_counter.py`
+15. `experiments/run_perf_event_counter.py`
    - Compiles a KernelScript perf_event page-fault counter and a matched
      hand-written C/eBPF object.
    - Uses one libbpf runner to attach both objects to a software page-fault perf
@@ -236,7 +251,7 @@ one libbpf runner.
    - Writes `results/perf_event_counter_summary.csv` and
      `results/perf_event_counter_summary.json`.
 
-15. `experiments/run_ringbuf_workload.py`
+16. `experiments/run_ringbuf_workload.py`
    - Compiles a KernelScript XDP ringbuf event emitter and a matched
      hand-written C/eBPF object.
    - Uses one libbpf runner to execute both objects through BPF_PROG_TEST_RUN
@@ -246,7 +261,7 @@ one libbpf runner.
    - Writes `results/ringbuf_workload_summary.csv` and
      `results/ringbuf_workload_summary.json`.
 
-16. `experiments/run_struct_ops_compat.py`
+17. `experiments/run_struct_ops_compat.py`
    - Compiles `kernelscript/examples/struct_ops_simple.ks` with `make
      ebpf-only`.
    - Compiles a hand-written tcp-congestion struct_ops C/eBPF object with the
@@ -259,7 +274,7 @@ one libbpf runner.
    - Writes `results/struct_ops_compat_summary.csv` and
      `results/struct_ops_compat_summary.json`.
 
-17. `experiments/run_struct_ops_workload.py`
+18. `experiments/run_struct_ops_workload.py`
    - Compiles the same generated and hand-written tcp-congestion struct_ops
      objects as the direct compatibility check.
    - Uses one libbpf runner to load and attach each object.
@@ -271,7 +286,7 @@ one libbpf runner.
    - Writes `results/struct_ops_workload_summary.csv` and
      `results/struct_ops_workload_summary.json`.
 
-18. `experiments/run_struct_ops_callback_workload.py`
+19. `experiments/run_struct_ops_callback_workload.py`
    - Compiles callback-flag generated and hand-written tcp-congestion
      struct_ops objects.
    - Uses one libbpf runner to load and attach each object, reset callback
@@ -283,7 +298,7 @@ one libbpf runner.
    - Writes `results/struct_ops_callback_workload_summary.csv` and
      `results/struct_ops_callback_workload_summary.json`.
 
-19. `experiments/run_struct_ops_skeleton_repair.py`
+20. `experiments/run_struct_ops_skeleton_repair.py`
    - Compiles `kernelscript/examples/struct_ops_simple.ks` and
      `kernelscript/examples/sched_ext_simple.ks` into generated projects.
    - Records the original generated userspace build status and classifies the
@@ -295,7 +310,7 @@ one libbpf runner.
    - Writes `results/struct_ops_skeleton_repair_summary.csv` and
      `results/struct_ops_skeleton_repair_summary.json`.
 
-20. `experiments/run_sched_ext_verifier.py`
+21. `experiments/run_sched_ext_verifier.py`
    - Compiles `kernelscript/examples/sched_ext_simple.ks` with KernelScript and
      a five-callback hand-written scheduler-extension C/eBPF control baseline.
    - Uses `bpftool prog loadall` only, with no scheduler attach or registration.
@@ -305,7 +320,7 @@ one libbpf runner.
    - Writes `results/sched_ext_verifier_summary.csv` and
      `results/sched_ext_verifier_summary.json`.
 
-21. `experiments/run_sched_ext_attach.py`
+22. `experiments/run_sched_ext_attach.py`
    - Compiles the same C/eBPF control scheduler and a timeout-bounded
      generated scheduler-extension variant.
    - Requires explicit host-scheduler opt-in before calling
@@ -315,7 +330,7 @@ one libbpf runner.
    - Writes `results/sched_ext_attach_summary.csv` and
      `results/sched_ext_attach_summary.json`.
 
-22. `experiments/run_lowering_ablation.py`
+23. `experiments/run_lowering_ablation.py`
    - Compiles the KernelScript XDP count benchmark.
    - Copies the generated project and patches the map update lowering from
      lookup plus update helper to in-place atomic add.
@@ -326,9 +341,9 @@ one libbpf runner.
    - Writes `results/lowering_ablation_summary.csv` and
      `results/lowering_ablation_summary.json`.
 
-23. `experiments/update_paper_numbers.py`
+24. `experiments/update_paper_numbers.py`
    - Checks that unit tests, static checks, source-footprint proxy, smoke test,
-     external source-corpus scan, microbenchmarks, and
+     external source-corpus scan, external port check, microbenchmarks, and
      XDP traffic, TC traffic, traffic stress, perf_event loader lifecycle,
      perf_event counter, ringbuf workload, struct_ops compatibility, struct_ops
      workload, struct_ops callback workload, struct_ops skeleton repair,
@@ -358,6 +373,18 @@ At commit `3b19cd2`, on Linux `6.15.11-061511-generic`:
   expected markers with zero false-positive or false-negative feature labels.
   This is source-only feature context, not translation, build, verifier, attach,
   or runtime evidence.
+- The external port/build/runtime check manually ports the pinned
+  `xdp-tutorial` `basic03-map-counter` XDP map-counter to KernelScript. The
+  KernelScript port is 22 SLOC and the original external C/eBPF source is 24
+  SLOC. The KernelScript port builds through its generated Makefile, and the
+  original external C/eBPF source compiles directly to a BPF object with clang.
+  Both objects attach to isolated veth devices, pass iperf3 traffic, and
+  increment the XDP_PASS map key in 5 one-second trials. Median receiver
+  throughput is 16.1 Gb/s for the KernelScript port and 16.1 Gb/s for the
+  original external C/eBPF object, with median map update rates of 1.40 and 1.40
+  million updates/s. These numbers are descriptive local samples, not a
+  performance ranking. This is one manual port, not an automated translation or
+  broad portability result.
 - The verifier-load matrix loads 39 of 43 generated eBPF objects and confirms
   that each loadable object pins at least one BPF program. Among the 41 objects
   from full generated-project build successes, 37 load successfully and 4 expose
@@ -407,19 +434,19 @@ At commit `3b19cd2`, on Linux `6.15.11-061511-generic`:
   than an in-place atomic add.
 - The XDP traffic benchmark runs matched KernelScript and hand-written C/eBPF
   pass/count objects over iperf3 TCP on fresh veth/netns pairs. Pass medians are
-  17.4Gb/s for KernelScript and 17.8Gb/s for C/eBPF. Count medians are 17.2Gb/s
-  for KernelScript and 17.3Gb/s for C/eBPF, with positive count-map invocation
+  17.4 Gb/s for KernelScript and 17.8 Gb/s for C/eBPF. Count medians are 17.2 Gb/s
+  for KernelScript and 17.3 Gb/s for C/eBPF, with positive count-map invocation
   rates of 1.50 and 1.50 Mpps respectively.
 - The TC traffic benchmark runs matched KernelScript and hand-written C/eBPF
   ingress pass/count objects over iperf3 TCP on fresh veth/netns pairs. Pass
-  medians are 89.9Gb/s for KernelScript and 92.0Gb/s for C/eBPF. Count medians
-  are 93.0Gb/s for KernelScript and 90.7Gb/s for C/eBPF, with positive
+  medians are 89.9 Gb/s for KernelScript and 92.0 Gb/s for C/eBPF. Count medians
+  are 93.0 Gb/s for KernelScript and 90.7 Gb/s for C/eBPF, with positive
   count-map invocation rates of 0.27 and 0.26 Mpps respectively.
 - The longer traffic stress rerun uses 3 trials of 5s per XDP/TC pass/count
   variant. All stress oracles pass, but XDP stress includes retransmits and one
-  low generated pass sample. XDP count medians are 17.3Gb/s for KernelScript
-  and 15.3Gb/s for C/eBPF, and TC count medians are 89.5Gb/s for KernelScript
-  and 86.1Gb/s for C/eBPF.
+  low generated pass sample. XDP count medians are 17.3 Gb/s for KernelScript
+  and 15.3 Gb/s for C/eBPF, and TC count medians are 89.5 Gb/s for KernelScript
+  and 86.1 Gb/s for C/eBPF.
 - The perf_event loader lifecycle test runs a generated KernelScript loader and
   a hand-written C/libbpf loader for 20 privileged trials. Both attach two
   perf_event programs, read counters, and detach cleanly in every trial.
@@ -446,9 +473,11 @@ ring-buffer event-emission workload, one direct struct_ops compatibility check,
 one loopback struct_ops TCP workload, one callback-flag tcp-congestion
 workload, and one local struct_ops skeleton build repair.
 The C1 evidence now also includes a pinned external source-corpus scan that
-adds feature-overlap context across public eBPF source trees, but it remains
-source-only: no external application is translated, built, verifier-loaded,
-attached, or run.
+adds feature-overlap context across public eBPF source trees. A separate manual
+port of one external XDP map-counter adds compile/build/attach/runtime evidence
+against its original C/eBPF source. These additions still do not establish
+automated translation, broad external application portability, or developer-time
+benefit.
 The attach matrix confirms that verifier-clean single-section XDP objects can
 be installed and removed on isolated veth devices, and the traffic benchmark
 checks matched XDP and TC pass/count objects under real TCP traffic. The

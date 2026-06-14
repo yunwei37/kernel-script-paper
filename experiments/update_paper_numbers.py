@@ -134,6 +134,7 @@ def main() -> int:
     sched_ext_attach = load_json("sched_ext_attach_summary.json")
     source_footprint = load_json("source_footprint_summary.json")
     external_corpus = load_json("external_corpus_summary.json")
+    external_port = load_json("external_port_summary.json")
 
     if unit.get("returncode") != 0 or unit.get("reported_failures") != 0:
         raise SystemExit("unit tests are not clean; refusing to generate paper numbers")
@@ -182,6 +183,8 @@ def main() -> int:
     external_audit = external_corpus.get("classifier_audit", {})
     if external_audit.get("status") != "ok":
         raise SystemExit("external corpus classifier audit did not complete successfully")
+    if external_port.get("status") != "ok":
+        raise SystemExit("external port check did not complete successfully")
 
     content = ""
     content += macro("KSCommitShort", str(env["kernelscript_git_head"])[:7])
@@ -256,6 +259,22 @@ def main() -> int:
     content += macro("KSExternalCorpusAuditMatched", external_audit["matched_samples"])
     content += macro("KSExternalCorpusAuditFalsePositives", external_audit["false_positive_count"])
     content += macro("KSExternalCorpusAuditFalseNegatives", external_audit["false_negative_count"])
+    external_port_rows = {row["name"]: row for row in external_port["rows"]}
+    external_port_scope = external_port["scope"]
+    external_port_comparison = external_port["comparison"]
+    content += macro("KSExternalPortWorkloads", 1)
+    content += macro("KSExternalPortVariants", len(external_port_rows))
+    content += macro("KSExternalPortOracleOK", sum(1 for row in external_port_rows.values() if row["oracle_passed"]))
+    content += macro("KSExternalPortTrials", external_port["trials"])
+    content += macro("KSExternalPortSeconds", external_port["seconds_per_trial"])
+    content += macro("KSExternalPortCommitShort", str(external_port_scope["source_commit"])[:12])
+    content += macro("KSExternalPortKSSloc", external_port["source_sloc"]["kernelscript_port_sloc"])
+    content += macro("KSExternalPortCSloc", external_port["source_sloc"]["external_c_ebpf_sloc"])
+    content += macro("KSExternalPortKSMedianGbps", f"{external_port_rows['kernelscript_port']['median_receiver_gbps']:.1f}")
+    content += macro("KSExternalPortCMedianGbps", f"{external_port_rows['external_c']['median_receiver_gbps']:.1f}")
+    content += macro("KSExternalPortKSMedianMpps", f"{external_port_rows['kernelscript_port']['median_rx_mpps']:.2f}")
+    content += macro("KSExternalPortCMedianMpps", f"{external_port_rows['external_c']['median_rx_mpps']:.2f}")
+    content += macro("KSExternalPortRatio", f"{external_port_comparison['ks_over_external_c_ratio']:.2f}x")
     content += macro("KSStaticTotal", static["total_cases"])
     content += macro("KSStaticMatched", static["matched_cases"])
     content += macro("KSStaticExpectedFailures", static["expected_failures"])

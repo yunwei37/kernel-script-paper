@@ -1,6 +1,6 @@
 Last updated: 2026-06-13
 Stage at update: analyze
-Source/command: `./experiments/run_source_footprint.py`, `./experiments/run_external_corpus.py`, `./experiments/run_xdp_traffic.py`, `./experiments/run_tc_traffic.py`, `./experiments/run_traffic_stress.py`, `./experiments/run_perf_event_loader.py`, `./experiments/run_perf_event_counter.py`, `./experiments/run_ringbuf_workload.py`, `./experiments/run_struct_ops_workload.py`, `./experiments/run_struct_ops_callback_workload.py`, `./experiments/run_sched_ext_verifier.py`, `./experiments/run_sched_ext_attach.py --allow-host-scheduler`, and checked-in result summaries
+Source/command: `./experiments/run_source_footprint.py`, `./experiments/run_external_corpus.py`, `./experiments/run_external_port.py`, `./experiments/run_xdp_traffic.py`, `./experiments/run_tc_traffic.py`, `./experiments/run_traffic_stress.py`, `./experiments/run_perf_event_loader.py`, `./experiments/run_perf_event_counter.py`, `./experiments/run_ringbuf_workload.py`, `./experiments/run_struct_ops_workload.py`, `./experiments/run_struct_ops_callback_workload.py`, `./experiments/run_sched_ext_verifier.py`, `./experiments/run_sched_ext_attach.py --allow-host-scheduler`, and checked-in result summaries
 
 # Results Summary
 
@@ -26,12 +26,19 @@ public eBPF repositories, 166 selected C/header files, 34843 nonblank noncomment
 lines, and 14 tracked feature families; a 7-file manual spot-check matches the
 expected classifier markers with zero false-positive or false-negative feature
 labels. It is source-only feature context, not translation, build, verifier,
-attach, or runtime evidence. On
+attach, or runtime evidence. A separate manual port of pinned
+`xdp-tutorial/basic03-map-counter` builds through KernelScript's generated
+Makefile, while the original external C/eBPF source compiles directly to a BPF
+object with clang. Both variants attach as XDP programs, pass five one-second
+iperf3 traffic trials, and increment the XDP_PASS map key. Median receiver
+throughput is 16.1 Gb/s for the KernelScript port and 16.1 Gb/s for the original
+C/eBPF object. These numbers are descriptive local samples, not a performance
+ranking. On
 fresh veth/netns
 pairs with iperf3 TCP, KernelScript and hand-written C/eBPF pass/count objects
-all pass the traffic oracles. XDP count medians are 17.2Gb/s for KernelScript
-and 17.3Gb/s for C/eBPF. TC count medians are 93.0Gb/s for KernelScript and
-90.7Gb/s for C/eBPF. The generated perf_event loader and the hand-written
+all pass the traffic oracles. XDP count medians are 17.2 Gb/s for KernelScript
+and 17.3 Gb/s for C/eBPF. TC count medians are 93.0 Gb/s for KernelScript and
+90.7 Gb/s for C/eBPF. The generated perf_event loader and the hand-written
 C/libbpf loader both pass 20/20 attach, counter-read, and detach trials. Median
 end-to-end invocation latencies are 15.7ms and 18.2ms, with p90 latencies of
 20.6ms and 21.1ms, respectively. The
@@ -63,8 +70,8 @@ control, with median per-trial worker-count coefficient of variation below 0.01
 for both variants.
 The stress
 rerun uses three 5s iperf3 trials per XDP/TC pass/count variant; all oracles
-pass, with XDP count medians of 17.3 versus 15.3Gb/s and TC count medians of
-89.5 versus 86.1Gb/s for KernelScript and C/eBPF respectively.
+pass, with XDP count medians of 17.3 versus 15.3 Gb/s and TC count medians of
+89.5 versus 86.1 Gb/s for KernelScript and C/eBPF respectively.
 
 ## Completed Runs
 
@@ -87,13 +94,14 @@ pass, with XDP count medians of 17.3 versus 15.3Gb/s and TC count medians of
 | R014 | `results/sched_ext_attach_summary.json` | ok | Opt-in scheduler-extension attach harness registers the C/eBPF and generated toy FIFO schedulers, keeps sched_ext enabled during five bounded 0.75s CPU progress trials, records per-worker iteration counts, unregisters both, and returns sched_ext to disabled with zero rejected tasks. |
 | R015 | `results/source_footprint_summary.json` | ok | Matched source-footprint proxy covers 11 local workload rows; unique maintained KernelScript sources total 203 SLOC, C/eBPF objects alone total 254 SLOC, and C/libbpf sources total 1105 SLOC with runner/loader files included. |
 | R016 | `results/external_corpus_summary.json` | ok | External source-corpus scan covers 3 pinned public eBPF repositories, 166 selected C/header files, 34843 SLOC, and 14 tracked feature families; the 7-file classifier spot-check has zero false-positive or false-negative feature labels; no external application is translated, built, verifier-loaded, attached, or run. |
+| R017 | `results/external_port_summary.json` | ok | Manual KernelScript port of pinned `xdp-tutorial/basic03-map-counter` builds through its generated Makefile; the original external C/eBPF source compiles directly with clang; both objects attach, pass 5 x 1s iperf3 trials, and increment the same XDP_PASS map key. |
 
 ## Anomalies And Negative Results
 
 - The stricter verifier matrix reclassifies `local_global_vars` as
   `no_program_pinned`: `bpftool` returned success but pinned only maps because
   the XDP section was empty.
-- The XDP stress pass result includes one low generated sample (1.3Gb/s), so
+- The XDP stress pass result includes one low generated sample (1.3 Gb/s), so
   the stress pass range is a noise indicator rather than a performance
   comparison claim.
 - The longer stress rerun still uses local veth TCP rather than NIC-rate
@@ -122,6 +130,10 @@ pass, with XDP count medians of 17.3 versus 15.3Gb/s and TC count medians of
 - The external source-corpus scan is source-only feature context. It finds no
   tail-call marker in the selected paths and does not translate, build,
   verifier-load, attach, or run any external application.
+- The external port check covers one hand-written KernelScript port of
+  one XDP map-counter workload. It is useful external build/runtime evidence but
+  not a performance ranking, automated translation result, exact packet-count
+  equivalence result, or broad external-application portability claim.
 
 ## Figure/Table Candidates
 
@@ -136,6 +148,7 @@ pass, with XDP count medians of 17.3 versus 15.3Gb/s and TC count medians of
 - `results/source_footprint_summary.json`
 - `results/external_corpus_summary.json`
 - `results/external_corpus_audit.csv`
+- `results/external_port_summary.json`
 - `results/static_checks_summary.json`
 - `results/verifier_matrix_summary.json`
 - `results/attach_matrix_summary.json`
