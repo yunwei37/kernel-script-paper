@@ -1,6 +1,6 @@
 Last updated: 2026-06-13
 Stage at update: audit
-Source/command: manual/fallback experiment audit after source-footprint proxy
+Source/command: manual/fallback experiment audit after external source-corpus scan
 Completeness: complete
 
 # Experiment Audit
@@ -18,7 +18,7 @@ general runtime-equivalence or production-deployment claim.
 | Check | Evidence | Result |
 |---|---|---|
 | Required result files exist | Python audit over `results/*.json` inputs used by `experiments/update_paper_numbers.py` | pass |
-| Required status fields are clean | `smoke`, `microbench`, `source_footprint`, `static`, `lowering`, `compiler_patch`, `verifier`, `attach`, `xdp_traffic`, `tc_traffic`, `traffic_stress`, `perf_event_loader`, `perf_event_counter`, `ringbuf`, `struct_ops`, `struct_ops_workload`, `struct_ops_callback_workload`, `struct_ops_skeleton_repair`, `sched_ext_verifier`, and `sched_ext_attach` summaries all report `ok` | pass |
+| Required status fields are clean | `smoke`, `microbench`, `source_footprint`, `external_corpus`, `static`, `lowering`, `compiler_patch`, `verifier`, `attach`, `xdp_traffic`, `tc_traffic`, `traffic_stress`, `perf_event_loader`, `perf_event_counter`, `ringbuf`, `struct_ops`, `struct_ops_workload`, `struct_ops_callback_workload`, `struct_ops_skeleton_repair`, `sched_ext_verifier`, and `sched_ext_attach` summaries all report `ok` | pass |
 | Example corpus present | `results/examples_summary.json` contains 44 rows | pass |
 | Paper macro coverage | Parsed `paper/kernelscript-paper.tex` and `results/paper_numbers.tex`: all used `KS...` macros are defined | pass |
 | Paper-number reproducibility | `./experiments/update_paper_numbers.py && git diff --exit-code -- results/paper_numbers.tex` | pass |
@@ -36,6 +36,8 @@ The audit checked these paper-number inputs:
 - `results/evaluation_summary.json`
 - `results/examples_summary.json`
 - `results/source_footprint_summary.json`
+- `results/external_corpus_summary.json`
+- `results/external_corpus_audit.csv`
 - `results/smoke_summary.json`
 - `results/microbench_summary.json`
 - `results/static_checks_summary.json`
@@ -72,6 +74,12 @@ build completes from those macros.
   listed in `results/source_footprint_summary.json`; generated C, generated
   Makefiles, generated `vmlinux.h`, skeleton headers, KernelScript library
   headers, and Python experiment harnesses are excluded.
+- External source-corpus results clone pinned public repository commits and scan
+  selected C/header paths for file roles, SLOC, `SEC()` sections, and feature
+  markers; they exclude vendored `vmlinux` headers, generated files, build
+  outputs, Rust userspace, and support libraries outside the selected paths. The
+  classifier audit compares seven manually selected files against expected
+  feature markers and records false-positive and false-negative feature labels.
 - Static checks use explicit expected pass/fail programs and diagnostic
   category matching.
 - Verifier-load results use `bpftool prog loadall` and require at least one
@@ -114,7 +122,10 @@ from result files. Ratios and percentage differences are derived against matched
 C/eBPF baselines and are labeled as local comparisons. The audit found no
 headline claim that normalizes by KernelScript's own output distribution. The
 paper keeps generated SLOC expansion and matched source-footprint accounting
-separate from developer-time claims.
+separate from developer-time claims. External source-corpus numbers are labeled
+as source-only feature context rather than portability, build, verifier,
+attach, or runtime results. The classifier audit is labeled as a spot-check of
+selected marker rules rather than a statistical precision/recall estimate.
 
 ## Scope Language Review
 
@@ -128,8 +139,10 @@ evidence rather than full callback coverage, labels the skeleton repair as a
 local generated-userspace build repair rather than cross-version portability,
 and labels the scheduler-extension attach result as one toy bounded
 progress/fairness proxy rather than scheduler-policy or performance evidence.
-The source-footprint result is labeled as a local source-maintenance proxy
-rather than an external application corpus or developer-time study.
+The source-footprint result is labeled as a local matched source-footprint proxy
+rather than a developer-time study, and the external source-corpus result is
+labeled as source-only feature context rather than application portability or
+runtime evidence.
 
 ## Accepted Warnings
 
@@ -149,9 +162,10 @@ rather than an external application corpus or developer-time study.
    only. These checks do not cover scheduler-extension policy quality or
    performance, every tcp-congestion callback path, running the repaired
    binaries, or broad libbpf-version portability.
-4. The generated-structure and source-footprint results are corpus artifact
-   results, not a developer-effort study against an expert C implementation or
-   external application corpus.
+4. The generated-structure, source-footprint, and external source-corpus results
+   are corpus artifact results. The external scan adds source-only feature
+   context but is not a developer-effort study, translation/build corpus, or
+   runtime portability result.
 
 ## Gate Status
 

@@ -51,10 +51,16 @@ compiler without abandoning the ordinary Linux BPF toolchain.
 
 At commit \KSCommitShort{}, \KSKSCompileOK{} of \KSTotalExamples{} repository
 examples compile from \tool{} source and \KSMakeOK{} of \KSTotalExamples{}
-build into generated C/eBPF projects.  The checked-in evaluation then tests
-selected early rejections, strict verifier loading, isolated XDP attachment,
-matched XDP and TC traffic, perf-event counters, ring-buffer event delivery,
-and tcp-congestion struct\_ops compatibility.  \KSVerifierBuildLoadOK{} of
+build into generated C/eBPF projects.  A source-only scan of
+\KSExternalCorpusRepos{} pinned external eBPF repositories covers
+\KSExternalCorpusFiles{} files and observes markers for Express Data Path (XDP),
+traffic control (TC), tracing, maps, ring buffers, struct\_ops, and
+scheduler-extension code in the selected source paths, although it does not
+translate or build those applications.
+The checked-in evaluation then tests selected early rejections, strict verifier
+loading, isolated XDP attachment, matched XDP and TC traffic, perf-event
+counters, ring-buffer event delivery, and tcp-congestion struct\_ops
+compatibility.  \KSVerifierBuildLoadOK{} of
 \KSVerifierBuildObjects{} build-success generated objects verifier-load under a
 strict pinned-program criterion, and \KSAttachOK{} of \KSAttachEligible{}
 verifier-clean single-section XDP objects attach and detach in isolated
@@ -140,11 +146,12 @@ map access types, ring-buffer API use, config mutability, helper-scope
 restrictions, kernel-context allocation checks, perf-event group bounds, and
 stack-limit violations before load or attach time.  Third, it
 implements a reproducible artifact evaluation of test coverage, example
-buildability, generated-code expansion, example marker coverage, static
-rejection cases, strict verifier loading, isolated XDP attachment, matched XDP
-and TC traffic runs, perf-event loader and counter workloads, a ring-buffer
-event-emission workload, direct and callback-instrumented struct\_ops checks,
-and a compiler-source patch that isolates one map-update lowering mechanism.  The
+buildability, generated-code expansion, example marker coverage, external
+source-corpus feature context, static rejection cases, strict verifier loading,
+isolated XDP attachment, matched XDP and TC traffic runs, perf-event loader and
+counter workloads, a ring-buffer event-emission workload, direct and
+callback-instrumented struct\_ops checks, and a compiler-source patch that
+isolates one map-update lowering mechanism.  The
 scientific contribution is not a new BPF verifier or a broad
 performance-equivalence result.  Instead, it is an executable case
 study of which selected cross-boundary eBPF invariants this prototype exposes
@@ -309,24 +316,31 @@ microbenchmarks and object workloads do not pin CPUs or change the governor, so
 their nanosecond and event-rate differences are not statistically interpreted
 and should be read as local comparisons rather than general performance claims.
 The evaluated commit is
-\KSCommitShort{}.  The artifact contains 21 measurement scripts under
-\texttt{experiments/}.  They cover compiler tests and example builds,
-matched source-footprint accounting, static-check cases, strict verifier
-loading, isolated XDP attach/detach, XDP and TC traffic over fresh veth/netns
-pairs, perf-event loader and counter workloads,
-ring-buffer event emission, direct struct\_ops load/attach/detach
-compatibility, loopback TCP and callback-flag workloads for tcp-congestion
-struct\_ops, a
-version-aware struct\_ops skeleton repair, a longer XDP/TC traffic stress
-rerun, scheduler-extension attach/progress checks, and two map-update lowering
-ablations.  The paper reports the
+\KSCommitShort{}.  The evaluation comprises 22 measurement scripts under
+\texttt{experiments/}, organized around the four paper
+claims.  C1 uses the example build matrix, matched source-footprint proxy, and
+external source-only scan to measure generated structure and source context.  C2
+uses unit tests and a targeted static corpus for selected pre-load rejections.
+C3 uses strict verifier loading, isolated XDP attach/detach, generated-loader
+lifecycle checks, object-level perf-event/ring-buffer/struct\_ops workloads, and
+scheduler-extension diagnostics to test local compatibility boundaries.  C4
+uses BPF\_PROG\_TEST\_RUN microbenchmarks, matched XDP/TC traffic, longer traffic
+stress, and lowering ablations to isolate local runtime behavior and one
+map-update mechanism.  The paper reports the
 compiler-source patch ablation as the canonical mechanism-isolation result
 because it changes the compiler path
 rather than editing generated output.  The traffic scripts compare generated
 objects with hand-written C/eBPF baselines built with the same clang/libbpf
 toolchain and matched for program type, map schema, attachment point, and
-observable counter or byte-transfer semantics.  We do not hand-tune the
-baselines beyond the minimal idiomatic C/eBPF needed for those semantics.  The
+observable counter or byte-transfer semantics.  The baseline policy permits only
+the idiomatic C/eBPF needed for those matched semantics.  The
+baseline sources are tracked under \texttt{experiments/baselines/}; their
+construction policy is to match the generated program's observable semantics
+and avoid C-only shortcuts outside the map operation, attach point, event, or
+socket behavior under test.  The oracles check semantic equivalence at the
+boundary each workload exposes: exact map counts, perf-counter equality,
+submitted/received ring-buffer events, byte-transfer completion,
+load/attach/detach success, or callback flags.  The
 perf-event counter,
 ring-buffer, and struct\_ops scripts use one libbpf runner for both objects and
 check BPF map counts, submitted/received event counts, load/attach/detach
@@ -337,7 +351,7 @@ compiler source, applies a tracked compiler-source patch for array-map
 increment lowering, rebuilds the patched compiler, and reruns the same count
 benchmark.
 
-We measure fifteen outcomes.  \textbf{Compiler regression coverage} is
+We measure sixteen outcomes.  \textbf{Compiler regression coverage} is
 approximated by the repository test suite.  \textbf{Early rejection} is
 measured by static cases whose expected diagnostics are checked by the harness.
 \textbf{Example marker coverage} is
@@ -353,6 +367,10 @@ XDP attach/detach outcomes against the local kernel toolchain.
 \textbf{Matched source footprint} is measured by comparing the maintained
 \tool{} source for local matched workloads with the hand-written C/eBPF objects
 and C/libbpf runners used by the corresponding baselines.
+\textbf{External source-corpus context} is measured by cloning pinned commits
+of public eBPF example/application repositories, scanning selected
+application/example source paths, and counting feature markers without building,
+translating, or running those projects.
 \textbf{Mechanism isolation} is measured by the map-update lowering ablation.
 \textbf{Runtime sanity} is measured by iperf3 over veth/netns for matched XDP
 and TC pass/count objects, by a perf-event page-fault counter workload, and by
@@ -404,7 +422,8 @@ invocation timing for generated and hand-written loaders.
 Claim & Artifact under test & Baseline or actor & Oracle & Boundary \\
 \midrule
 Project generation & Repository examples lowered to generated projects & Compiler and make harness & Build rows, feature markers, generated source lines & Repository corpus only \\
-Source footprint & Matched local workload sources & Hand-written C/eBPF objects and C/libbpf runners & Nonblank noncomment source-line counts with explicit exclusions & Source-maintenance proxy, not developer time \\
+Source footprint & Matched local workload sources & Hand-written C/eBPF objects and C/libbpf runners & Nonblank noncomment source-line counts with explicit exclusions & Matched source-footprint proxy, not developer time \\
+External source corpus & Pinned public eBPF example/application repositories & Source-only feature classifier & File/SLOC counts, \texttt{SEC()} sections, and feature markers & No translation, build, verifier, attach, or runtime evidence \\
 Early checks & Unit tests and targeted invalid programs & Dune and static-check harnesses & Test success and expected diagnostic categories & Selected cases, not soundness \\
 Compatibility & Generated objects and generated perf loader & Local kernel/toolchain & Pinned-program load criterion, attach state, loader attach/read/detach and invocation timing & Local host only \\
 Runtime sanity & Generated XDP, TC, perf-counter, and ring-buffer objects & Matched C/eBPF objects or shared libbpf runner & iperf3 JSON, positive map counts, perf-counter equality, submitted/received/drop counts & Local workloads only \\
@@ -434,7 +453,7 @@ Makefile lines.  This definition is conservative for the generated-structure
 claim because it omits the large skeleton header that a low-level build still
 needs.
 
-\texttt{run\_source\_footprint.py} adds a separate source-maintenance proxy for
+\texttt{run\_source\_footprint.py} adds a separate matched source-footprint proxy for
 the local matched workloads.  It counts nonblank noncomment lines in the
 maintained \tool{} application source, the hand-written C/eBPF baseline objects,
 and the C/libbpf runner or loader files when that workload requires one.
@@ -442,6 +461,24 @@ Generated C, generated Makefiles, generated \texttt{vmlinux.h}, skeleton
 headers, \tool{} library headers, and Python experiment harness code are
 excluded.  This metric is closer to a hand-written baseline than the generated
 expansion factor, but it is still not a developer-time study.
+
+\texttt{run\_external\_corpus.py} adds an external source-only context check. It
+fetches pinned commits of \texttt{libbpf-bootstrap}, \texttt{xdp-tutorial}, and
+\texttt{scx}, scans selected application/example C and header paths, and records
+file counts, source lines, \texttt{SEC()} sections, and feature-family markers.
+The scan excludes vendored \texttt{vmlinux.h} headers, generated files, build
+outputs, Rust userspace code, and repository support libraries outside the
+selected application/example paths.  It is useful for checking whether the local
+artifact exercises externally visible eBPF feature families, but it is not a
+porting, build, verifier, or runtime experiment.
+The script also records a manual classifier spot-check over
+\KSExternalCorpusAuditSamples{} representative files.  The audit compares
+expected feature markers with the lexical detector output and matches
+\KSExternalCorpusAuditMatched{} of \KSExternalCorpusAuditSamples{} samples, with
+\KSExternalCorpusAuditFalsePositives{} false-positive feature labels and
+\KSExternalCorpusAuditFalseNegatives{} false-negative feature labels.  This is a
+reconstructability check for the selected marker rules, not a statistical
+precision/recall estimate.
 
 \section{Results}
 
@@ -672,7 +709,7 @@ compatibility gap explicit.
 
 \begin{table}[t]
 \centering
-\caption{Example marker coverage in repository examples. A = attempted, KS = \tool{} compiler success, B = generated project build success.}
+\caption{Example marker coverage in repository examples shows broad local feature markers but XDP-heavy coverage. A = attempted, KS = \tool{} compiler success, B = generated project build success.}
 \label{tab:features}
 \scriptsize
 \begin{tabular}{lrrr@{\hspace{0.8em}}lrrr}
@@ -714,7 +751,7 @@ rather than a direct developer-effort result.
 
 The metric is intentionally conservative.  It does not say that every
 generated line is exactly a hand-written line saved, and it does not compare
-against an external application corpus.  It does show that \tool{}
+against a ported external application corpus.  It does show that \tool{}
 centralizes recurring eBPF project structure.  Examples such
 as perf events have particularly high expansion factors because attaching and
 reading counters requires substantial userspace coordination code relative to the
@@ -733,8 +770,32 @@ C/libbpf source footprint to \KSSourceFootprintUniqueCSloc{} lines
 per-workload rows, \tool{} is smaller in \KSSourceFootprintKSSmaller{} of
 \KSSourceFootprintWorkloads{} rows, while the three rows where it is not smaller
 are tiny pass or scheduler-control cases with little userspace coordination.
-This result is a source-surface comparison for the local workload corpus, not a
+This result is a matched source-footprint proxy for the local workload corpus, not a
 claim about programmer time or external applications.
+
+\textbf{External source-corpus context.}
+The external source-only scan covers \KSExternalCorpusRepos{} public repositories
+at pinned commits, \KSExternalCorpusFiles{} selected C/header files, and
+\KSExternalCorpusSLOC{} nonblank noncomment source lines.  The selected corpus
+contains \KSExternalCorpusKernelFiles{} kernel-side files,
+\KSExternalCorpusUserspaceFiles{} userspace files, and
+\KSExternalCorpusHeaderFiles{} local headers.  The classifier observes
+\KSExternalCorpusFeatureCount{} of the tracked feature families: maps appear in
+\KSExternalCorpusMapsFiles{} files, XDP in \KSExternalCorpusXDPFiles{}, TC in
+\KSExternalCorpusTCFiles{}, tracepoint in \KSExternalCorpusTracepointFiles{},
+kprobe in \KSExternalCorpusKprobeFiles{}, perf-event in
+\KSExternalCorpusPerfEventFiles{}, ring-buffer in
+\KSExternalCorpusRingbufFiles{}, struct\_ops in
+\KSExternalCorpusStructOpsFiles{}, scheduler-extension markers in
+\KSExternalCorpusSchedExtFiles{}, and kfunc-related markers in
+\KSExternalCorpusKfuncFiles{}.  This provides external feature-context evidence
+for the paper's chosen local program classes.  It also narrows the claim: the
+scan found no tail-call marker in this selected corpus, and no external program
+is translated, built, verifier-loaded, attached, or run by this experiment.
+A manual spot-check of the lexical classifier matches
+\KSExternalCorpusAuditMatched{} of \KSExternalCorpusAuditSamples{} sampled files,
+with \KSExternalCorpusAuditFalsePositives{} false-positive feature labels and
+\KSExternalCorpusAuditFalseNegatives{} false-negative feature labels.
 
 \textbf{Runtime microbenchmarks and lowering ablation.}
 Table~\ref{tab:micro} uses BPF\_PROG\_TEST\_RUN for 100000 repetitions over
@@ -948,6 +1009,9 @@ generated-only expansion factor, but it still uses local baselines and line
 counts rather than a controlled developer study.  Future work should therefore
 measure time to fix injected errors, quality of compiler messages, and whether
 developers can understand generated verifier failures.
+The external corpus scan should be interpreted just as carefully: it measures
+feature overlap in pinned public source trees, not whether \tool{} can compile
+those programs or preserve their behavior.
 
 \section{Threats to Validity}
 
@@ -958,7 +1022,7 @@ used by the local matched workload corpus.  It is more direct than comparing
 task time, debugging effort, review burden, or expert familiarity.  An expert
 could write smaller C for some examples, especially tiny XDP pass/drop programs.
 Conversely, generated code omits comments and may be denser than maintainable
-production C.  The right interpretation is therefore ``source surface
+production C.  The right interpretation is therefore ``matched source footprint
 centralized for these local workloads,'' not ``developer time saved.''
 
 \textbf{Repository examples may be biased.}  The corpus comes from the
@@ -967,7 +1031,9 @@ authors wanted to demonstrate.  The corpus is useful for an artifact study becau
 is reproducible and covers many features, but it is not a representative sample
 of all eBPF applications.  A stronger corpus would include programs from
 Cilium, bcc/libbpf-tools, production XDP filters, scheduler extensions, and
-observability agents, then reimplement each in \tool{} and C/libbpf.
+observability agents, then reimplement each in \tool{} and C/libbpf.  The
+external source scan adds independent feature context, but it is source-only and
+does not remove this threat.
 
 \textbf{Static checks are targeted, not complete.}  The static rejection
 corpus is a regression test for selected compiler checks, not a formal proof of
@@ -1057,7 +1123,11 @@ source and build lines.  A matched source-footprint proxy adds
 \KSSourceFootprintWorkloads{} local workload rows in which unique maintained
 \tool{} sources total \KSSourceFootprintUniqueKSSloc{} lines versus
 \KSSourceFootprintUniqueCSloc{} hand-written C/libbpf lines when baseline
-runners are included.  Second, the implementation exposes selected errors
+runners are included.  A pinned external source-corpus scan covers
+\KSExternalCorpusFiles{} files across \KSExternalCorpusRepos{} public eBPF
+repositories and observes \KSExternalCorpusFeatureCount{} tracked feature
+families, giving source-only context for the local evaluation scope.  Second,
+the implementation exposes selected errors
 before kernel loading: the targeted static corpus includes
 \KSStaticExpectedFailures{} expected invalid programs, and the evaluation keeps
 those diagnostics executable.  Third, the generated artifacts are not merely

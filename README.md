@@ -9,6 +9,8 @@ evaluation scripts, generated results, and a paper draft.
 - `experiments/run_evaluation.py`: compiler/test/example build evaluation.
 - `experiments/run_source_footprint.py`: matched source-footprint proxy against
   hand-written C/eBPF and C/libbpf baseline source files.
+- `experiments/run_external_corpus.py`: pinned external eBPF source-corpus
+  feature scan for source-only context.
 - `experiments/run_verifier_matrix.py`: bpftool verifier-load matrix for
   generated eBPF objects.
 - `experiments/run_attach_matrix.py`: isolated network-namespace XDP
@@ -75,6 +77,12 @@ Run the matched source-footprint proxy:
 
 ```bash
 ./experiments/run_source_footprint.py
+```
+
+Run the pinned external eBPF source-corpus scan:
+
+```bash
+./experiments/run_external_corpus.py
 ```
 
 Run the verifier-load matrix, which requires `sudo -n` and the generated
@@ -227,7 +235,15 @@ The current run evaluates KernelScript commit `3b19cd2` on Linux
   total 203 nonblank noncomment lines. The matching hand-written C/eBPF objects
   total 254 lines, and the C/libbpf source footprint rises to 1105 lines when
   the baseline runner or loader files used by the nontrivial workloads are
-  included. This is a source-maintenance proxy, not a developer-time study.
+  included. This is a matched source-footprint proxy, not a developer-time study.
+- External source-corpus scan: three pinned public eBPF repositories
+  (`libbpf-bootstrap` at `fac4e8ddf011`, `xdp-tutorial` at `4e2bf5658434`,
+  and `scx` at `0f3df692e2bd`) contribute 166 selected C/header files, 34843
+  nonblank noncomment lines, 82 kernel-side files, 32 userspace files, and 52
+  local headers. The source-only classifier observes 14 tracked feature
+  families, and a seven-file manual spot-check matches the expected markers with
+  zero false-positive or false-negative feature labels. This is feature-context
+  evidence only, not translation, build, verifier, attach, or runtime evidence.
 - Verifier-load matrix: 39 of 43 generated eBPF objects load with
   `bpftool prog loadall` and pin at least one BPF program. Among the 41 objects
   from full generated-project build successes, 37 load successfully and 4 fail
@@ -254,8 +270,8 @@ The current run evaluates KernelScript commit `3b19cd2` on Linux
   schedulers, runs five 0.75s CPU workload trials with four workers per trial,
   records per-worker progress, unregisters them, and returns
   `/sys/kernel/sched_ext/state` to `disabled` with zero rejected sched_ext
-  tasks. Median total worker-loop iterations are 37139820 for the generated
-  scheduler and 31636648 for the C/eBPF control in this local run.
+  tasks. Median total worker-loop iterations are about 37M for the generated
+  scheduler and about 32M for the C/eBPF control in this local run.
 - Struct_ops TCP workload: over ten privileged trials, both the generated
   tcp-congestion object and the C/eBPF object are selected with `TCP_CONGESTION`
   on a loopback sender socket, transfer 1MiB, and detach successfully in 10 of

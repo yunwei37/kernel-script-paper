@@ -1,0 +1,8 @@
+repo,path,rationale,expected_features,detected_features,false_positives,false_negatives,matched
+libbpf-bootstrap,examples/c/bootstrap.bpf.c,tracepoint example with map and ring-buffer use,maps ringbuf tracepoint,maps ringbuf tracepoint,,,True
+libbpf-bootstrap,examples/c/fentry.bpf.c,negative control for untracked fentry/fexit sections,,,,,True
+libbpf-bootstrap,examples/c/tc.bpf.c,traffic-control section example,tc,tc,,,True
+xdp-tutorial,basic03-map-counter/xdp_prog_kern.c,XDP map-counter tutorial example,maps xdp,maps xdp,,,True
+xdp-tutorial,tracing02-xdp-monitor/trace_prog_kern.c,XDP tracepoint monitor example,maps tracepoint xdp,maps tracepoint xdp,,,True
+scx,scheds/rust/scx_cake/src/bpf/cake.bpf.c,"scheduler-extension example with maps, ringbuf, iterator, and kfunc use",iterator kfunc maps ringbuf sched_ext struct_ops,iterator kfunc maps ringbuf sched_ext struct_ops,,,True
+scx,tools/scxtop/src/bpf/main.bpf.c,"observability tool with mixed probe, perf-event, ringbuf, and scheduler markers",iterator kfunc kprobe maps perf_event ringbuf sched_ext uprobe,iterator kfunc kprobe maps perf_event ringbuf sched_ext uprobe,,,True

@@ -13,12 +13,14 @@ load/attach/detach compatibility check, a loopback TCP workload through selected
 BPF tcp-congestion algorithms, a callback-flag workload with clean and
 loss-injected reachability profiles, a local struct_ops skeleton build repair,
 a scheduler-extension load-only verifier diagnostic, an opt-in bounded
-scheduler-extension attach/progress check, and a broader 28-case static
-negative corpus. It now also includes a longer XDP/TC traffic stress rerun.
+scheduler-extension attach/progress check, a broader 28-case static negative
+corpus, and a source-only external feature scan across 3 pinned public eBPF
+repositories. It now also includes a longer XDP/TC traffic stress rerun.
 It is closer to a top-systems weak accept, but still not there. The source
 footprint result partially addresses the missing hand-written-baseline concern
-for C1, but it is still a local source-surface proxy rather than an external
-application corpus or developer-time study. The main remaining gaps are
+for C1, and the external source scan adds feature-context evidence; however,
+neither result translates, builds, verifier-loads, attaches, or runs external
+applications, and neither measures developer time. The main remaining gaps are
 representative scheduler-policy and performance evidence beyond one toy FIFO
 progress/fairness proxy, broader callback-level struct_ops behavior,
 generated-dispatch-loop throughput beyond one perf_event lifecycle loader
@@ -80,8 +82,14 @@ non-local or longer-duration deployment methodology.
   maintained source lines for 11 matched local workload rows. Unique
   KernelScript application sources total 203 SLOC; matched C/eBPF object sources
   total 254 SLOC, and C/libbpf baseline sources total 1105 SLOC when runner or
-  loader files are included. This is a source-maintenance proxy, not a
+  loader files are included. This is a matched source-footprint proxy, not a
   developer-time study.
+- Added `experiments/run_external_corpus.py`, which clones pinned commits of
+  `libbpf-bootstrap`, `xdp-tutorial`, and `scx`; scans 166 selected C/header
+  files and 34843 SLOC; observes 14 tracked feature families; and records a
+  7-file manual classifier spot-check with zero false-positive or false-negative
+  feature labels. This is source-only feature context, not translation, build,
+  verifier, attach, or runtime evidence.
 - Expanded `experiments/run_static_checks.py` to 28 deterministic cases,
   including 27 expected rejections across lifecycle, signature, map, type,
   symbol, config, helper-scope, kernel-context, perf-event group, ringbuf, and
@@ -91,8 +99,10 @@ non-local or longer-duration deployment methodology.
 
 ## Remaining Experiments For Weak-Accept Bar
 
-1. Add an external application corpus or controlled developer-effort study for
-   C1, because the current source-footprint result is local and line-count based.
+1. Add external application translation/build/runtime evidence or a controlled
+   developer-effort study for C1, because the current source-footprint result is
+   local and line-count based and the external corpus result is source-only
+   feature context.
 2. Add scheduler-extension policy/performance evidence beyond the current toy
    FIFO progress/fairness proxy; also add broader callback-level struct_ops programs,
    broader skeleton version coverage with

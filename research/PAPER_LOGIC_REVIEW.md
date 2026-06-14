@@ -99,9 +99,21 @@ callback-flag workload results, and a scheduler-extension verifier diagnostic.
     progress/fairness oracle and refreshed the method summary to the then-current
     measurement script and outcome counts.
 20. Added a matched source-footprint proxy for C1. The paper now separates
-    generated-structure expansion from a local hand-written C/libbpf
-    source-surface comparison, reports 11 local workload rows, and scopes the
-    result as source-maintenance evidence rather than developer time.
+    generated-structure expansion from a local hand-written C/libbpf matched
+    source-footprint comparison, reports 11 local workload rows, and scopes the
+    result as source-footprint evidence rather than developer time.
+21. Added a pinned external source-corpus scan for C1. The paper now reports 166
+    selected C/header files across 3 public eBPF repositories and 14 tracked
+    feature families as source-only context, while explicitly avoiding
+    translation, build, verifier, attach, or runtime claims for external
+    applications.
+22. Applied a top-systems writing and experiment review after the external
+    source-corpus scan. The follow-up pass removed representativeness-sounding
+    "common" wording from the abstract, added a seven-file classifier spot-check
+    with zero false-positive or false-negative feature labels, clarified baseline
+    provenance and semantic-equivalence oracles, rewrote the evaluation overview
+    around C1--C4 rather than a raw script list, added a table-caption takeaway,
+    and rounded toy scheduler iteration prose in the artifact summary.
 
 ## Remaining Accepted Limits
 
@@ -119,16 +131,16 @@ callback-flag workload results, and a scheduler-extension verifier diagnostic.
   performance. The paper still does not cover every callback path, running
   repaired generated binaries, production TCP performance, or broad
   libbpf-version portability.
-- Generated-structure and source-footprint evidence are corpus artifact results,
-  not developer-time studies against expert-written C/libbpf or external
-  applications.
+- Generated-structure, source-footprint, and external source-corpus evidence are
+  corpus artifact results. The external scan is source-only feature context, not
+  a developer-time study or external application portability/runtime result.
 
 ## Follow-Up Gate
 
 The next scientific-strength gate is additional evidence rather than prose:
-an external application corpus or developer-time study, broader
-generated-dispatch-loop throughput, scheduler-extension policy/performance
-evidence after the verifier-load and attach fixes, every
+external application translation/build/runtime evidence or a developer-time
+study, broader generated-dispatch-loop throughput, scheduler-extension
+policy/performance evidence after the verifier-load and attach fixes, every
 tcp-congestion callback path beyond the two tested profiles,
 upstream-integrated skeleton generation across libbpf versions, or non-local
 deployment/longer-duration workload evidence.

@@ -1,6 +1,6 @@
 Last updated: 2026-06-13
 Stage at update: analyze
-Source/command: `./experiments/run_source_footprint.py`, `./experiments/run_xdp_traffic.py`, `./experiments/run_tc_traffic.py`, `./experiments/run_traffic_stress.py`, `./experiments/run_perf_event_loader.py`, `./experiments/run_perf_event_counter.py`, `./experiments/run_ringbuf_workload.py`, `./experiments/run_struct_ops_workload.py`, `./experiments/run_struct_ops_callback_workload.py`, `./experiments/run_sched_ext_verifier.py`, `./experiments/run_sched_ext_attach.py --allow-host-scheduler`, and checked-in result summaries
+Source/command: `./experiments/run_source_footprint.py`, `./experiments/run_external_corpus.py`, `./experiments/run_xdp_traffic.py`, `./experiments/run_tc_traffic.py`, `./experiments/run_traffic_stress.py`, `./experiments/run_perf_event_loader.py`, `./experiments/run_perf_event_counter.py`, `./experiments/run_ringbuf_workload.py`, `./experiments/run_struct_ops_workload.py`, `./experiments/run_struct_ops_callback_workload.py`, `./experiments/run_sched_ext_verifier.py`, `./experiments/run_sched_ext_attach.py --allow-host-scheduler`, and checked-in result summaries
 
 # Results Summary
 
@@ -20,8 +20,13 @@ BPF_PROG_TEST_RUN microbenchmarks. The source-footprint proxy covers 11 local
 workload rows: unique maintained KernelScript application sources total 203
 nonblank noncomment lines, the matching hand-written C/eBPF object sources
 total 254 lines, and the C/libbpf baseline source footprint totals 1105 lines
-when runner or loader files are included. This is source-maintenance evidence,
-not a developer-time study. On
+when runner or loader files are included. This is matched source-footprint evidence,
+not a developer-time study. The external source-corpus scan covers 3 pinned
+public eBPF repositories, 166 selected C/header files, 34843 nonblank noncomment
+lines, and 14 tracked feature families; a 7-file manual spot-check matches the
+expected classifier markers with zero false-positive or false-negative feature
+labels. It is source-only feature context, not translation, build, verifier,
+attach, or runtime evidence. On
 fresh veth/netns
 pairs with iperf3 TCP, KernelScript and hand-written C/eBPF pass/count objects
 all pass the traffic oracles. XDP count medians are 17.2Gb/s for KernelScript
@@ -53,9 +58,9 @@ separate opt-in attach harness registers both toy FIFO schedulers, runs a
 bounded 0.75s CPU workload for five trials per variant, records per-worker
 iteration progress, unregisters both, and returns `/sys/kernel/sched_ext/state`
 to disabled with zero rejected sched_ext tasks. Median total worker-loop
-iterations are 37139820 for the generated scheduler and 31636648 for the C/eBPF
-control, with median per-trial worker-count coefficient of variation 0.008 and
-0.005 respectively.
+iterations are about 37M for the generated scheduler and about 32M for the C/eBPF
+control, with median per-trial worker-count coefficient of variation below 0.01
+for both variants.
 The stress
 rerun uses three 5s iperf3 trials per XDP/TC pass/count variant; all oracles
 pass, with XDP count medians of 17.3 versus 15.3Gb/s and TC count medians of
@@ -81,6 +86,7 @@ pass, with XDP count medians of 17.3 versus 15.3Gb/s and TC count medians of
 | R013 | `results/sched_ext_verifier_summary.json` | ok | Five-callback C/eBPF scheduler-extension control object verifier-loads and pins 5 programs; generated `sched_ext_simple` verifier-loads and pins 12 programs; no scheduler attach is attempted and sched_ext state remains disabled. |
 | R014 | `results/sched_ext_attach_summary.json` | ok | Opt-in scheduler-extension attach harness registers the C/eBPF and generated toy FIFO schedulers, keeps sched_ext enabled during five bounded 0.75s CPU progress trials, records per-worker iteration counts, unregisters both, and returns sched_ext to disabled with zero rejected tasks. |
 | R015 | `results/source_footprint_summary.json` | ok | Matched source-footprint proxy covers 11 local workload rows; unique maintained KernelScript sources total 203 SLOC, C/eBPF objects alone total 254 SLOC, and C/libbpf sources total 1105 SLOC with runner/loader files included. |
+| R016 | `results/external_corpus_summary.json` | ok | External source-corpus scan covers 3 pinned public eBPF repositories, 166 selected C/header files, 34843 SLOC, and 14 tracked feature families; the 7-file classifier spot-check has zero false-positive or false-negative feature labels; no external application is translated, built, verifier-loaded, attached, or run. |
 
 ## Anomalies And Negative Results
 
@@ -112,7 +118,10 @@ pass, with XDP count medians of 17.3 versus 15.3Gb/s and TC count medians of
   throughput study.
 - The source-footprint proxy is not an external application corpus and does not
   measure developer time, debugging effort, or code review effort. It should be
-  read as local source-maintenance surface evidence only.
+  read as local matched source-footprint evidence only.
+- The external source-corpus scan is source-only feature context. It finds no
+  tail-call marker in the selected paths and does not translate, build,
+  verifier-load, attach, or run any external application.
 
 ## Figure/Table Candidates
 
@@ -125,6 +134,8 @@ pass, with XDP count medians of 17.3 versus 15.3Gb/s and TC count medians of
 
 - `results/evaluation_summary.json`
 - `results/source_footprint_summary.json`
+- `results/external_corpus_summary.json`
+- `results/external_corpus_audit.csv`
 - `results/static_checks_summary.json`
 - `results/verifier_matrix_summary.json`
 - `results/attach_matrix_summary.json`

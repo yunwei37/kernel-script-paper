@@ -1,0 +1,167 @@
+repo,repo_commit,path,role,sloc,sections,feature_xdp,feature_tc,feature_tracepoint,feature_kprobe,feature_uprobe,feature_perf_event,feature_lsm,feature_iterator,feature_socket,feature_maps,feature_ringbuf,feature_tail_call,feature_struct_ops,feature_sched_ext,feature_kfunc
+libbpf-bootstrap,fac4e8ddf011,examples/c/bootstrap.bpf.c,kernel,76,.maps license tp/sched/sched_process_exec tp/sched/sched_process_exit,False,False,True,False,False,False,False,False,False,True,True,False,False,False,False
+libbpf-bootstrap,fac4e8ddf011,examples/c/bootstrap.c,userspace,135,,False,False,False,False,False,False,False,False,False,True,True,False,False,False,False
+libbpf-bootstrap,fac4e8ddf011,examples/c/bootstrap.h,header,14,,False,False,False,False,False,False,False,False,False,False,False,False,False,False,False
+libbpf-bootstrap,fac4e8ddf011,examples/c/bootstrap_legacy.bpf.c,kernel,71,.maps license tp/sched/sched_process_exec tp/sched/sched_process_exit,False,False,True,False,False,True,False,False,False,True,False,False,False,False,False
+libbpf-bootstrap,fac4e8ddf011,examples/c/bootstrap_legacy.c,userspace,134,,False,False,False,False,False,False,False,False,False,True,True,False,False,False,False
+libbpf-bootstrap,fac4e8ddf011,examples/c/fentry.bpf.c,kernel,20,fentry/do_unlinkat fexit/do_unlinkat license,False,False,False,False,False,False,False,False,False,False,False,False,False,False,False
+libbpf-bootstrap,fac4e8ddf011,examples/c/fentry.c,userspace,46,,False,False,False,False,False,False,False,False,False,False,False,False,False,False,False
+libbpf-bootstrap,fac4e8ddf011,examples/c/kprobe.bpf.c,kernel,23,kprobe/do_unlinkat kretprobe/do_unlinkat license,False,False,False,True,False,False,False,False,False,False,False,False,False,False,False
+libbpf-bootstrap,fac4e8ddf011,examples/c/kprobe.c,userspace,46,,False,False,False,False,False,False,False,False,False,False,False,False,False,False,False
+libbpf-bootstrap,fac4e8ddf011,examples/c/ksyscall.bpf.c,kernel,33,ksyscall/kill ksyscall/tgkill license,False,False,False,True,False,False,False,False,False,False,False,False,False,False,False
+libbpf-bootstrap,fac4e8ddf011,examples/c/ksyscall.c,userspace,46,,False,False,False,False,False,False,False,False,False,False,False,False,False,False,False
+libbpf-bootstrap,fac4e8ddf011,examples/c/lsm.bpf.c,kernel,13,license lsm/bpf,False,False,False,False,False,False,True,False,False,False,False,False,False,False,False
+libbpf-bootstrap,fac4e8ddf011,examples/c/lsm.c,userspace,34,,False,False,False,False,False,False,False,False,False,False,False,False,False,False,False
+libbpf-bootstrap,fac4e8ddf011,examples/c/minimal.bpf.c,kernel,13,license tp/syscalls/sys_enter_write,False,False,True,False,False,False,False,False,False,False,False,False,False,False,False
+libbpf-bootstrap,fac4e8ddf011,examples/c/minimal.c,userspace,40,,False,False,False,False,False,False,False,False,False,False,False,False,False,False,False
+libbpf-bootstrap,fac4e8ddf011,examples/c/minimal_legacy.bpf.c,kernel,24,.maps license tp/syscalls/sys_enter_write,False,False,True,False,False,False,False,False,False,True,False,False,False,False,False
+libbpf-bootstrap,fac4e8ddf011,examples/c/minimal_legacy.c,userspace,43,,False,False,False,False,False,False,False,False,False,True,False,False,False,False,False
+libbpf-bootstrap,fac4e8ddf011,examples/c/minimal_ns.bpf.c,kernel,17,license tp/syscalls/sys_enter_write,False,False,True,False,False,False,False,False,False,False,False,False,False,False,False
+libbpf-bootstrap,fac4e8ddf011,examples/c/minimal_ns.c,userspace,47,,False,False,False,False,False,False,False,False,False,False,False,False,False,False,False
+libbpf-bootstrap,fac4e8ddf011,examples/c/profile.bpf.c,kernel,30,.maps license perf_event,False,False,False,False,False,True,False,False,False,True,True,False,False,False,False
+libbpf-bootstrap,fac4e8ddf011,examples/c/profile.c,userspace,226,,False,False,False,False,False,False,False,False,False,True,True,False,False,False,False
+libbpf-bootstrap,fac4e8ddf011,examples/c/profile.h,header,19,,False,False,False,False,False,False,False,False,False,False,False,False,False,False,False
+libbpf-bootstrap,fac4e8ddf011,examples/c/sockfilter.bpf.c,kernel,50,.maps license socket,False,True,False,False,False,False,False,False,True,True,True,False,False,False,False
+libbpf-bootstrap,fac4e8ddf011,examples/c/sockfilter.c,userspace,164,,False,False,False,False,False,False,False,False,False,True,True,False,False,False,False
+libbpf-bootstrap,fac4e8ddf011,examples/c/sockfilter.h,header,14,,False,False,False,False,False,False,False,False,False,False,False,False,False,False,False
+libbpf-bootstrap,fac4e8ddf011,examples/c/task_iter.bpf.c,kernel,50,.maps iter/task license,False,False,False,False,False,False,False,True,False,True,False,False,False,False,False
+libbpf-bootstrap,fac4e8ddf011,examples/c/task_iter.c,userspace,103,,False,False,False,False,False,False,False,True,False,False,False,False,False,False,False
+libbpf-bootstrap,fac4e8ddf011,examples/c/task_iter.h,header,10,,False,False,False,False,False,False,False,False,False,False,False,False,False,False,False
+libbpf-bootstrap,fac4e8ddf011,examples/c/tc.bpf.c,kernel,25,license tc,False,True,False,False,False,False,False,False,False,False,False,False,False,False,False
+libbpf-bootstrap,fac4e8ddf011,examples/c/tc.c,userspace,63,,False,True,False,False,False,False,False,False,False,False,False,False,False,False,False
+libbpf-bootstrap,fac4e8ddf011,examples/c/uprobe.bpf.c,kernel,28,license uprobe uprobe//proc/self/exe:uprobed_sub uretprobe uretprobe//proc/self/exe:uprobed_sub,False,False,False,False,True,False,False,False,False,False,False,False,False,False,False
+libbpf-bootstrap,fac4e8ddf011,examples/c/uprobe.c,userspace,69,,False,False,False,False,False,False,False,False,False,False,False,False,False,False,False
+libbpf-bootstrap,fac4e8ddf011,examples/c/usdt.bpf.c,kernel,23,license usdt usdt/libc.so.6:libc:setjmp,False,False,False,False,True,False,False,False,False,False,False,False,False,False,False
+libbpf-bootstrap,fac4e8ddf011,examples/c/usdt.c,userspace,63,,False,False,False,False,False,False,False,False,False,False,False,False,False,False,False
+xdp-tutorial,4e2bf5658434,advanced03-AF_XDP/af_xdp_kern.c,kernel,29,.maps license xdp,True,False,False,False,False,False,False,False,False,True,False,False,False,False,False
+xdp-tutorial,4e2bf5658434,advanced03-AF_XDP/af_xdp_user.c,userspace,467,,True,False,False,False,False,False,False,False,False,True,False,False,False,False,False
+xdp-tutorial,4e2bf5658434,basic-solutions/xdp_loader.c,userspace,209,,True,False,False,False,False,False,False,False,False,True,False,False,False,False,False
+xdp-tutorial,4e2bf5658434,basic-solutions/xdp_stats.c,userspace,226,,True,False,False,False,False,False,False,False,False,True,False,False,False,False,False
+xdp-tutorial,4e2bf5658434,basic01-xdp-pass/xdp_pass_kern.c,kernel,8,license xdp,True,False,False,False,False,False,False,False,False,False,False,False,False,False,False
+xdp-tutorial,4e2bf5658434,basic01-xdp-pass/xdp_pass_user.c,userspace,94,,True,False,False,False,False,False,False,False,False,False,False,False,False,False,False
+xdp-tutorial,4e2bf5658434,basic02-prog-by-name/xdp_loader.c,userspace,115,,True,False,False,False,False,False,False,False,False,False,False,False,False,False,False
+xdp-tutorial,4e2bf5658434,basic02-prog-by-name/xdp_prog_kern.c,kernel,13,license xdp,True,False,False,False,False,False,False,False,False,False,False,False,False,False,False
+xdp-tutorial,4e2bf5658434,basic03-map-counter/xdp_load_and_stats.c,userspace,260,,True,False,False,False,False,False,False,False,False,True,False,False,False,False,False
+xdp-tutorial,4e2bf5658434,basic03-map-counter/xdp_prog_kern.c,kernel,24,.maps license xdp,True,False,False,False,False,False,False,False,False,True,False,False,False,False,False
+xdp-tutorial,4e2bf5658434,basic04-pinning-maps/xdp_loader.c,userspace,147,,True,False,False,False,False,False,False,False,False,False,False,False,False,False,False
+xdp-tutorial,4e2bf5658434,basic04-pinning-maps/xdp_prog_kern.c,kernel,46,.maps license xdp,True,False,False,False,False,False,False,False,False,True,False,False,False,False,False
+xdp-tutorial,4e2bf5658434,basic04-pinning-maps/xdp_stats.c,userspace,207,,True,False,False,False,False,False,False,False,False,True,False,False,False,False,False
+xdp-tutorial,4e2bf5658434,common/common_defines.h,header,35,,True,False,False,False,False,False,False,False,False,False,False,False,False,False,False
+xdp-tutorial,4e2bf5658434,common/common_libbpf.c,userspace,107,,False,False,False,False,False,False,False,False,False,True,False,False,False,False,False
+xdp-tutorial,4e2bf5658434,common/common_libbpf.h,header,18,,False,False,False,False,False,False,False,False,False,False,False,False,False,False,False
+xdp-tutorial,4e2bf5658434,common/common_params.c,userspace,178,,True,False,False,False,False,False,False,False,False,False,False,False,False,False,False
+xdp-tutorial,4e2bf5658434,common/common_params.h,header,16,,False,False,False,False,False,False,False,False,False,False,False,False,False,False,False
+xdp-tutorial,4e2bf5658434,common/common_user_bpf_xdp.c,userspace,231,,True,False,False,False,False,False,False,False,False,True,False,False,False,False,False
+xdp-tutorial,4e2bf5658434,common/common_user_bpf_xdp.h,header,12,,True,False,False,False,False,False,False,False,False,True,False,False,False,False,False
+xdp-tutorial,4e2bf5658434,common/parsing_helpers.h,header,166,,False,False,False,False,False,False,False,False,False,False,False,False,False,False,False
+xdp-tutorial,4e2bf5658434,common/rewrite_helpers.h,header,75,,True,False,False,False,False,False,False,False,False,False,False,False,False,False,False
+xdp-tutorial,4e2bf5658434,common/xdp_stats_kern.h,header,26,.maps,True,False,False,False,False,False,False,False,False,True,False,False,False,False,False
+xdp-tutorial,4e2bf5658434,common/xdp_stats_kern_user.h,header,10,,True,False,False,False,False,False,False,False,False,False,False,False,False,False,False
+xdp-tutorial,4e2bf5658434,experiment01-tailgrow/xdp_data_access_helpers.h,header,59,,True,False,False,False,False,False,False,False,False,False,False,False,False,False,False
+xdp-tutorial,4e2bf5658434,experiment01-tailgrow/xdp_prog_fail1.c,kernel,19,xdp_fail1,True,False,False,False,False,False,False,False,False,False,False,False,False,False,False
+xdp-tutorial,4e2bf5658434,experiment01-tailgrow/xdp_prog_fail2.c,kernel,19,xdp_fail2,True,False,False,False,False,False,False,False,False,False,False,False,False,False,False
+xdp-tutorial,4e2bf5658434,experiment01-tailgrow/xdp_prog_fail3.c,kernel,22,xdp_fail3,True,False,False,False,False,False,False,False,False,False,False,False,False,False,False
+xdp-tutorial,4e2bf5658434,experiment01-tailgrow/xdp_prog_kern.c,kernel,85,license xdp_pass xdp_tailgrow xdp_tailgrow_parse xdp_tailgrow_tx xdp_tx,True,False,False,False,False,False,False,False,False,False,False,False,False,False,False
+xdp-tutorial,4e2bf5658434,experiment01-tailgrow/xdp_prog_kern2.c,kernel,31,xdp_end_loop,True,False,False,False,False,False,False,False,False,False,False,False,False,False,False
+xdp-tutorial,4e2bf5658434,experiment01-tailgrow/xdp_prog_kern3.c,kernel,23,xdp_works1,True,False,False,False,False,False,False,False,False,False,False,False,False,False,False
+xdp-tutorial,4e2bf5658434,experiment01-tailgrow/xdp_prog_kern4.c,kernel,14,xdp_test1,True,False,False,False,False,False,False,False,False,False,False,False,False,False,False
+xdp-tutorial,4e2bf5658434,packet-solutions/tc_reply_kern_02.c,kernel,50,license tc,False,True,False,False,False,False,False,False,False,False,False,False,False,False,False
+xdp-tutorial,4e2bf5658434,packet-solutions/xdp_prog_kern_02.c,kernel,80,license xdp_pass xdp_patch_ports xdp_vlan_swap,True,False,False,False,False,False,False,False,False,False,False,False,False,False,False
+xdp-tutorial,4e2bf5658434,packet-solutions/xdp_prog_kern_03.c,kernel,232,.maps license xdp_icmp_echo xdp_pass xdp_redirect xdp_redirect_map xdp_router,True,False,False,False,False,False,False,False,False,True,False,False,False,False,False
+xdp-tutorial,4e2bf5658434,packet-solutions/xdp_prog_user.c,userspace,132,,True,False,False,False,False,False,False,False,False,True,False,False,False,False,False
+xdp-tutorial,4e2bf5658434,packet-solutions/xdp_vlan01_kern.c,kernel,59,xdp_vlan01,True,False,False,False,False,False,False,False,False,False,False,False,False,False,False
+xdp-tutorial,4e2bf5658434,packet-solutions/xdp_vlan02_kern.c,kernel,79,xdp_vlan02,True,False,False,False,False,False,False,False,False,False,False,False,False,False,False
+xdp-tutorial,4e2bf5658434,packet01-parsing/xdp_prog_kern.c,kernel,44,license xdp,True,False,False,False,False,False,False,False,False,False,False,False,False,False,False
+xdp-tutorial,4e2bf5658434,packet02-rewriting/xdp_prog_kern.c,kernel,78,license xdp,True,False,False,False,False,False,False,False,False,False,False,False,False,False,False
+xdp-tutorial,4e2bf5658434,packet03-redirecting/xdp_prog_kern.c,kernel,188,.maps license xdp,True,False,False,False,False,False,False,False,False,True,False,False,False,False,False
+xdp-tutorial,4e2bf5658434,packet03-redirecting/xdp_prog_user.c,userspace,104,,True,False,False,False,False,False,False,False,False,True,False,False,False,False,False
+xdp-tutorial,4e2bf5658434,tracing01-xdp-simple/trace_load_and_stats.c,userspace,209,,True,False,True,False,False,False,False,False,False,True,False,False,False,False,False
+xdp-tutorial,4e2bf5658434,tracing01-xdp-simple/trace_prog_kern.c,kernel,30,.maps license tracepoint/xdp/xdp_exception,True,False,True,False,False,False,False,False,False,True,False,False,False,False,False
+xdp-tutorial,4e2bf5658434,tracing01-xdp-simple/xdp_prog_kern.c,kernel,8,license xdp,True,False,False,False,False,False,False,False,False,False,False,False,False,False,False
+xdp-tutorial,4e2bf5658434,tracing02-xdp-monitor/trace_load_and_stats.c,userspace,682,,True,False,True,False,False,False,False,False,False,True,False,False,False,False,False
+xdp-tutorial,4e2bf5658434,tracing02-xdp-monitor/trace_prog_kern.c,kernel,183,.maps tracepoint/xdp/xdp_cpumap_enqueue tracepoint/xdp/xdp_cpumap_kthread tracepoint/xdp/xdp_devmap_xmit tracepoint/xdp/xdp_exception tracepoint/xdp/xdp_redirect tracepoint/xdp/xdp_redirect_err tracepoint/xdp/xdp_redirect_map tracepoint/xdp/xdp_redirect_map_err,True,False,True,False,False,False,False,False,False,True,False,False,False,False,False
+xdp-tutorial,4e2bf5658434,tracing03-xdp-debug-print/trace_read.c,userspace,54,,False,False,True,False,False,False,False,False,False,False,False,False,False,False,False
+xdp-tutorial,4e2bf5658434,tracing03-xdp-debug-print/xdp_prog_kern.c,kernel,33,license xdp,True,False,False,False,False,False,False,False,False,False,False,False,False,False,False
+xdp-tutorial,4e2bf5658434,tracing04-xdp-tcpdump/xdp_sample_pkts_kern.c,kernel,39,.maps license xdp,True,False,False,False,False,True,False,False,False,True,False,False,False,False,False
+xdp-tutorial,4e2bf5658434,tracing04-xdp-tcpdump/xdp_sample_pkts_user.c,userspace,182,,True,False,False,False,False,False,False,False,False,True,False,False,False,False,False
+scx,0f3df692e2bd,scheds/experimental/scx_flow/src/bpf/budget.bpf.c,kernel,51,,False,False,False,False,False,False,False,False,False,False,False,False,True,True,False
+scx,0f3df692e2bd,scheds/experimental/scx_flow/src/bpf/dispatch.bpf.c,kernel,20,,False,False,False,False,False,False,False,False,False,False,False,False,True,True,True
+scx,0f3df692e2bd,scheds/experimental/scx_flow/src/bpf/enqueue.bpf.c,kernel,67,,False,False,False,False,False,False,False,False,False,False,False,False,True,True,True
+scx,0f3df692e2bd,scheds/experimental/scx_flow/src/bpf/helpers.bpf.c,kernel,131,,False,False,False,False,False,False,False,False,False,True,False,False,False,True,False
+scx,0f3df692e2bd,scheds/experimental/scx_flow/src/bpf/intf.h,header,44,,False,False,False,False,False,False,False,False,False,False,False,False,False,True,True
+scx,0f3df692e2bd,scheds/experimental/scx_flow/src/bpf/main.bpf.c,kernel,92,.maps license,False,False,False,False,False,False,False,False,False,True,False,False,True,True,True
+scx,0f3df692e2bd,scheds/experimental/scx_flow/src/bpf/select_cpu.bpf.c,kernel,44,,False,False,False,False,False,False,False,False,False,False,False,False,True,True,True
+scx,0f3df692e2bd,scheds/experimental/scx_flow/src/bpf/task.bpf.c,kernel,44,,False,False,False,False,False,False,False,False,False,False,False,False,True,True,True
+scx,0f3df692e2bd,scheds/experimental/scx_wd40/src/bpf/common.bpf.c,kernel,44,.maps,False,False,False,False,False,False,False,False,False,True,False,False,False,True,True
+scx,0f3df692e2bd,scheds/experimental/scx_wd40/src/bpf/common.h,header,0,,False,False,False,False,False,False,False,False,False,False,False,False,False,True,False
+scx,0f3df692e2bd,scheds/experimental/scx_wd40/src/bpf/deadline.bpf.c,kernel,141,,False,False,False,False,False,False,False,False,False,False,False,False,False,True,True
+scx,0f3df692e2bd,scheds/experimental/scx_wd40/src/bpf/deadline.h,header,0,,False,False,False,False,False,False,False,False,False,False,False,False,False,True,False
+scx,0f3df692e2bd,scheds/experimental/scx_wd40/src/bpf/intf.h,header,63,,False,False,False,False,False,False,False,False,False,False,False,False,False,True,False
+scx,0f3df692e2bd,scheds/experimental/scx_wd40/src/bpf/lb_domain.bpf.c,kernel,243,.maps,False,False,False,False,False,False,False,False,False,True,False,False,False,True,True
+scx,0f3df692e2bd,scheds/experimental/scx_wd40/src/bpf/lb_domain.h,header,44,,False,False,False,False,False,False,False,False,False,False,False,False,False,True,False
+scx,0f3df692e2bd,scheds/experimental/scx_wd40/src/bpf/main.bpf.c,kernel,583,license syscall,False,False,False,False,False,False,False,False,False,False,False,False,True,True,True
+scx,0f3df692e2bd,scheds/experimental/scx_wd40/src/bpf/placement.bpf.c,kernel,134,,False,False,False,False,False,False,False,False,False,False,False,False,False,True,True
+scx,0f3df692e2bd,scheds/experimental/scx_wd40/src/bpf/types.h,header,52,,False,False,False,False,False,False,False,False,False,False,False,False,False,True,False
+scx,0f3df692e2bd,scheds/rust/scx_beerland/src/bpf/intf.h,header,31,,False,False,False,False,False,False,False,False,False,False,False,False,False,True,False
+scx,0f3df692e2bd,scheds/rust/scx_beerland/src/bpf/main.bpf.c,kernel,507,.maps license syscall,False,False,False,False,False,False,False,False,False,True,False,False,True,True,True
+scx,0f3df692e2bd,scheds/rust/scx_bpfland/src/bpf/intf.h,header,32,,False,False,False,False,False,False,False,False,False,False,False,False,False,True,False
+scx,0f3df692e2bd,scheds/rust/scx_bpfland/src/bpf/main.bpf.c,kernel,734,.maps license syscall,False,False,False,False,False,False,False,False,False,True,False,False,True,True,True
+scx,0f3df692e2bd,scheds/rust/scx_cake/src/bpf/bpf_compat.h,header,24,,False,False,False,False,False,False,False,False,False,False,False,False,False,True,False
+scx,0f3df692e2bd,scheds/rust/scx_cake/src/bpf/cake.bpf.c,kernel,1940,.bss .maps iter/task license,False,False,False,False,False,False,False,True,False,True,True,False,True,True,True
+scx,0f3df692e2bd,scheds/rust/scx_cake/src/bpf/intf.h,header,406,iter/task,False,False,False,False,False,False,False,True,False,True,True,False,False,True,True
+scx,0f3df692e2bd,scheds/rust/scx_chaos/src/bpf/intf.h,header,44,,False,False,False,False,False,False,False,False,False,False,False,False,False,True,False
+scx,0f3df692e2bd,scheds/rust/scx_chaos/src/bpf/main.bpf.c,kernel,550,.maps kprobe/generic,False,False,False,True,False,False,False,True,False,True,False,False,True,True,True
+scx,0f3df692e2bd,scheds/rust/scx_cosmos/src/bpf/intf.h,header,31,,False,False,False,False,False,False,False,False,False,False,False,False,False,True,False
+scx,0f3df692e2bd,scheds/rust/scx_cosmos/src/bpf/main.bpf.c,kernel,806,.maps license syscall,False,False,False,False,False,False,False,False,False,True,False,False,True,True,True
+scx,0f3df692e2bd,scheds/rust/scx_flash/src/bpf/intf.h,header,32,,False,False,False,False,False,False,False,False,False,False,False,False,False,True,False
+scx,0f3df692e2bd,scheds/rust/scx_flash/src/bpf/main.bpf.c,kernel,714,.maps license syscall,False,False,False,False,False,False,False,False,False,True,False,False,True,True,True
+scx,0f3df692e2bd,scheds/rust/scx_lavd/src/bpf/balance.bpf.c,kernel,355,,False,False,False,False,False,False,False,False,False,False,False,False,False,True,True
+scx,0f3df692e2bd,scheds/rust/scx_lavd/src/bpf/idle.bpf.c,kernel,578,,False,False,False,False,False,False,False,False,False,False,False,False,False,True,True
+scx,0f3df692e2bd,scheds/rust/scx_lavd/src/bpf/intf.h,header,115,,False,False,False,False,False,False,False,False,False,False,False,False,False,True,False
+scx,0f3df692e2bd,scheds/rust/scx_lavd/src/bpf/introspec.bpf.c,kernel,111,.maps,False,False,False,False,False,False,False,False,False,True,True,False,False,True,True
+scx,0f3df692e2bd,scheds/rust/scx_lavd/src/bpf/lat_cri.bpf.c,kernel,149,,False,False,False,False,False,False,False,False,False,False,False,False,False,True,False
+scx,0f3df692e2bd,scheds/rust/scx_lavd/src/bpf/lavd.bpf.h,header,428,,False,False,False,False,False,False,False,False,False,True,False,False,False,True,False
+scx,0f3df692e2bd,scheds/rust/scx_lavd/src/bpf/lock.bpf.c,kernel,207,?fexit/__futex_wait ?fexit/futex_lock_pi ?fexit/futex_unlock_pi ?fexit/futex_wait_multiple ?fexit/futex_wait_requeue_pi ?fexit/futex_wake ?fexit/futex_wake_op ?tracepoint/syscalls/sys_enter_futex ?tracepoint/syscalls/sys_exit_futex ?tracepoint/syscalls/sys_exit_futex_wait ?tracepoint/syscalls/sys_exit_futex_waitv ?tracepoint/syscalls/sys_exit_futex_wake,False,False,True,False,False,False,False,False,False,False,False,False,False,True,False
+scx,0f3df692e2bd,scheds/rust/scx_lavd/src/bpf/main.bpf.c,kernel,1404,?tracepoint/syscalls/sys_enter_execve ?tracepoint/syscalls/sys_enter_execveat license,False,False,True,False,False,False,False,False,False,False,False,False,True,True,True
+scx,0f3df692e2bd,scheds/rust/scx_lavd/src/bpf/power.bpf.c,kernel,480,syscall,False,False,False,False,False,False,False,False,False,False,False,False,False,True,True
+scx,0f3df692e2bd,scheds/rust/scx_lavd/src/bpf/power.bpf.h,header,42,,False,False,False,False,False,False,False,False,False,False,False,False,False,True,True
+scx,0f3df692e2bd,scheds/rust/scx_lavd/src/bpf/preempt.bpf.c,kernel,231,,False,False,False,False,False,False,False,False,False,False,False,False,False,True,True
+scx,0f3df692e2bd,scheds/rust/scx_lavd/src/bpf/sys_stat.bpf.c,kernel,487,.maps,False,False,False,False,False,False,False,False,False,True,False,False,False,True,True
+scx,0f3df692e2bd,scheds/rust/scx_lavd/src/bpf/util.bpf.c,kernel,330,.maps,False,False,False,False,False,False,False,False,False,True,False,False,False,True,True
+scx,0f3df692e2bd,scheds/rust/scx_lavd/src/bpf/util.bpf.h,header,57,,False,False,False,False,False,False,False,False,False,False,False,False,False,True,True
+scx,0f3df692e2bd,scheds/rust/scx_layered/src/bpf/intf.h,header,374,,False,False,False,False,False,False,False,False,False,False,False,False,False,True,False
+scx,0f3df692e2bd,scheds/rust/scx_layered/src/bpf/main.bpf.c,kernel,3227,.maps ?kprobe/nvidia_mmap ?kprobe/nvidia_open ?kprobe/nvidia_poll license syscall tp_btf/cgroup_attach_task tp_btf/task_rename,False,False,False,True,False,False,False,False,False,True,False,False,True,True,True
+scx,0f3df692e2bd,scheds/rust/scx_layered/src/bpf/timer.bpf.c,kernel,84,.maps,False,False,False,False,False,False,False,False,False,True,False,False,False,True,True
+scx,0f3df692e2bd,scheds/rust/scx_layered/src/bpf/timer.bpf.h,header,29,,False,False,False,False,False,False,False,False,False,False,False,False,False,True,False
+scx,0f3df692e2bd,scheds/rust/scx_layered/src/bpf/util.bpf.c,kernel,170,.maps,False,False,False,False,False,False,False,False,False,True,False,False,False,True,True
+scx,0f3df692e2bd,scheds/rust/scx_layered/src/bpf/util.bpf.h,header,24,,False,False,False,False,False,False,False,False,False,False,False,False,False,True,False
+scx,0f3df692e2bd,scheds/rust/scx_mitosis/src/bpf/cell_cpumask.bpf.h,header,137,,False,False,False,False,False,False,False,False,False,True,False,False,False,True,True
+scx,0f3df692e2bd,scheds/rust/scx_mitosis/src/bpf/dsq.bpf.h,header,98,,False,False,False,False,False,False,False,False,False,False,False,False,False,True,True
+scx,0f3df692e2bd,scheds/rust/scx_mitosis/src/bpf/intf.h,header,114,,False,False,False,False,False,False,False,False,False,False,False,False,False,True,False
+scx,0f3df692e2bd,scheds/rust/scx_mitosis/src/bpf/intf_rust.h,header,2,,False,False,False,False,False,False,False,False,False,False,False,False,False,True,False
+scx,0f3df692e2bd,scheds/rust/scx_mitosis/src/bpf/llc_aware.bpf.h,header,189,,False,False,False,False,False,False,False,False,False,False,False,False,False,True,True
+scx,0f3df692e2bd,scheds/rust/scx_mitosis/src/bpf/mitosis.bpf.c,kernel,1554,.maps fentry/cpuset_write_resmask license syscall tp_btf/cgroup_mkdir tp_btf/cgroup_rmdir,False,False,False,False,False,False,False,False,False,True,False,False,True,True,True
+scx,0f3df692e2bd,scheds/rust/scx_mitosis/src/bpf/mitosis.bpf.h,header,84,,False,False,False,False,False,False,False,False,False,True,False,False,False,True,True
+scx,0f3df692e2bd,scheds/rust/scx_mitosis/src/bpf/slice_shrinking.bpf.h,header,72,,False,False,False,False,False,False,False,False,False,False,False,False,False,True,True
+scx,0f3df692e2bd,scheds/rust/scx_p2dq/src/bpf/intf.h,header,84,,False,False,False,False,False,False,False,False,False,False,False,False,False,True,False
+scx,0f3df692e2bd,scheds/rust/scx_p2dq/src/bpf/main.bpf.c,kernel,2872,.maps license tp_btf/hw_pressure_update?,False,False,False,False,False,False,False,False,False,True,False,False,True,True,True
+scx,0f3df692e2bd,scheds/rust/scx_p2dq/src/bpf/types.h,header,163,,False,False,False,False,False,False,False,False,False,False,False,False,False,True,False
+scx,0f3df692e2bd,scheds/rust/scx_pandemonium/src/bpf/intf.h,header,66,,False,False,False,False,False,False,False,False,False,True,False,False,False,True,True
+scx,0f3df692e2bd,scheds/rust/scx_pandemonium/src/bpf/main.bpf.c,kernel,1511,.maps license,False,False,False,False,False,False,False,False,False,True,False,False,True,True,True
+scx,0f3df692e2bd,scheds/rust/scx_rusty/src/bpf/intf.h,header,60,,False,False,False,False,False,False,False,False,False,False,False,False,False,True,False
+scx,0f3df692e2bd,scheds/rust/scx_rusty/src/bpf/lb_domain.h,header,96,.maps,False,False,False,False,False,False,False,False,False,True,False,False,False,True,True
+scx,0f3df692e2bd,scheds/rust/scx_rusty/src/bpf/main.bpf.c,kernel,1295,.maps license,False,False,False,False,False,False,False,False,False,True,False,False,True,True,True
+scx,0f3df692e2bd,scheds/rust/scx_rusty/src/bpf/ravg.bpf.h,header,13,,False,False,False,False,False,False,False,False,False,False,False,False,False,True,False
+scx,0f3df692e2bd,scheds/rust/scx_rusty/src/bpf/ravg_impl.bpf.h,header,136,,False,False,False,False,False,False,False,False,False,False,False,False,False,True,False
+scx,0f3df692e2bd,scheds/rust/scx_rusty/src/bpf/sdt_alloc.bpf.c,kernel,468,.maps license,False,False,False,False,False,False,False,False,False,True,False,False,False,True,True
+scx,0f3df692e2bd,scheds/rust/scx_rusty/src/bpf/sdt_task.bpf.c,kernel,60,.maps,False,False,False,False,False,False,False,False,False,True,False,False,False,True,False
+scx,0f3df692e2bd,scheds/rust/scx_rusty/src/bpf/sdt_task.h,header,79,,False,False,False,False,False,False,False,False,False,False,False,False,False,True,False
+scx,0f3df692e2bd,scheds/rust/scx_rusty/src/bpf/types.h,header,56,,False,False,False,False,False,False,False,False,False,False,False,False,False,True,False
+scx,0f3df692e2bd,scheds/rust/scx_tickless/src/bpf/intf.h,header,19,,False,False,False,False,False,False,False,False,False,False,False,False,False,True,False
+scx,0f3df692e2bd,scheds/rust/scx_tickless/src/bpf/main.bpf.c,kernel,384,.maps license syscall,False,False,False,False,False,False,False,False,False,True,False,False,True,True,True
+scx,0f3df692e2bd,tools/scxcash/src/bpf/hints_tls.bpf.c,kernel,37,.maps fentry/bpf_pid_task_storage_update_elem license,False,False,False,False,False,False,False,False,False,True,True,False,False,False,False
+scx,0f3df692e2bd,tools/scxcash/src/bpf/intf.h,header,28,,False,False,False,False,False,False,False,False,False,False,False,False,False,False,False
+scx,0f3df692e2bd,tools/scxcash/src/bpf/perf_sample.bpf.c,kernel,25,.maps license perf_event,False,False,False,False,False,True,False,False,False,True,False,False,False,False,False
+scx,0f3df692e2bd,tools/scxcash/src/bpf/soft_dirty.bpf.c,kernel,27,.maps fentry/do_fault license,False,False,False,False,False,False,False,False,False,True,True,False,False,False,False
+scx,0f3df692e2bd,tools/scxtop/src/bpf/intf.h,header,232,,False,False,False,False,False,False,False,False,False,False,False,False,False,False,False
+scx,0f3df692e2bd,tools/scxtop/src/bpf/main.bpf.c,kernel,1083,.maps ?tp_btf/gpu_mem_total ?tp_btf/hw_pressure_update ?tp_btf/sched_process_hang ?tp_btf/sched_process_wait kprobe/__scx_bpf_dsq_insert_vtime kprobe/bpf_scx_reg kprobe/bpf_scx_unreg kprobe/generic_kprobe kprobe/scx_bpf_cpuperf_set kprobe/scx_bpf_dispatch kprobe/scx_bpf_dispatch_from_dsq kprobe/scx_bpf_dispatch_from_dsq_set_slice kprobe/scx_bpf_dispatch_from_dsq_set_vtime kprobe/scx_bpf_dispatch_vtime kprobe/scx_bpf_dispatch_vtime_from_dsq kprobe/scx_bpf_dsq_insert kprobe/scx_bpf_dsq_insert___v2 kprobe/scx_bpf_dsq_insert_vtime kprobe/scx_bpf_dsq_move kprobe/scx_bpf_dsq_move_set_slice kprobe/scx_bpf_dsq_move_set_vtime kprobe/scx_bpf_dsq_move_vtime license perf_event syscall tp_btf/cpuhp_enter tp_btf/cpuhp_exit tp_btf/ipi_send_cpu tp_btf/sched_migrate_task tp_btf/sched_process_exec tp_btf/sched_process_exit tp_btf/sched_process_fork tp_btf/sched_switch tp_btf/sched_wakeup tp_btf/sched_wakeup_new tp_btf/sched_waking tp_btf/softirq_entry tp_btf/softirq_exit uprobe uretprobe,False,False,False,True,True,True,False,True,False,True,True,False,False,True,True

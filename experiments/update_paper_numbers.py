@@ -133,6 +133,7 @@ def main() -> int:
     sched_ext_verifier = load_json("sched_ext_verifier_summary.json")
     sched_ext_attach = load_json("sched_ext_attach_summary.json")
     source_footprint = load_json("source_footprint_summary.json")
+    external_corpus = load_json("external_corpus_summary.json")
 
     if unit.get("returncode") != 0 or unit.get("reported_failures") != 0:
         raise SystemExit("unit tests are not clean; refusing to generate paper numbers")
@@ -174,6 +175,13 @@ def main() -> int:
         raise SystemExit("sched_ext verifier diagnostic did not complete successfully")
     if sched_ext_attach.get("status") != "ok":
         raise SystemExit("sched_ext attach workload did not complete successfully")
+    if source_footprint.get("status") != "ok":
+        raise SystemExit("source-footprint proxy did not complete successfully")
+    if external_corpus.get("status") != "ok":
+        raise SystemExit("external corpus scan did not complete successfully")
+    external_audit = external_corpus.get("classifier_audit", {})
+    if external_audit.get("status") != "ok":
+        raise SystemExit("external corpus classifier audit did not complete successfully")
 
     content = ""
     content += macro("KSCommitShort", str(env["kernelscript_git_head"])[:7])
@@ -218,6 +226,36 @@ def main() -> int:
         "KSSourceFootprintUniqueObjectRatio",
         f"{(source_footprint_unique['c_ebpf_sloc'] / source_footprint_unique['ks_sloc']):.2f}x",
     )
+    external_features = external_corpus["feature_file_counts"]
+    external_roles = external_corpus["roles"]
+    external_sloc_by_role = external_corpus["sloc_by_role"]
+    content += macro("KSExternalCorpusRepos", external_corpus["repo_count"])
+    content += macro("KSExternalCorpusFiles", external_corpus["file_count"])
+    content += macro("KSExternalCorpusSLOC", external_corpus["total_sloc"])
+    content += macro("KSExternalCorpusKernelFiles", external_roles["kernel"])
+    content += macro("KSExternalCorpusUserspaceFiles", external_roles["userspace"])
+    content += macro("KSExternalCorpusHeaderFiles", external_roles["header"])
+    content += macro("KSExternalCorpusKernelSLOC", external_sloc_by_role["kernel"])
+    content += macro("KSExternalCorpusUserspaceSLOC", external_sloc_by_role["userspace"])
+    content += macro("KSExternalCorpusHeaderSLOC", external_sloc_by_role["header"])
+    content += macro("KSExternalCorpusFeatureCount", external_corpus["feature_count"])
+    content += macro("KSExternalCorpusSectionCount", external_corpus["section_count"])
+    content += macro("KSExternalCorpusXDPFiles", external_features["xdp"])
+    content += macro("KSExternalCorpusTCFiles", external_features["tc"])
+    content += macro("KSExternalCorpusTracepointFiles", external_features["tracepoint"])
+    content += macro("KSExternalCorpusKprobeFiles", external_features["kprobe"])
+    content += macro("KSExternalCorpusUprobeFiles", external_features["uprobe"])
+    content += macro("KSExternalCorpusPerfEventFiles", external_features["perf_event"])
+    content += macro("KSExternalCorpusMapsFiles", external_features["maps"])
+    content += macro("KSExternalCorpusRingbufFiles", external_features["ringbuf"])
+    content += macro("KSExternalCorpusStructOpsFiles", external_features["struct_ops"])
+    content += macro("KSExternalCorpusSchedExtFiles", external_features["sched_ext"])
+    content += macro("KSExternalCorpusKfuncFiles", external_features["kfunc"])
+    content += macro("KSExternalCorpusTailCallFiles", external_features["tail_call"])
+    content += macro("KSExternalCorpusAuditSamples", external_audit["sample_count"])
+    content += macro("KSExternalCorpusAuditMatched", external_audit["matched_samples"])
+    content += macro("KSExternalCorpusAuditFalsePositives", external_audit["false_positive_count"])
+    content += macro("KSExternalCorpusAuditFalseNegatives", external_audit["false_negative_count"])
     content += macro("KSStaticTotal", static["total_cases"])
     content += macro("KSStaticMatched", static["matched_cases"])
     content += macro("KSStaticExpectedFailures", static["expected_failures"])
