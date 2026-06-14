@@ -97,8 +97,10 @@ build completes from those macros.
   and confirm no scheduler attach is attempted.
 - Scheduler-extension attach results require explicit opt-in, a disabled
   starting state, successful struct_ops registration, sched_ext still enabled
-  after a bounded CPU workload, successful unregister, return to disabled, and
-  zero rejected sched_ext tasks for both generated and C/eBPF toy schedulers.
+  after each of five bounded CPU workload trials, positive progress from every
+  worker, recorded fairness dispersion, successful unregister, return to
+  disabled, and zero rejected sched_ext tasks for both generated and C/eBPF toy
+  schedulers.
 
 ## Metric And Normalization Review
 
@@ -118,8 +120,8 @@ compatibility, labels the struct_ops workload as socket-level loopback evidence,
 labels the callback workload as clean and loss-injected local reachability
 evidence rather than full callback coverage, labels the skeleton repair as a
 local generated-userspace build repair rather than cross-version portability,
-and labels the scheduler-extension attach result as one toy bounded workload
-rather than scheduler-policy or performance evidence.
+and labels the scheduler-extension attach result as one toy bounded
+progress/fairness proxy rather than scheduler-policy or performance evidence.
 
 ## Accepted Warnings
 
@@ -135,7 +137,7 @@ rather than scheduler-policy or performance evidence.
    loss-injected ssthresh/cong_avoid/set_state/cwnd_event flags, and one
    scheduler-extension verifier diagnostic where both the five-callback C/eBPF
    control object and generated object load, plus one toy scheduler-extension
-   attach workload. The skeleton repair covers local generated userspace builds
+   attach/progress workload. The skeleton repair covers local generated userspace builds
    only. These checks do not cover scheduler-extension policy quality or
    performance, every tcp-congestion callback path, running the repaired
    binaries, or broad libbpf-version portability.

@@ -421,6 +421,7 @@ def main() -> int:
     content += macro("KSSchedExtAttachOK", sum(1 for row in sched_ext_attach_rows.values() if row["status"] == "ok"))
     content += macro("KSSchedExtAttachWorkloadSeconds", sched_ext_attach["workload_seconds"])
     content += macro("KSSchedExtAttachWorkloadWorkers", sched_ext_attach["workload_max_workers"])
+    content += macro("KSSchedExtAttachWorkloadTrials", sched_ext_attach["workload_trials"])
     content += macro("KSSchedExtAttachKsOK", 1 if sched_ext_attach_rows["ks_generated"]["status"] == "ok" else 0)
     content += macro("KSSchedExtAttachCOK", 1 if sched_ext_attach_rows["c_libbpf"]["status"] == "ok" else 0)
     content += macro("KSSchedExtAttachKsProgramCount", len(sched_ext_attach_rows["ks_generated"]["program_sections"]))
@@ -433,6 +434,14 @@ def main() -> int:
     content += macro("KSSchedExtAttachCStateAfterCleanup", sched_ext_attach_rows["c_libbpf"]["state_after_unregister"])
     content += macro("KSSchedExtAttachKsRejectedAfter", sched_ext_attach_rows["ks_generated"]["nr_rejected_after"])
     content += macro("KSSchedExtAttachCRejectedAfter", sched_ext_attach_rows["c_libbpf"]["nr_rejected_after"])
+    sched_ext_attach_comparison = sched_ext_attach["comparison"]
+    content += macro("KSSchedExtAttachKsMedianIterations", integer(sched_ext_attach_rows["ks_generated"]["workload_median_total_iterations"]))
+    content += macro("KSSchedExtAttachCMedianIterations", integer(sched_ext_attach_rows["c_libbpf"]["workload_median_total_iterations"]))
+    content += macro("KSSchedExtAttachKsMinIterations", integer(sched_ext_attach_rows["ks_generated"]["workload_min_total_iterations"]))
+    content += macro("KSSchedExtAttachCMinIterations", integer(sched_ext_attach_rows["c_libbpf"]["workload_min_total_iterations"]))
+    content += macro("KSSchedExtAttachIterationRatio", f"{sched_ext_attach_comparison['ks_over_c_total_iterations_ratio']:.2f}x")
+    content += macro("KSSchedExtAttachKsFairnessCV", f"{sched_ext_attach_comparison['ks_median_fairness_cv']:.3f}")
+    content += macro("KSSchedExtAttachCFairnessCV", f"{sched_ext_attach_comparison['c_median_fairness_cv']:.3f}")
     struct_ops_workload_rows = {row["name"]: row for row in struct_ops_workload["rows"]}
     content += macro("KSStructOpsWorkloadTrials", struct_ops_workload["trials"])
     content += macro("KSStructOpsWorkloadBytes", struct_ops_workload["bytes_per_trial"])

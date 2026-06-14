@@ -11,6 +11,7 @@ from __future__ import annotations
 import argparse
 import csv
 import json
+import math
 import os
 import re
 import shutil
@@ -44,6 +45,7 @@ CLANG = "clang"
 SCHED_EXT_SYSFS = Path("/sys/kernel/sched_ext")
 WORKLOAD_SECONDS = 0.75
 WORKLOAD_MAX_WORKERS = 4
+WORKLOAD_TRIALS = int(os.environ.get("KERNELSCRIPT_SCHED_EXT_ATTACH_TRIALS", "5"))
 
 
 def display_path(path: Path) -> str:
@@ -176,6 +178,7 @@ def wait_for_enabled(timeout_s: float = 2.0) -> str:
 
 def run_workload() -> subprocess.CompletedProcess[str]:
     code = f"""
+import json
 import multiprocessing as mp
 import os
 import time
@@ -183,14 +186,24 @@ import time
 def spin(idx):
     end = time.monotonic() + {WORKLOAD_SECONDS}
     value = idx + 1
+    iterations = 0
     while time.monotonic() < end:
         value = ((value * 1103515245) + 12345 + idx) & 0xffffffff
-    return value
+        iterations += 1
+    return {{"idx": idx, "iterations": iterations, "value": value}}
 
 workers = min({WORKLOAD_MAX_WORKERS}, os.cpu_count() or 1)
 with mp.Pool(workers) as pool:
     values = pool.map(spin, range(workers))
-print(sum(values))
+counts = [item["iterations"] for item in values]
+print(json.dumps({{
+    "workers": workers,
+    "duration_sec": {WORKLOAD_SECONDS},
+    "worker_iterations": counts,
+    "total_iterations": sum(counts),
+    "min_worker_iterations": min(counts) if counts else 0,
+    "max_worker_iterations": max(counts) if counts else 0,
+}}))
 """
     return subprocess.run(
         ["python3", "-c", code],
@@ -200,6 +213,47 @@ print(sum(values))
         timeout=5,
         check=False,
     )
+
+
+def parse_workload(proc: subprocess.CompletedProcess[str]) -> dict[str, Any]:
+    if proc.returncode != 0:
+        return {
+            "workers": 0,
+            "duration_sec": WORKLOAD_SECONDS,
+            "worker_iterations": [],
+            "total_iterations": 0,
+            "min_worker_iterations": 0,
+            "max_worker_iterations": 0,
+            "fairness_cv": -1.0,
+            "parse_error": (proc.stderr or proc.stdout).strip()[:500],
+        }
+    try:
+        parsed = json.loads(proc.stdout.strip().splitlines()[-1])
+    except (IndexError, json.JSONDecodeError) as exc:
+        return {
+            "workers": 0,
+            "duration_sec": WORKLOAD_SECONDS,
+            "worker_iterations": [],
+            "total_iterations": 0,
+            "min_worker_iterations": 0,
+            "max_worker_iterations": 0,
+            "fairness_cv": -1.0,
+            "parse_error": f"could not parse workload JSON: {exc}",
+        }
+    counts = [int(value) for value in parsed.get("worker_iterations", [])]
+    mean = sum(counts) / len(counts) if counts else 0.0
+    variance = (
+        sum((value - mean) ** 2 for value in counts) / len(counts)
+        if counts
+        else 0.0
+    )
+    parsed["worker_iterations"] = counts
+    parsed["total_iterations"] = int(parsed.get("total_iterations", sum(counts)))
+    parsed["min_worker_iterations"] = int(parsed.get("min_worker_iterations", min(counts) if counts else 0))
+    parsed["max_worker_iterations"] = int(parsed.get("max_worker_iterations", max(counts) if counts else 0))
+    parsed["fairness_cv"] = math.sqrt(variance) / mean if mean > 0 else -1.0
+    parsed["parse_error"] = ""
+    return parsed
 
 
 def ensure_no_active_scheduler() -> tuple[bool, str]:
@@ -277,6 +331,17 @@ def run_variant(
         "program_sections": program_sections(obj),
         "new_struct_ops_maps": [],
         "unregister_attempts": [],
+        "workload_trials": WORKLOAD_TRIALS,
+        "workload_returncodes": [],
+        "workload_total_iterations_samples": [],
+        "workload_min_worker_iterations_samples": [],
+        "workload_max_worker_iterations_samples": [],
+        "workload_fairness_cv_samples": [],
+        "workload_state_samples": [],
+        "workload_median_total_iterations": 0,
+        "workload_min_total_iterations": 0,
+        "workload_median_fairness_cv": 0.0,
+        "workload_max_fairness_cv": 0.0,
     }
 
     ready, reason = ensure_no_active_scheduler()
@@ -315,18 +380,53 @@ def run_variant(
         ]
         row["new_struct_ops_maps"] = new_entries
 
-        workload = run_workload()
-        row["workload_returncode"] = workload.returncode
-        write(LOGS / f"{name}.workload.stdout", workload.stdout)
-        write(LOGS / f"{name}.workload.stderr", workload.stderr)
-        if workload.returncode != 0:
-            row["failure_excerpt"] = (workload.stderr or workload.stdout).strip()[:500]
-            return row
+        workload_rows: list[dict[str, Any]] = []
+        for trial in range(WORKLOAD_TRIALS):
+            workload = run_workload()
+            write(LOGS / f"{name}.workload{trial}.stdout", workload.stdout)
+            write(LOGS / f"{name}.workload{trial}.stderr", workload.stderr)
+            parsed = parse_workload(workload)
+            parsed["trial"] = trial
+            parsed["returncode"] = workload.returncode
+            parsed["state_after_workload"] = sched_ext_value("state")
+            workload_rows.append(parsed)
+            if workload.returncode != 0:
+                row["failure_excerpt"] = (workload.stderr or workload.stdout).strip()[:500]
+                return row
+            if parsed["parse_error"]:
+                row["failure_excerpt"] = str(parsed["parse_error"])
+                return row
+            if int(parsed["min_worker_iterations"]) <= 0:
+                row["failure_excerpt"] = "at least one workload worker made no progress"
+                return row
+            if parsed["state_after_workload"] != "enabled":
+                row["failure_excerpt"] = "scheduler left enabled state during workload"
+                return row
 
-        row["state_after_workload"] = sched_ext_value("state")
-        if row["state_after_workload"] != "enabled":
-            row["failure_excerpt"] = "scheduler left enabled state during workload"
-            return row
+        row["workload_returncode"] = 0
+        row["workload_returncodes"] = [int(sample["returncode"]) for sample in workload_rows]
+        row["workload_total_iterations_samples"] = [
+            int(sample["total_iterations"]) for sample in workload_rows
+        ]
+        row["workload_min_worker_iterations_samples"] = [
+            int(sample["min_worker_iterations"]) for sample in workload_rows
+        ]
+        row["workload_max_worker_iterations_samples"] = [
+            int(sample["max_worker_iterations"]) for sample in workload_rows
+        ]
+        row["workload_fairness_cv_samples"] = [
+            float(sample["fairness_cv"]) for sample in workload_rows
+        ]
+        row["workload_state_samples"] = [
+            str(sample["state_after_workload"]) for sample in workload_rows
+        ]
+        totals = row["workload_total_iterations_samples"]
+        cvs = row["workload_fairness_cv_samples"]
+        row["workload_median_total_iterations"] = sorted(totals)[len(totals) // 2]
+        row["workload_min_total_iterations"] = min(totals)
+        row["workload_median_fairness_cv"] = sorted(cvs)[len(cvs) // 2]
+        row["workload_max_fairness_cv"] = max(cvs)
+        row["state_after_workload"] = row["workload_state_samples"][-1]
 
         row["nr_rejected_after"] = sched_ext_value("nr_rejected")
         row["status"] = "ok"
@@ -362,6 +462,23 @@ def run_variant(
             )
 
 
+def comparison(rows: list[dict[str, Any]]) -> dict[str, Any]:
+    by_name = {str(row["name"]): row for row in rows}
+    if "ks_generated" not in by_name or "c_libbpf" not in by_name:
+        return {}
+    ks = by_name["ks_generated"]
+    c = by_name["c_libbpf"]
+    ks_total = float(ks.get("workload_median_total_iterations") or 0.0)
+    c_total = float(c.get("workload_median_total_iterations") or 0.0)
+    return {
+        "ks_median_total_iterations": ks_total,
+        "c_median_total_iterations": c_total,
+        "ks_over_c_total_iterations_ratio": ks_total / c_total if c_total else 0.0,
+        "ks_median_fairness_cv": float(ks.get("workload_median_fairness_cv") or 0.0),
+        "c_median_fairness_cv": float(c.get("workload_median_fairness_cv") or 0.0),
+    }
+
+
 def write_summary(rows: list[dict[str, Any]], overall_status: str) -> None:
     summary = {
         "experiment": "sched_ext_attach",
@@ -371,7 +488,9 @@ def write_summary(rows: list[dict[str, Any]], overall_status: str) -> None:
         "allow_env": ALLOW_ENV,
         "workload_seconds": WORKLOAD_SECONDS,
         "workload_max_workers": WORKLOAD_MAX_WORKERS,
+        "workload_trials": WORKLOAD_TRIALS,
         "rows": rows,
+        "comparison": comparison(rows),
     }
     SUMMARY_JSON.write_text(json.dumps(summary, indent=2) + "\n")
 
@@ -383,6 +502,11 @@ def write_summary(rows: list[dict[str, Any]], overall_status: str) -> None:
         "register_returncode",
         "unregister_returncode",
         "workload_returncode",
+        "workload_trials",
+        "workload_median_total_iterations",
+        "workload_min_total_iterations",
+        "workload_median_fairness_cv",
+        "workload_max_fairness_cv",
         "state_before",
         "state_after_register",
         "state_after_workload",

@@ -62,11 +62,12 @@ namespaces.  For struct\_ops, shared libbpf runners distinguish direct object
 load/attach/detach, loopback TCP byte-transfer behavior, callback reachability
 under clean and loss-trigger profiles, and a local skeleton-header repair that
 builds \KSStructOpsRepairBuildOK{}/\KSStructOpsRepairExamples{} affected
-generated userspace projects.  A scheduler-extension diagnostic adds
-evidence for both verifier loading and bounded attachment: both the
-hand-written C/eBPF object and the generated object verifier-load and pin
-programs, and an opt-in harness registers both toy schedulers, runs a bounded
-CPU workload, and unregisters them cleanly.  The
+generated userspace projects.  Scheduler-extension experiments add evidence for
+verifier loading and bounded attachment: both the hand-written C/eBPF object and
+the generated object verifier-load and pin programs, and an opt-in harness
+registers both toy schedulers, runs five bounded progress trials, and
+unregisters them cleanly.
+The
 results support an artifact/prototype
 claim: \tool{} centralizes recurring project structure for this repository
 corpus and exposes concrete compatibility limits, but it does not yet establish
@@ -309,7 +310,7 @@ microbenchmarks and object workloads do not pin CPUs or change the governor, so
 their nanosecond and event-rate differences are not statistically interpreted
 and should be read as local comparisons rather than general performance claims.
 The evaluated commit is
-\KSCommitShort{}.  The artifact contains nineteen measurement scripts under
+\KSCommitShort{}.  The artifact contains 20 measurement scripts under
 \texttt{experiments/}.  They cover compiler tests and example builds,
 static-check cases, strict verifier loading, isolated XDP attach/detach, XDP and
 TC traffic over fresh veth/netns pairs, perf-event loader and counter workloads,
@@ -317,7 +318,8 @@ ring-buffer event emission, direct struct\_ops load/attach/detach
 compatibility, loopback TCP and callback-flag workloads for tcp-congestion
 struct\_ops, a
 version-aware struct\_ops skeleton repair, a longer XDP/TC traffic stress
-rerun, and two map-update lowering ablations.  The paper reports the
+rerun, scheduler-extension attach/progress checks, and two map-update lowering
+ablations.  The paper reports the
 compiler-source patch ablation as the canonical mechanism-isolation result
 because it changes the compiler path
 rather than editing generated output.  The traffic scripts compare generated
@@ -335,7 +337,7 @@ compiler source, applies a tracked compiler-source patch for array-map
 increment lowering, rebuilds the patched compiler, and reruns the same count
 benchmark.
 
-We measure thirteen outcomes.  \textbf{Compiler regression coverage} is
+We measure fourteen outcomes.  \textbf{Compiler regression coverage} is
 approximated by the repository test suite.  \textbf{Early rejection} is
 measured by static cases whose expected diagnostics are checked by the harness.
 \textbf{Example marker coverage} is
@@ -378,6 +380,11 @@ generated \texttt{sched\_ext\_simple} object with a five-callback C/eBPF control
 object under \texttt{bpftool prog loadall} only, recording pinned-program
 counts, load status, and scheduler-extension state without attaching a
 scheduler.
+\textbf{Scheduler-extension attach/progress} is measured by an opt-in harness
+that registers generated and C/eBPF toy FIFO schedulers, requires sched\_ext to
+stay enabled across five bounded CPU workload trials, records per-worker
+iteration progress and fairness dispersion, and checks cleanup to disabled
+state.
 \textbf{Generated-loader lifecycle}
 is measured by a perf-event loader latency check that requires successful
 load/attach, positive page-fault counter reads, clean detach, and end-to-end
@@ -613,17 +620,25 @@ Both objects verifier-load on this host: the generated object pins
 pipeline unless the caller passes an explicit host-scheduler opt-in.  The
 script requires sched\_ext to start disabled, registers each scheduler with
 \texttt{bpftool struct\_ops register}, runs a bounded
-\KSSchedExtAttachWorkloadSeconds{}s CPU workload with up to
-\KSSchedExtAttachWorkloadWorkers{} workers, requires sched\_ext to remain
-enabled after registration and after the workload, unregisters the struct\_ops
-map, and checks that sched\_ext returns to disabled.  In the checked-in run,
+\KSSchedExtAttachWorkloadSeconds{}s CPU workload for
+\KSSchedExtAttachWorkloadTrials{} trials with up to
+\KSSchedExtAttachWorkloadWorkers{} workers per trial, records each worker's
+iteration count, requires every worker to make progress, requires sched\_ext to
+remain enabled after registration and every workload trial, unregisters the
+struct\_ops map, and checks that sched\_ext returns to disabled.  In the
+checked-in run,
 both the \KSSchedExtAttachCProgramCount{}-callback C/eBPF control and the
 \KSSchedExtAttachKsProgramCount{}-callback generated object pass this oracle:
 \KSSchedExtAttachOK{} of \KSSchedExtAttachVariants{} variants register, keep
-sched\_ext enabled during the workload, unregister cleanly, and leave
+sched\_ext enabled during all trials, unregister cleanly, and leave
 \KSSchedExtAttachKsRejectedAfter{} rejected sched\_ext tasks for the generated
-variant.  This is attach and bounded-workload evidence for a toy FIFO
-scheduler, not a scheduling-policy performance result.
+variant.  The generated scheduler reports a median
+\KSSchedExtAttachKsMedianIterations{} worker-loop iterations versus
+\KSSchedExtAttachCMedianIterations{} for the C/eBPF control
+(\KSSchedExtAttachIterationRatio{}), with median per-trial worker-count
+coefficient of variation \KSSchedExtAttachKsFairnessCV{} versus
+\KSSchedExtAttachCFairnessCV{}.  This is attach, progress, and fairness sanity
+evidence for a toy FIFO scheduler, not a scheduling-policy performance result.
 
 \textbf{Isolated XDP attach matrix.}  Verifier acceptance is still weaker than
 attachability.  \texttt{run\_attach\_matrix.py} therefore takes the
@@ -854,17 +869,18 @@ compiler rejects selected lifecycle, program-signature, map-type,
 ring-buffer-API, config-boundary, helper-scope, kernel-context allocation,
 perf-event group-bound, symbol-validation, type-system, and stack-limit errors
 before kernel loading.  The runtime evidence is deliberately smaller.  It
-shows that a minimal pass program has no measurable BPF\_PROG\_TEST\_RUN overhead in this
-harness and that the map-update gap is caused by a specific lowering choice,
-not by the unified source model alone.  The
+shows that a minimal pass program has the same instruction count and a
+comparable BPF\_PROG\_TEST\_RUN median in this local harness, and that the
+map-update gap is caused by a specific lowering choice, not by the unified
+source model alone.  The
 compiler-source patch result strengthens that mechanism claim.  The XDP attach
 matrix plus XDP, TC, perf-event, ring-buffer, direct struct\_ops, and
 callback-instrumented struct\_ops checks strengthen the local deployment,
 generated-loader lifecycle, object-workload, object-compatibility, and
 callback-reachability evidence across five program classes, and the longer
 traffic rerun adds a small stress check for the XDP and TC cases.  The
-scheduler-extension attach harness adds a bounded host-scheduler workload for
-one toy FIFO policy.  The
+scheduler-extension attach harness adds a bounded host-scheduler progress and
+fairness proxy for one toy FIFO policy.  The
 artifact still does not establish broad runtime equivalence with hand-written
 C/libbpf.
 

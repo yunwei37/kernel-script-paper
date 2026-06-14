@@ -12,11 +12,11 @@ load/attach/detach compatibility check, a loopback TCP workload through selected
 BPF tcp-congestion algorithms, a callback-flag workload with clean and
 loss-injected reachability profiles, a local struct_ops skeleton build repair,
 a scheduler-extension load-only verifier diagnostic, an opt-in bounded
-scheduler-extension attach/workload check, and a broader 28-case static
+scheduler-extension attach/progress check, and a broader 28-case static
 negative corpus. It now also includes a longer XDP/TC traffic stress rerun.
 It is closer to a top-systems weak accept, but still not there. The main
 remaining gap is representative scheduler-policy and performance evidence
-beyond one toy FIFO workload, broader callback-level struct_ops behavior,
+beyond one toy FIFO progress/fairness proxy, broader callback-level struct_ops behavior,
 generated-dispatch-loop throughput beyond one perf_event lifecycle loader
 workload, broader skeleton version coverage and compiler integration, and
 non-local or longer-duration deployment methodology.
@@ -68,7 +68,8 @@ non-local or longer-duration deployment methodology.
   object pins 12 programs, and leaves sched_ext disabled.
 - Added `experiments/run_sched_ext_attach.py`, which requires explicit
   host-scheduler opt-in, registers generated and hand-written toy FIFO
-  schedulers, runs a bounded CPU workload while sched_ext remains enabled,
+  schedulers, runs five bounded CPU progress trials while sched_ext remains
+  enabled, records per-worker iteration counts and fairness dispersion,
   unregisters both schedulers, and verifies sched_ext returns to disabled with
   zero rejected tasks.
 - Expanded `experiments/run_static_checks.py` to 28 deterministic cases,
@@ -83,7 +84,7 @@ non-local or longer-duration deployment methodology.
 ## Remaining Experiments For Weak-Accept Bar
 
 1. Add scheduler-extension policy/performance evidence beyond the current toy
-   FIFO attach workload; also add broader callback-level struct_ops programs,
+   FIFO progress/fairness proxy; also add broader callback-level struct_ops programs,
    broader skeleton version coverage with
    compiler-integrated generation, broader perf_event event types, and
    generated-dispatch-loop throughput.

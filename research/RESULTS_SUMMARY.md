@@ -44,8 +44,12 @@ show that the five-callback hand-written C/eBPF control baseline
 verifier-loads and pins 5 programs, while the generated `sched_ext_simple`
 object verifier-loads and pins 12 programs without scheduler attachment. The
 separate opt-in attach harness registers both toy FIFO schedulers, runs a
-bounded 0.75s CPU workload, unregisters both, and returns
-`/sys/kernel/sched_ext/state` to disabled with zero rejected sched_ext tasks.
+bounded 0.75s CPU workload for five trials per variant, records per-worker
+iteration progress, unregisters both, and returns `/sys/kernel/sched_ext/state`
+to disabled with zero rejected sched_ext tasks. Median total worker-loop
+iterations are 37139820 for the generated scheduler and 31636648 for the C/eBPF
+control, with median per-trial worker-count coefficient of variation 0.008 and
+0.005 respectively.
 The stress
 rerun uses three 5s iperf3 trials per XDP/TC pass/count variant; all oracles
 pass, with XDP count medians of 17.3 versus 15.3Gb/s and TC count medians of
@@ -69,7 +73,7 @@ pass, with XDP count medians of 17.3 versus 15.3Gb/s and TC count medians of
 | R011 | `results/struct_ops_workload_summary.json` | ok | Generated and C/eBPF tcp-congestion objects each complete 10/10 loopback TCP workload trials with algorithm selection, full byte transfer, and detach success. |
 | R012 | `results/struct_ops_callback_workload_summary.json` | ok | Generated and C/eBPF tcp-congestion objects each complete 10/10 clean 4MiB loopback TCP trials with cong_avoid plus cwnd_event, then complete 5/5 5% loss-injected 4MiB trials with ssthresh, cong_avoid, set_state, and cwnd_event. |
 | R013 | `results/sched_ext_verifier_summary.json` | ok | Five-callback C/eBPF scheduler-extension control object verifier-loads and pins 5 programs; generated `sched_ext_simple` verifier-loads and pins 12 programs; no scheduler attach is attempted and sched_ext state remains disabled. |
-| R014 | `results/sched_ext_attach_summary.json` | ok | Opt-in scheduler-extension attach harness registers the C/eBPF and generated toy FIFO schedulers, keeps sched_ext enabled during a bounded 0.75s CPU workload, unregisters both, and returns sched_ext to disabled with zero rejected tasks. |
+| R014 | `results/sched_ext_attach_summary.json` | ok | Opt-in scheduler-extension attach harness registers the C/eBPF and generated toy FIFO schedulers, keeps sched_ext enabled during five bounded 0.75s CPU progress trials, records per-worker iteration counts, unregisters both, and returns sched_ext to disabled with zero rejected tasks. |
 
 ## Anomalies And Negative Results
 
@@ -89,8 +93,9 @@ pass, with XDP count medians of 17.3 versus 15.3Gb/s and TC count medians of
   cwnd_event reachability under 5% loopback loss. It still does not measure
   production TCP performance or cover every tcp-congestion callback path. The
   scheduler-extension verifier diagnostic is load-only evidence, while the
-  separate attach harness exercises only one toy FIFO scheduler policy and does
-  not measure scheduler quality or performance. The skeleton repair validates
+  separate attach harness exercises only one toy FIFO scheduler policy with a
+  bounded progress/fairness proxy and does not measure scheduler quality or
+  production performance. The skeleton repair validates
   one local generated-userspace build
   fix, but it does not run the
   generated binaries or prove portability across libbpf versions. The

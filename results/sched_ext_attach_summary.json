@@ -6,12 +6,13 @@
   "allow_env": "KERNELSCRIPT_ALLOW_SCHED_EXT_ATTACH",
   "workload_seconds": 0.75,
   "workload_max_workers": 4,
+  "workload_trials": 5,
   "rows": [
     {
       "name": "c_libbpf",
       "implementation": "C/libbpf",
       "object": "results/build/sched_ext_attach/handwritten/sched_ext_simple.o",
-      "link_dir": "/sys/fs/bpf/kernelscript-paper/sched-ext-attach/240748-c_libbpf",
+      "link_dir": "/sys/fs/bpf/kernelscript-paper/sched-ext-attach/257101-c_libbpf",
       "attach_attempted": true,
       "status": "ok",
       "register_returncode": 0,
@@ -21,9 +22,9 @@
       "state_after_register": "enabled",
       "state_after_workload": "enabled",
       "state_after_unregister": "disabled",
-      "enable_seq_before": "11",
-      "enable_seq_after_register": "12",
-      "enable_seq_after_unregister": "12",
+      "enable_seq_before": "13",
+      "enable_seq_after_register": "14",
+      "enable_seq_after_unregister": "14",
       "nr_rejected_before": "0",
       "nr_rejected_after": "0",
       "failure_excerpt": "",
@@ -36,25 +37,72 @@
       ],
       "new_struct_ops_maps": [
         {
-          "id": 7313,
+          "id": 8102,
           "name": "ks_paper_scx",
           "kernel_struct_ops": "sched_ext_ops"
         }
       ],
       "unregister_attempts": [
         {
-          "target": "id 7313",
+          "target": "id 8102",
           "returncode": "0",
           "stdout": "",
-          "stderr": "Unregistered sched_ext_ops ks_paper_scx id 7313"
+          "stderr": "Unregistered sched_ext_ops ks_paper_scx id 8102"
         }
-      ]
+      ],
+      "workload_trials": 5,
+      "workload_returncodes": [
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "workload_total_iterations_samples": [
+        31636648,
+        35119920,
+        39587416,
+        31349353,
+        31410684
+      ],
+      "workload_min_worker_iterations_samples": [
+        7888277,
+        7844004,
+        9851554,
+        7783100,
+        7810082
+      ],
+      "workload_max_worker_iterations_samples": [
+        7931882,
+        9726838,
+        9952336,
+        7895875,
+        7906747
+      ],
+      "workload_fairness_cv_samples": [
+        0.002233754042069738,
+        0.1063918948015173,
+        0.00434773866990633,
+        0.005170516885612609,
+        0.004966273029371431
+      ],
+      "workload_state_samples": [
+        "enabled",
+        "enabled",
+        "enabled",
+        "enabled",
+        "enabled"
+      ],
+      "workload_median_total_iterations": 31636648,
+      "workload_min_total_iterations": 31349353,
+      "workload_median_fairness_cv": 0.004966273029371431,
+      "workload_max_fairness_cv": 0.1063918948015173
     },
     {
       "name": "ks_generated",
       "implementation": "KernelScript",
       "object": "results/build/sched_ext_attach/kernelscript/sched_ext_attach_safe.ebpf.o",
-      "link_dir": "/sys/fs/bpf/kernelscript-paper/sched-ext-attach/240748-ks_generated",
+      "link_dir": "/sys/fs/bpf/kernelscript-paper/sched-ext-attach/257101-ks_generated",
       "attach_attempted": true,
       "status": "ok",
       "register_returncode": 0,
@@ -64,9 +112,9 @@
       "state_after_register": "enabled",
       "state_after_workload": "enabled",
       "state_after_unregister": "disabled",
-      "enable_seq_before": "12",
-      "enable_seq_after_register": "13",
-      "enable_seq_after_unregister": "13",
+      "enable_seq_before": "14",
+      "enable_seq_after_register": "15",
+      "enable_seq_after_unregister": "15",
       "nr_rejected_before": "0",
       "nr_rejected_after": "0",
       "failure_excerpt": "",
@@ -86,19 +134,73 @@
       ],
       "new_struct_ops_maps": [
         {
-          "id": 7314,
+          "id": 8103,
           "name": "simple_fifo_sch",
           "kernel_struct_ops": "sched_ext_ops"
         }
       ],
       "unregister_attempts": [
         {
-          "target": "id 7314",
+          "target": "id 8103",
           "returncode": "0",
           "stdout": "",
-          "stderr": "Unregistered sched_ext_ops simple_fifo_sch id 7314"
+          "stderr": "Unregistered sched_ext_ops simple_fifo_sch id 8103"
         }
-      ]
+      ],
+      "workload_trials": 5,
+      "workload_returncodes": [
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "workload_total_iterations_samples": [
+        37139820,
+        39547444,
+        39615884,
+        33772246,
+        31543127
+      ],
+      "workload_min_worker_iterations_samples": [
+        7707639,
+        9772229,
+        9869025,
+        7889556,
+        7814986
+      ],
+      "workload_max_worker_iterations_samples": [
+        9949735,
+        9976833,
+        9942924,
+        9439325,
+        7919114
+      ],
+      "workload_fairness_cv_samples": [
+        0.09858996914046561,
+        0.008178097667975066,
+        0.0032373665929086234,
+        0.07458179124639634,
+        0.005264364197541781
+      ],
+      "workload_state_samples": [
+        "enabled",
+        "enabled",
+        "enabled",
+        "enabled",
+        "enabled"
+      ],
+      "workload_median_total_iterations": 37139820,
+      "workload_min_total_iterations": 31543127,
+      "workload_median_fairness_cv": 0.008178097667975066,
+      "workload_max_fairness_cv": 0.09858996914046561
     }
-  ]
+  ],
+  "comparison": {
+    "ks_median_total_iterations": 37139820.0,
+    "c_median_total_iterations": 31636648.0,
+    "ks_over_c_total_iterations_ratio": 1.173949275536397,
+    "ks_median_fairness_cv": 0.008178097667975066,
+    "c_median_fairness_cv": 0.004966273029371431
+  }
 }

@@ -416,13 +416,14 @@ repair checks one local generated userspace build fix but does not run the
 repaired binaries. The scheduler-extension diagnostics show that the local
 kernel/toolchain accepts both the five-callback C/eBPF control object and the
 generated object for verifier load, and that both toy FIFO schedulers can be
-registered, kept enabled through a bounded CPU workload, and unregistered
-cleanly. The evaluation still does not validate NIC-rate throughput,
+registered, kept enabled through five bounded CPU progress trials with
+per-worker iteration counts, and unregistered cleanly. The evaluation still
+does not validate NIC-rate throughput,
 scheduler-extension policy quality or performance, every
 tcp-congestion callback path, broader skeleton version coverage, broader
 perf_event workloads, or generated-loader throughput.
 A full runtime comparison should add scheduler-extension workloads beyond the
-current toy FIFO policy, more tcp-congestion callback coverage,
+current toy FIFO progress/fairness proxy, more tcp-congestion callback coverage,
 upstream-integrated skeleton generation across libbpf versions, broader
 perf_event workloads, and larger or non-local XDP/TC stress runs with `pktgen`
 or `xdp-bench` that report throughput, tail latency, verifier log size, and CPU

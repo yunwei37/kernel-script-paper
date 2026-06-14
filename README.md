@@ -237,9 +237,11 @@ The current run evaluates KernelScript commit `3b19cd2` on Linux
   `sched_ext` baseline verifier-loads and pins 5 programs, and the generated
   `sched_ext_simple` object verifier-loads and pins 12 programs without
   scheduler attachment. The opt-in attach harness then registers both toy FIFO
-  schedulers, runs a bounded 0.75s CPU workload, unregisters them, and returns
+  schedulers, runs five 0.75s CPU workload trials with four workers per trial,
+  records per-worker progress, unregisters them, and returns
   `/sys/kernel/sched_ext/state` to `disabled` with zero rejected sched_ext
-  tasks.
+  tasks. Median total worker-loop iterations are 37139820 for the generated
+  scheduler and 31636648 for the C/eBPF control in this local run.
 - Struct_ops TCP workload: over ten privileged trials, both the generated
   tcp-congestion object and the C/eBPF object are selected with `TCP_CONGESTION`
   on a loopback sender socket, transfer 1MiB, and detach successfully in 10 of
@@ -292,10 +294,10 @@ The current run evaluates KernelScript commit `3b19cd2` on Linux
   five-callback hand-written C/eBPF control baseline, then runs
   `bpftool prog loadall` only. The C/eBPF object loads and pins 5 programs, and
   the generated object loads and pins 12 programs. `run_sched_ext_attach.py` is
-  a separate opt-in check that registers both toy schedulers, runs a bounded CPU
-  workload, and unregisters them cleanly. This is local attach/workload
-  evidence for one toy policy, not scheduler-performance evidence or full
-  callback-set equivalence.
+  a separate opt-in check that registers both toy schedulers, runs five bounded
+  CPU progress trials, and unregisters them cleanly. This is local
+  attach/progress evidence for one toy policy, not scheduler-performance
+  evidence or full callback-set equivalence.
 - Struct_ops TCP workload: `run_struct_ops_workload.py` attaches the generated
   and C/eBPF tcp-congestion objects, selects the registered BPF algorithm on a
   loopback TCP sender socket, transfers 1MiB, and detaches. This is a local

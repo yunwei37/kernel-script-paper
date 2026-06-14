@@ -83,8 +83,8 @@ callback-flag workload results, and a scheduler-extension verifier diagnostic.
 16. Applied a delegated top-systems review after the scheduler-extension
     diagnostic. The follow-up pass corrected the scheduler-extension baseline
     wording from matched callback-set language to a five-callback control
-    baseline, and updated the method summary to nineteen measurement scripts
-    and thirteen outcomes.
+    baseline, and updated the method summary to the then-current measurement
+    script and outcome counts.
 17. Applied a delegated top-systems review after the scheduler-extension
     verifier-load fix. The follow-up pass removed the scheduler "generalizes"
     framing, split overloaded struct_ops claim-scope rows, refreshed stale
@@ -95,6 +95,9 @@ callback-flag workload results, and a scheduler-extension verifier diagnostic.
     distinguishes the load-only verifier diagnostic from the bounded toy FIFO
     attach workload, and keeps scheduler-policy quality and performance as
     remaining limits.
+19. Extended the scheduler-extension attach harness into a five-trial
+    progress/fairness oracle and refreshed the method summary to 20 measurement
+    scripts and fourteen outcomes.
 
 ## Remaining Accepted Limits
 
