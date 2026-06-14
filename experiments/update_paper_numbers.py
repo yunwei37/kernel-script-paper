@@ -411,10 +411,15 @@ def main() -> int:
     content += macro("KSStructOpsWorkloadKsMiBps", f"{struct_ops_workload_rows['ks_generated']['median_mib_per_sec']:.1f}")
     content += macro("KSStructOpsWorkloadCMiBps", f"{struct_ops_workload_rows['c_libbpf']['median_mib_per_sec']:.1f}")
     struct_ops_callback_rows = {row["name"]: row for row in struct_ops_callback["rows"]}
+    struct_ops_callback_loss_rows = {row["name"]: row for row in struct_ops_callback["loss_rows"]}
     callback_flag_names = struct_ops_callback["flag_names"]
+    callback_ssthresh = callback_flag_names.index("ssthresh")
+    callback_undo_cwnd = callback_flag_names.index("undo_cwnd")
     callback_cong_avoid = callback_flag_names.index("cong_avoid")
+    callback_set_state = callback_flag_names.index("set_state")
     callback_cwnd_event = callback_flag_names.index("cwnd_event")
     required_callback_flags = struct_ops_callback["required_callback_flags"]
+    loss_required_callback_flags = struct_ops_callback["loss_required_callback_flags"]
     content += macro("KSStructOpsCallbackTrials", struct_ops_callback["trials"])
     content += macro("KSStructOpsCallbackBytes", struct_ops_callback["bytes_per_trial"])
     content += macro("KSStructOpsCallbackMiB", f"{struct_ops_callback['bytes_per_trial'] / (1024 * 1024):.0f}")
@@ -433,6 +438,31 @@ def main() -> int:
     content += macro("KSStructOpsCallbackCElapsedMs", elapsed_ms(struct_ops_callback_rows["c_libbpf"]["median_elapsed_sec"]))
     content += macro("KSStructOpsCallbackKsMiBps", f"{struct_ops_callback_rows['ks_generated']['median_mib_per_sec']:.1f}")
     content += macro("KSStructOpsCallbackCMiBps", f"{struct_ops_callback_rows['c_libbpf']['median_mib_per_sec']:.1f}")
+    content += macro("KSStructOpsCallbackLossTrials", struct_ops_callback["loss_trials"])
+    content += macro("KSStructOpsCallbackLossBytes", struct_ops_callback["loss_bytes_per_trial"])
+    content += macro("KSStructOpsCallbackLossMiB", f"{struct_ops_callback['loss_bytes_per_trial'] / (1024 * 1024):.0f}")
+    content += macro("KSStructOpsCallbackLossPct", str(struct_ops_callback["loss_percent"]).replace("%", r"\%"))
+    content += macro("KSStructOpsCallbackLossRequired", latex_join(loss_required_callback_flags))
+    content += macro("KSStructOpsCallbackKsLossOK", sum(struct_ops_callback_loss_rows["ks_generated"]["workload_ok_samples"]))
+    content += macro("KSStructOpsCallbackCLossOK", sum(struct_ops_callback_loss_rows["c_libbpf"]["workload_ok_samples"]))
+    content += macro("KSStructOpsCallbackKsLossOracleOK", sum(struct_ops_callback_loss_rows["ks_generated"]["callback_oracle_samples"]))
+    content += macro("KSStructOpsCallbackCLossOracleOK", sum(struct_ops_callback_loss_rows["c_libbpf"]["callback_oracle_samples"]))
+    content += macro("KSStructOpsCallbackKsLossSsthresh", sum(struct_ops_callback_loss_rows["ks_generated"]["callback_flags_by_slot"][callback_ssthresh]))
+    content += macro("KSStructOpsCallbackCLossSsthresh", sum(struct_ops_callback_loss_rows["c_libbpf"]["callback_flags_by_slot"][callback_ssthresh]))
+    content += macro("KSStructOpsCallbackKsLossUndoCwnd", sum(struct_ops_callback_loss_rows["ks_generated"]["callback_flags_by_slot"][callback_undo_cwnd]))
+    content += macro("KSStructOpsCallbackCLossUndoCwnd", sum(struct_ops_callback_loss_rows["c_libbpf"]["callback_flags_by_slot"][callback_undo_cwnd]))
+    content += macro("KSStructOpsCallbackKsLossCongAvoid", sum(struct_ops_callback_loss_rows["ks_generated"]["callback_flags_by_slot"][callback_cong_avoid]))
+    content += macro("KSStructOpsCallbackCLossCongAvoid", sum(struct_ops_callback_loss_rows["c_libbpf"]["callback_flags_by_slot"][callback_cong_avoid]))
+    content += macro("KSStructOpsCallbackKsLossSetState", sum(struct_ops_callback_loss_rows["ks_generated"]["callback_flags_by_slot"][callback_set_state]))
+    content += macro("KSStructOpsCallbackCLossSetState", sum(struct_ops_callback_loss_rows["c_libbpf"]["callback_flags_by_slot"][callback_set_state]))
+    content += macro("KSStructOpsCallbackKsLossCwndEvent", sum(struct_ops_callback_loss_rows["ks_generated"]["callback_flags_by_slot"][callback_cwnd_event]))
+    content += macro("KSStructOpsCallbackCLossCwndEvent", sum(struct_ops_callback_loss_rows["c_libbpf"]["callback_flags_by_slot"][callback_cwnd_event]))
+    content += macro("KSStructOpsCallbackKsLossDetachOK", sum(struct_ops_callback_loss_rows["ks_generated"]["detach_ok_samples"]))
+    content += macro("KSStructOpsCallbackCLossDetachOK", sum(struct_ops_callback_loss_rows["c_libbpf"]["detach_ok_samples"]))
+    content += macro("KSStructOpsCallbackKsLossElapsedMs", elapsed_ms(struct_ops_callback_loss_rows["ks_generated"]["median_elapsed_sec"]))
+    content += macro("KSStructOpsCallbackCLossElapsedMs", elapsed_ms(struct_ops_callback_loss_rows["c_libbpf"]["median_elapsed_sec"]))
+    content += macro("KSStructOpsCallbackKsLossMiBps", f"{struct_ops_callback_loss_rows['ks_generated']['median_mib_per_sec']:.1f}")
+    content += macro("KSStructOpsCallbackCLossMiBps", f"{struct_ops_callback_loss_rows['c_libbpf']['median_mib_per_sec']:.1f}")
 
     OUT.write_text(content, encoding="utf-8")
     return 0

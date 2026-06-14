@@ -61,6 +61,21 @@ and callback-flag workload results.
     delegated top-systems review found no must-fix contradictions but flagged
     stale static-category summaries and an implicit generated-code-size
     denominator.
+12. Expanded the callback-flag struct_ops workload into clean and loss-injected
+    profiles: clean loopback keeps the cong_avoid/cwnd_event oracle, while 5%
+    loopback loss adds ssthresh/set_state reachability for generated and C/eBPF
+    objects without claiming complete TCP callback coverage.
+13. Re-ran a targeted whole-paper logic pass for the loss-injected profile,
+    verified the new macros against `results/struct_ops_callback_workload_summary.json`,
+    and removed remaining semicolon-joined clauses introduced near the
+    struct_ops result text.
+14. Applied a delegated top-systems writing and experiment review after the
+    loss-injected callback profile. The follow-up pass tightened the abstract
+    and conclusion, clarified that the loss profile is a callback trigger rather
+    than robustness evidence, corrected the stale static-check count in the
+    experiment plan, changed generated-SLOC wording away from developer-effort
+    savings, and renamed the runner's clean-profile callback field so the JSON
+    profile oracle is not easy to misread.
 
 ## Remaining Accepted Limits
 
@@ -71,10 +86,11 @@ and callback-flag workload results.
   shared libbpf runners, so they do not measure broader generated userspace
   dispatch-loop throughput.
 - Struct_ops evidence covers tcp-congestion object load/attach/detach, a
-  loopback TCP socket workload, cong_avoid/cwnd_event callback flags, and a
-  local generated-userspace skeleton build repair, not scheduler-extension
-  struct_ops, broader callback-level TCP behavior, running repaired generated
-  binaries, production TCP performance, or broad libbpf-version portability.
+  loopback TCP socket workload, clean cong_avoid/cwnd_event callback flags,
+  loss-injected ssthresh/cong_avoid/set_state/cwnd_event flags, and a local
+  generated-userspace skeleton build repair, not scheduler-extension
+  struct_ops, every callback path, running repaired generated binaries,
+  production TCP performance, or broad libbpf-version portability.
 - Generated-structure evidence is a corpus artifact result, not a developer
   effort study against expert-written C/libbpf.
 
@@ -82,6 +98,7 @@ and callback-flag workload results.
 
 The next scientific-strength gate is additional evidence rather than prose:
 broader generated-dispatch-loop throughput, scheduler-extension struct_ops,
-broader callback-level TCP behavior, upstream-integrated skeleton generation
+every tcp-congestion callback path beyond the two tested profiles,
+upstream-integrated skeleton generation
 across libbpf versions, or non-local deployment/longer-duration workload
 evidence.

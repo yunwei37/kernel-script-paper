@@ -84,7 +84,9 @@ build completes from those macros.
   algorithm selection, full loopback byte transfer, client success, and detach
   success for generated and C/eBPF tcp-congestion objects.
 - Struct_ops callback workload results require the same loopback byte-transfer
-  oracle plus callback-map flags for cong_avoid and cwnd_event before detach.
+  oracle plus callback-map flags for cong_avoid and cwnd_event before detach
+  in the clean profile. The loss-injected profile also requires byte transfer
+  plus ssthresh, cong_avoid, set_state, and cwnd_event before detach.
 - Struct_ops skeleton repair results require the original generated userspace
   failures to match the local map-link field mismatch and the repaired
   generated userspace projects to build successfully.
@@ -104,9 +106,9 @@ equivalence, NIC-rate performance, scheduler-extension struct_ops portability,
 or full generated-dispatch-loop throughput. It also labels traffic results as
 local-host veth evidence, labels the direct struct_ops result as object
 compatibility, labels the struct_ops workload as socket-level loopback evidence,
-labels the callback workload as reachability for cong_avoid/cwnd_event only,
-and labels the skeleton repair as a local generated-userspace build repair
-rather than cross-version portability.
+labels the callback workload as clean and loss-injected local reachability
+evidence rather than full callback coverage, and labels the skeleton repair as
+a local generated-userspace build repair rather than cross-version portability.
 
 ## Accepted Warnings
 
@@ -118,11 +120,11 @@ rather than cross-version portability.
    runners, so they do not measure broader generated userspace dispatch-loop
    throughput.
 3. The struct_ops checks cover tcp-congestion object load/attach/detach, a
-   loopback socket workload, and cong_avoid/cwnd_event callback flags only, and
-   the skeleton repair covers local generated userspace builds only. They do
-   not cover scheduler-extension struct_ops, broader tcp-congestion callback
-   behavior, running the repaired binaries, or broad libbpf-version
-   portability.
+   loopback socket workload, clean cong_avoid/cwnd_event callback flags, and
+   loss-injected ssthresh/cong_avoid/set_state/cwnd_event flags. The skeleton
+   repair covers local generated userspace builds only. These checks do not
+   cover scheduler-extension struct_ops, every tcp-congestion callback path,
+   running the repaired binaries, or broad libbpf-version portability.
 4. The generated-structure result is a corpus artifact result, not a
    developer-effort study against an expert C implementation.
 

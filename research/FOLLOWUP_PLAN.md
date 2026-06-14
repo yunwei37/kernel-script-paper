@@ -9,8 +9,8 @@ isolated XDP attach matrix, local XDP and TC traffic benchmarks, one generated
 perf_event loader lifecycle latency check, a perf_event page-fault counter
 workload, a ringbuf event-emission workload, a direct tcp-congestion struct_ops
 load/attach/detach compatibility check, a loopback TCP workload through selected
-BPF tcp-congestion algorithms, a callback-flag workload for cong_avoid and
-cwnd_event, a local struct_ops skeleton build repair, and a broader 28-case
+BPF tcp-congestion algorithms, a callback-flag workload with clean and
+loss-injected reachability profiles, a local struct_ops skeleton build repair, and a broader 28-case
 static negative corpus. It now also includes a longer XDP/TC traffic stress
 rerun.
 It is closer to a top-systems weak accept, but still not there. The main
@@ -50,8 +50,10 @@ compiler integration, and non-local or longer-duration deployment methodology.
   transfers 1MiB, and requires byte-count and detach success.
 - Added `experiments/run_struct_ops_callback_workload.py`, which instruments
   generated and hand-written tcp-congestion callbacks with BPF map flags,
-  transfers 4MiB over loopback TCP, and requires cong_avoid plus cwnd_event to
-  be reached before detach.
+  transfers 4MiB over clean loopback TCP and requires cong_avoid plus
+  cwnd_event to be reached before detach. It also applies 5% loopback loss and
+  requires ssthresh, cong_avoid, set_state, and cwnd_event in 5/5 trials per
+  variant.
 - Added `experiments/run_traffic_stress.py`, which reruns matched XDP and TC
   pass/count traffic checks for three 5s trials per variant while preserving
   the headline 1s summaries.

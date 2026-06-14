@@ -1,6 +1,6 @@
 {
   "bytes_per_trial": 4194304,
-  "description": "loopback TCP workload with struct_ops callback flags",
+  "description": "clean and loss-injected loopback TCP workloads with struct_ops callback flags",
   "flag_names": [
     "ssthresh",
     "undo_cwnd",
@@ -8,6 +8,341 @@
     "set_state",
     "cwnd_event"
   ],
+  "loss_bytes_per_trial": 4194304,
+  "loss_percent": "5%",
+  "loss_required_callback_flags": [
+    "ssthresh",
+    "cong_avoid",
+    "set_state",
+    "cwnd_event"
+  ],
+  "loss_rows": [
+    {
+      "attach_ok_samples": [
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "bytes_per_trial": 4194304,
+      "bytes_received_samples": [
+        4194304,
+        4194304,
+        4194304,
+        4194304,
+        4194304
+      ],
+      "callback_any_samples": [
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "callback_flags_by_slot": [
+        [
+          1,
+          1,
+          1,
+          1,
+          1
+        ],
+        [
+          0,
+          0,
+          0,
+          0,
+          1
+        ],
+        [
+          1,
+          1,
+          1,
+          1,
+          1
+        ],
+        [
+          1,
+          1,
+          1,
+          1,
+          1
+        ],
+        [
+          1,
+          1,
+          1,
+          1,
+          1
+        ]
+      ],
+      "callback_map_found_samples": [
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "callback_oracle_samples": [
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "callback_positive_slots_samples": [
+        4,
+        4,
+        4,
+        4,
+        5
+      ],
+      "cc_name": "minimal_cc",
+      "cc_selected_samples": [
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "client_ok_samples": [
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "detach_ok_samples": [
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "elapsed_sec_samples": [
+        15.27012,
+        1.294616,
+        0.050752,
+        1.120915,
+        5.463973
+      ],
+      "flags_map": "callback_flags",
+      "implementation": "kernelscript",
+      "load_ok_samples": [
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "loss_percent": "5%",
+      "map_name": "minimal_congestion_control",
+      "median_elapsed_sec": 1.294616,
+      "median_mib_per_sec": 3.089719,
+      "name": "ks_generated",
+      "network_profile": "loopback_netem_loss",
+      "object": "results/build/struct_ops_callback_workload/kernelscript/struct_ops_callback_count.ebpf.o",
+      "oracle_passed": true,
+      "required_callback_flags": [
+        "ssthresh",
+        "cong_avoid",
+        "set_state",
+        "cwnd_event"
+      ],
+      "required_callback_ok_counts": [
+        5,
+        5,
+        5,
+        5
+      ],
+      "returncodes": [
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "runner_clean_callback_required_samples": [
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "trials": 5,
+      "workload_ok_samples": [
+        1,
+        1,
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "attach_ok_samples": [
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "bytes_per_trial": 4194304,
+      "bytes_received_samples": [
+        4194304,
+        4194304,
+        4194304,
+        4194304,
+        4194304
+      ],
+      "callback_any_samples": [
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "callback_flags_by_slot": [
+        [
+          1,
+          1,
+          1,
+          1,
+          1
+        ],
+        [
+          1,
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          1,
+          1,
+          1,
+          1,
+          1
+        ],
+        [
+          1,
+          1,
+          1,
+          1,
+          1
+        ],
+        [
+          1,
+          1,
+          1,
+          1,
+          1
+        ]
+      ],
+      "callback_map_found_samples": [
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "callback_oracle_samples": [
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "callback_positive_slots_samples": [
+        5,
+        4,
+        4,
+        4,
+        4
+      ],
+      "cc_name": "ks_cb_cc",
+      "cc_selected_samples": [
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "client_ok_samples": [
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "detach_ok_samples": [
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "elapsed_sec_samples": [
+        0.045786,
+        0.253963,
+        12.017398,
+        10.726005,
+        5.245195
+      ],
+      "flags_map": "callback_flags",
+      "implementation": "handwritten_c",
+      "load_ok_samples": [
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "loss_percent": "5%",
+      "map_name": "ks_paper_cb_cc",
+      "median_elapsed_sec": 5.245195,
+      "median_mib_per_sec": 0.762603,
+      "name": "c_libbpf",
+      "network_profile": "loopback_netem_loss",
+      "object": "results/build/struct_ops_callback_workload/handwritten/struct_ops_tcp_callback_flags.o",
+      "oracle_passed": true,
+      "required_callback_flags": [
+        "ssthresh",
+        "cong_avoid",
+        "set_state",
+        "cwnd_event"
+      ],
+      "required_callback_ok_counts": [
+        5,
+        5,
+        5,
+        5
+      ],
+      "returncodes": [
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "runner_clean_callback_required_samples": [
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "trials": 5,
+      "workload_ok_samples": [
+        1,
+        1,
+        1,
+        1,
+        1
+      ]
+    }
+  ],
+  "loss_trials": 5,
   "required_callback_flags": [
     "cong_avoid",
     "cwnd_event"
@@ -149,18 +484,6 @@
         2,
         2
       ],
-      "callback_required_samples": [
-        1,
-        1,
-        1,
-        1,
-        1,
-        1,
-        1,
-        1,
-        1,
-        1
-      ],
       "cc_name": "minimal_cc",
       "cc_selected_samples": [
         1,
@@ -199,16 +522,16 @@
         1
       ],
       "elapsed_sec_samples": [
-        0.035527,
-        0.032064,
-        0.039879,
-        0.033555,
-        0.033949,
-        0.037499,
-        0.034828,
-        0.042765,
-        0.039081,
-        0.031638
+        0.040386,
+        0.040319,
+        0.035801,
+        0.049858,
+        0.033332,
+        0.035487,
+        0.036804,
+        0.027606,
+        0.030791,
+        0.035919
       ],
       "flags_map": "callback_flags",
       "implementation": "kernelscript",
@@ -224,12 +547,18 @@
         1,
         1
       ],
+      "loss_percent": "",
       "map_name": "minimal_congestion_control",
-      "median_elapsed_sec": 0.035178,
-      "median_mib_per_sec": 113.720272,
+      "median_elapsed_sec": 0.03586,
+      "median_mib_per_sec": 111.545199,
       "name": "ks_generated",
+      "network_profile": "clean_loopback",
       "object": "results/build/struct_ops_callback_workload/kernelscript/struct_ops_callback_count.ebpf.o",
       "oracle_passed": true,
+      "required_callback_flags": [
+        "cong_avoid",
+        "cwnd_event"
+      ],
       "required_callback_ok_counts": [
         10,
         10
@@ -245,6 +574,18 @@
         0,
         0,
         0
+      ],
+      "runner_clean_callback_required_samples": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
       ],
       "trials": 10,
       "workload_ok_samples": [
@@ -396,18 +737,6 @@
         2,
         2
       ],
-      "callback_required_samples": [
-        1,
-        1,
-        1,
-        1,
-        1,
-        1,
-        1,
-        1,
-        1,
-        1
-      ],
       "cc_name": "ks_cb_cc",
       "cc_selected_samples": [
         1,
@@ -446,16 +775,16 @@
         1
       ],
       "elapsed_sec_samples": [
-        0.032095,
-        0.03569,
-        0.030611,
-        0.035839,
-        0.03998,
-        0.025424,
-        0.02975,
-        0.024656,
-        0.041227,
-        0.041959
+        0.028591,
+        0.046867,
+        0.0345,
+        0.036915,
+        0.038921,
+        0.040308,
+        0.031652,
+        0.034872,
+        0.036475,
+        0.033853
       ],
       "flags_map": "callback_flags",
       "implementation": "handwritten_c",
@@ -471,12 +800,18 @@
         1,
         1
       ],
+      "loss_percent": "",
       "map_name": "ks_paper_cb_cc",
-      "median_elapsed_sec": 0.033892,
-      "median_mib_per_sec": 118.353108,
+      "median_elapsed_sec": 0.035673,
+      "median_mib_per_sec": 112.184681,
       "name": "c_libbpf",
+      "network_profile": "clean_loopback",
       "object": "results/build/struct_ops_callback_workload/handwritten/struct_ops_tcp_callback_flags.o",
       "oracle_passed": true,
+      "required_callback_flags": [
+        "cong_avoid",
+        "cwnd_event"
+      ],
       "required_callback_ok_counts": [
         10,
         10
@@ -492,6 +827,18 @@
         0,
         0,
         0
+      ],
+      "runner_clean_callback_required_samples": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
       ],
       "trials": 10,
       "workload_ok_samples": [

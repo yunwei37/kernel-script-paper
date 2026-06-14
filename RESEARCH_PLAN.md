@@ -65,7 +65,9 @@ rebuilds the two generated struct_ops userspace projects before and after a
 version-aware generated-skeleton repair for the local libbpf map-link mismatch.
 `experiments/run_struct_ops_callback_workload.py` adds a callback-flag variant
 of that TCP workload and checks that cong_avoid plus cwnd_event are reached in
-both generated and C/eBPF objects.
+clean loopback transfers, then adds a loss-injected profile that reaches
+ssthresh, cong_avoid, set_state, and cwnd_event in both generated and C/eBPF
+objects.
 
 RQ6. Is the XDP map-update gap caused by the unified source model or by a
 specific lowering choice?
@@ -238,9 +240,11 @@ one libbpf runner.
    - Compiles callback-flag generated and hand-written tcp-congestion
      struct_ops objects.
    - Uses one libbpf runner to load and attach each object, reset callback
-     flags, run a loopback TCP transfer, read callback flags, and detach.
+     flags, run clean and loss-injected loopback TCP transfers, read callback
+     flags, and detach.
    - Requires full byte transfer plus cong_avoid and cwnd_event flags in every
-     trial.
+     clean trial, and full byte transfer plus ssthresh, cong_avoid, set_state,
+     and cwnd_event flags in every loss-injected trial.
    - Writes `results/struct_ops_callback_workload_summary.csv` and
      `results/struct_ops_callback_workload_summary.json`.
 
@@ -307,9 +311,11 @@ At commit `ccb15b4`, on Linux `6.15.11-061511-generic`:
 - The struct_ops TCP workload check selects the generated and C/eBPF BPF
   congestion-control algorithms on loopback sender sockets, transfers 1MiB, and
   detaches successfully in 10 of 10 privileged trials for both variants.
-- The struct_ops callback workload check transfers 4MiB on loopback and
+- The struct_ops callback workload check transfers 4MiB on clean loopback and
   confirms cong_avoid plus cwnd_event flags in 10 of 10 privileged trials for
-  both generated and C/eBPF variants.
+  both generated and C/eBPF variants. Its 5% loss-injected profile transfers
+  4MiB in 5 of 5 trials per variant and confirms ssthresh, cong_avoid,
+  set_state, and cwnd_event for both variants.
 - The struct_ops skeleton repair check confirms the original generated
   userspace builds succeed for 0 of 2 affected examples, removes 2 local
   version-incompatible map-link assignments from generated skeleton headers,
@@ -369,12 +375,13 @@ repository-example loader against a matched C/libbpf loader, the counter
 workload checks one sustained page-fault event path, and the ring-buffer
 workload checks object-level event delivery and loss. The struct_ops TCP
 workload checks socket-level algorithm selection and byte transfer, and the
-callback-flag workload checks cong_avoid/cwnd_event reachability for that
-loopback transfer. The repair checks one local generated userspace build fix
-but does not run the repaired binaries. The evaluation still does not validate
-NIC-rate throughput, scheduler-extension struct_ops behavior, broader
-callback-level TCP coverage beyond those two flags, broader skeleton version
-coverage, broader perf_event workloads, or generated-loader throughput.
+callback-flag workload checks clean-loopback cong_avoid/cwnd_event reachability
+and loss-injected ssthresh/cong_avoid/set_state/cwnd_event reachability. The
+repair checks one local generated userspace build fix but does not run the
+repaired binaries. The evaluation still does not validate NIC-rate throughput,
+scheduler-extension struct_ops behavior, every tcp-congestion callback path,
+broader skeleton version coverage, broader perf_event workloads, or
+generated-loader throughput.
 A full runtime comparison should add matched hand-written C/libbpf baselines
 for struct_ops programs, upstream-integrated skeleton generation across libbpf
 versions, broader perf_event workloads, and larger or non-local XDP/TC stress

@@ -45,43 +45,27 @@ Realistic eBPF applications span verifier-constrained kernel programs,
 userspace loaders, shared maps, skeletons, and sometimes kernel-module code.
 This paper studies \tool, a beta domain-specific language (DSL) that explores
 whether these pieces can be represented in one type-checked source model and
-lowered to conventional libbpf-compatible artifacts.  At commit
-\KSCommitShort{}, \KSKSCompileOK{} of \KSTotalExamples{} repository examples
-compile from \tool{} source, \KSMakeOK{} of \KSTotalExamples{} build into
-generated C/eBPF projects, \KSVerifierBuildLoadOK{} of
+lowered to conventional libbpf-compatible artifacts.  The scientific question
+is whether such a unified model can expose cross-boundary eBPF structure to the
+compiler without abandoning the ordinary Linux BPF toolchain.
+
+At commit \KSCommitShort{}, \KSKSCompileOK{} of \KSTotalExamples{} repository
+examples compile from \tool{} source and \KSMakeOK{} of \KSTotalExamples{}
+build into generated C/eBPF projects.  The checked-in evaluation then tests
+selected early rejections, strict verifier loading, isolated XDP attachment,
+matched XDP and TC traffic, perf-event counters, ring-buffer event delivery,
+and tcp-congestion struct\_ops compatibility.  \KSVerifierBuildLoadOK{} of
 \KSVerifierBuildObjects{} build-success generated objects verifier-load under a
 strict pinned-program criterion, and \KSAttachOK{} of \KSAttachEligible{}
-verifier-clean single-section Express Data Path (XDP) objects attach and detach
-in isolated namespaces.  Matched local checks cover XDP and traffic control
-(TC) traffic, perf-event counters, ring-buffer event emission, direct
-struct\_ops load/attach/detach compatibility, a loopback struct\_ops TCP
-workload, and callback-flag reachability.  Over \KSRingbufTrials{} trials,
-both generated and C/eBPF ring-buffer objects submit and receive
-\KSRingbufEvents{} events per trial, with \KSRingbufKsDropped{} and
-\KSRingbufCDropped{} drops, respectively, and report \KSRingbufKsMps{} versus
-\KSRingbufCMps{} million events/s.  A direct struct\_ops compatibility check
-loads, attaches, and detaches the generated tcp-congestion object in
-\KSStructOpsKsDetachOK{}/\KSStructOpsTrials{} trials and the minimal C/eBPF
-tcp-congestion object in \KSStructOpsCDetachOK{}/\KSStructOpsTrials{} trials.
-A loopback TCP workload then selects the generated BPF congestion-control
-algorithm and transfers \KSStructOpsWorkloadMiB{}MiB in
-\KSStructOpsWorkloadKsOK{}/\KSStructOpsWorkloadTrials{} trials, matching
-\KSStructOpsWorkloadCOK{}/\KSStructOpsWorkloadTrials{} trials for the C/eBPF
-object.  A callback-instrumented TCP workload then transfers
-\KSStructOpsCallbackMiB{}MiB and sets the required
-\KSStructOpsCallbackRequired{} flags in
-\KSStructOpsCallbackKsOracleOK{}/\KSStructOpsCallbackTrials{} generated trials,
-matching \KSStructOpsCallbackCOracleOK{}/\KSStructOpsCallbackTrials{} C/eBPF
-trials.  These checks separate object compatibility, socket-level workload
-behavior, and two callback-reachability flags from a skeleton-header version
-mismatch.  A version-aware skeleton repair then builds
-\KSStructOpsRepairBuildOK{}/\KSStructOpsRepairExamples{} generated
-struct\_ops userspace projects on libbpf \KSStructOpsRepairLibbpfVersion{}.
-The
-results support an artifact/prototype claim: \tool{} centralizes recurring
-project structure for this repository corpus and exposes concrete
-compatibility limits, but it does not yet establish broad runtime equivalence
-or broad struct\_ops portability.
+verifier-clean single-section XDP objects attach and detach in isolated
+namespaces.  For struct\_ops, shared libbpf runners distinguish direct object
+load/attach/detach, loopback TCP byte-transfer behavior, callback reachability
+under clean and loss-trigger profiles, and a local skeleton-header repair that
+builds \KSStructOpsRepairBuildOK{}/\KSStructOpsRepairExamples{} affected
+generated userspace projects.  The results support an artifact/prototype
+claim: \tool{} centralizes recurring project structure for this repository
+corpus and exposes concrete compatibility limits, but it does not yet establish
+broad runtime equivalence or broad struct\_ops portability.
 \end{minipage}
 \vspace{1.0em}
 \end{center}
@@ -370,8 +354,11 @@ transferring a fixed byte count, and checking algorithm selection, byte count,
 and detach success for generated and C/eBPF objects.
 \textbf{Struct\_ops callback reachability} is measured by instrumenting the
 generated and C/eBPF tcp-congestion callbacks with BPF array-map flags and
-checking that the same loopback workload reaches \KSStructOpsCallbackRequired{}
-for both variants.
+checking that the clean loopback workload reaches \KSStructOpsCallbackRequired{}
+while a \KSStructOpsCallbackLossPct{} loss-injected loopback workload reaches
+\KSStructOpsCallbackLossRequired{} for both variants.  The loss setting is a
+callback-trigger profile chosen to enter loss-recovery paths, not a robustness
+or TCP-performance sweep.
 \textbf{Struct\_ops skeleton repair} is measured by rebuilding the two
 generated struct\_ops userspace projects, detecting whether the installed
 libbpf skeleton header exposes map-link fields, and applying a minimal
@@ -395,7 +382,7 @@ Project generation & Repository examples lowered to generated projects & Compile
 Early checks & Unit tests and targeted invalid programs & Dune and static-check harnesses & Test success and expected diagnostic categories & Selected cases, not soundness \\
 Compatibility & Generated objects and generated perf loader & Local kernel/toolchain & Pinned-program load criterion, attach state, loader attach/read/detach and invocation timing & Local host only \\
 Runtime sanity & Generated XDP, TC, perf-counter, and ring-buffer objects & Matched C/eBPF objects or shared libbpf runner & iperf3 JSON, positive map counts, perf-counter equality, submitted/received/drop counts & Local workloads only \\
-Struct\_ops compatibility & Generated tcp-congestion object and generated skeleton projects & Minimal C/eBPF object with same function set; installed libbpf header & Shared libbpf runner load/attach/detach; loopback TCP byte-transfer; callback flags; repaired userspace build status & Local object compatibility, socket workload, callback reachability for two functions, and skeleton build repair only; no scheduler workload \\
+Struct\_ops compatibility & Generated tcp-congestion object and generated skeleton projects & Minimal C/eBPF object with same function set; installed libbpf header & Shared libbpf runner load/attach/detach; loopback TCP byte-transfer; clean and loss-injected callback flags; repaired userspace build status & Local object compatibility, socket workload, callback reachability for two clean functions and four loss-injected functions, and skeleton build repair only; no scheduler workload \\
 \bottomrule
 \end{tabular}
 \end{table*}
@@ -516,7 +503,7 @@ skeleton compatibility problem for this host.
 map-link assignments that point at struct\_ops links and rebuilds the two
 affected generated userspace projects.  On this host, the original generated
 userspace builds succeed in
-\KSStructOpsRepairBaselineBuildOK{}/\KSStructOpsRepairExamples{} cases; after
+\KSStructOpsRepairBaselineBuildOK{}/\KSStructOpsRepairExamples{} cases.  After
 the repair, \KSStructOpsRepairBuildOK{}/\KSStructOpsRepairExamples{} build.
 The script removes \KSStructOpsRepairRemovedAssignments{} assignments across
 the two examples.  This is a version-aware local build repair for the observed
@@ -532,7 +519,7 @@ that the socket reports the requested algorithm, transfers
 \KSStructOpsWorkloadMiB{}MiB, and detaches the link.  Across
 \KSStructOpsWorkloadTrials{} trials, the generated object selects the BPF
 algorithm, transfers the full byte count, and detaches in
-\KSStructOpsWorkloadKsOK{}/\KSStructOpsWorkloadTrials{} trials; the C/eBPF
+\KSStructOpsWorkloadKsOK{}/\KSStructOpsWorkloadTrials{} trials.  The C/eBPF
 object does the same in
 \KSStructOpsWorkloadCOK{}/\KSStructOpsWorkloadTrials{} trials.  Median
 end-to-end invocation times are \KSStructOpsWorkloadKsElapsedMs{}ms and
@@ -544,8 +531,11 @@ BPF callbacks rather than only selecting a registered algorithm,
 \texttt{run\_struct\_ops\_callback\_workload.py} instruments the generated and
 C/eBPF tcp-congestion objects with a five-slot BPF array map.  Each callback
 sets its own flag, and the shared runner clears the map before transfer and
-reads it before detach.  Across \KSStructOpsCallbackTrials{} trials of
-\KSStructOpsCallbackMiB{}MiB, the generated object completes the byte-transfer
+reads it before detach.  The runner also prints a clean-profile
+\texttt{callback\_clean\_required} field, while the Python harness computes the
+profile-specific oracle from the required flag list.  Across
+\KSStructOpsCallbackTrials{} trials of \KSStructOpsCallbackMiB{}MiB, the
+generated object completes the byte-transfer
 oracle in \KSStructOpsCallbackKsOK{}/\KSStructOpsCallbackTrials{} trials and
 sets both \KSStructOpsCallbackRequired{} in
 \KSStructOpsCallbackKsOracleOK{}/\KSStructOpsCallbackTrials{} trials.  The
@@ -556,8 +546,20 @@ trials.  The generated object sets \texttt{cong\_avoid} and
 \texttt{cwnd\_event} in \KSStructOpsCallbackKsCongAvoid{} and
 \KSStructOpsCallbackKsCwndEvent{} trials, respectively, matching
 \KSStructOpsCallbackCCongAvoid{} and \KSStructOpsCallbackCCwndEvent{} C/eBPF
-trials.  This is callback-reachability evidence for this loopback workload,
-not coverage of every tcp-congestion callback or a TCP performance result.
+trials.  The same script then adds \KSStructOpsCallbackLossPct{} loss to the
+loopback device with \texttt{tc netem} as a callback-trigger profile and repeats
+\KSStructOpsCallbackLossTrials{} \KSStructOpsCallbackLossMiB{}MiB trials per
+variant.  Under loss, the generated object completes
+\KSStructOpsCallbackKsLossOK{}/\KSStructOpsCallbackLossTrials{} byte-transfer
+trials and sets \KSStructOpsCallbackLossRequired{} in
+\KSStructOpsCallbackKsLossOracleOK{}/\KSStructOpsCallbackLossTrials{} trials.
+The C/eBPF object matches with \KSStructOpsCallbackCLossOK{}/\KSStructOpsCallbackLossTrials{}
+byte-transfer trials and \KSStructOpsCallbackCLossOracleOK{}/\KSStructOpsCallbackLossTrials{}
+callback-oracle trials.  The \texttt{undo\_cwnd} flag is not part of the loss
+oracle, and it appears in \KSStructOpsCallbackKsLossUndoCwnd{} generated loss
+trials and \KSStructOpsCallbackCLossUndoCwnd{} C/eBPF loss trials.  This is
+callback-reachability evidence for two local loopback profiles, not coverage of
+every tcp-congestion callback or a TCP performance result.
 
 \textbf{Verifier-load matrix.}  Build success is still weaker than kernel
 acceptance, so \texttt{run\_verifier\_matrix.py} loads generated objects with
@@ -633,8 +635,10 @@ programs with comparable hand-written baselines.
 median generated project size, counting userspace C, eBPF C, optional module
 C, and Makefile lines but excluding generated \texttt{vmlinux.h} and skeleton
 headers, is \KSMedianGeneratedSloc{} lines.  The median expansion factor is
-\KSMedianGeneratedRatio{}.  These measurements show that a small unified source file
-centralizes hundreds of lines of low-level build and coordination code.
+\KSMedianGeneratedRatio{}.  These measurements show that the compiler emits a
+median \KSMedianGeneratedSloc{} generated source and build lines from
+\KSMedianKSSloc{} \tool{} source lines, giving generated-structure evidence
+rather than a direct developer-effort result.
 
 The metric is intentionally conservative.  It does not say that every
 generated line is exactly a hand-written line saved, and it does not compare
@@ -821,9 +825,10 @@ libbpf runner can load, attach, and detach the generated tcp-congestion
 struct\_ops object on this host, and a loopback TCP socket can select the
 registered BPF congestion-control algorithm and transfer data.  A
 callback-flag variant shows that this workload reaches \texttt{cong\_avoid}
-and \texttt{cwnd\_event} in both generated and C/eBPF objects, so the measured
-failure is not simply an invalid object, unusable TCP algorithm, or entirely
-unreached callback path.  The
+and \texttt{cwnd\_event} in both generated and C/eBPF objects, and the
+loss-injected profile also reaches \texttt{ssthresh} and \texttt{set\_state}.
+Thus, the measured failure is not simply an invalid object, unusable TCP
+algorithm, or entirely unreached callback path.  The
 skeleton-repair experiment shows that one local map-link mismatch can be
 handled with a version-aware generated-header repair, but a production compiler
 would still need to integrate that decision into generation, dependency checks,
@@ -890,8 +895,10 @@ generated-dispatch-loop throughput.
 The struct\_ops compatibility checks also use shared libbpf runners.  The TCP
 workload validates socket-level algorithm selection and byte transfer through
 the generated and C/eBPF tcp-congestion objects, and the callback-flag workload
-validates that this loopback transfer reaches \texttt{cong\_avoid} and
-\texttt{cwnd\_event} in both variants.  The skeleton repair validates a local
+validates that a clean loopback transfer reaches \texttt{cong\_avoid} and
+\texttt{cwnd\_event} in both variants.  Its loss-injected profile also reaches
+\texttt{ssthresh}, \texttt{cong\_avoid}, \texttt{set\_state}, and
+\texttt{cwnd\_event}.  The skeleton repair validates a local
 generated-userspace build fix for the observed map-link mismatch.  These
 checks do not measure production TCP performance, cover every
 tcp-congestion-control callback, cover scheduler-extension struct\_ops, prove
@@ -935,48 +942,29 @@ space.
 \section{Conclusion}
 
 \tool{} is an early but useful prototype for studying typed unified-source
-eBPF development.  Our artifact evaluation shows that the current compiler
-passes a broad test suite, compiles \KSKSCompileOK{} of \KSTotalExamples{}
-repository examples, builds \KSMakeOK{} of \KSTotalExamples{} generated
-projects, verifier-loads \KSVerifierBuildLoadOK{} of \KSVerifierBuildObjects{}
-build-success objects, attaches and detaches \KSAttachOK{} of
-\KSAttachEligible{} verifier-clean single-section XDP objects in isolated
-namespaces, runs matched XDP and TC traffic baselines and a longer local traffic
-stress rerun,
-rejects \KSStaticExpectedFailures{} invalid programs in a targeted static
-corpus, runs a minimal XDP attach/detach smoke test, runs a generated
-perf-event loader through \KSPerfLoaderTrials{} attach/counter-read/detach
-trials with median end-to-end invocation latency \KSPerfLoaderKsElapsedMs{}ms,
-exercises a sustained perf-event page-fault counter workload, and delivers
-\KSRingbufEvents{} ring-buffer events per trial over \KSRingbufTrials{} trials
-in a matched object workload, with \KSRingbufKsDropped{} generated-object drops
-and \KSRingbufCDropped{} C/eBPF-object drops.  The direct struct\_ops
-compatibility check also loads,
-attaches, and detaches a generated tcp-congestion struct\_ops object in
-\KSStructOpsKsDetachOK{}/\KSStructOpsTrials{} trials, and a version-aware
-skeleton repair builds \KSStructOpsRepairBuildOK{}/\KSStructOpsRepairExamples{}
-previously failing generated struct\_ops userspace projects on this host.  A
-loopback TCP workload also selects the generated BPF congestion-control
-algorithm, transfers \KSStructOpsWorkloadMiB{}MiB, and detaches in
-\KSStructOpsWorkloadKsOK{}/\KSStructOpsWorkloadTrials{} trials, matching
-\KSStructOpsWorkloadCOK{}/\KSStructOpsWorkloadTrials{} C/eBPF trials.  A
-callback-flag variant transfers \KSStructOpsCallbackMiB{}MiB and reaches
-\KSStructOpsCallbackRequired{} in
-\KSStructOpsCallbackKsOracleOK{}/\KSStructOpsCallbackTrials{} generated trials,
-matching \KSStructOpsCallbackCOracleOK{}/\KSStructOpsCallbackTrials{} C/eBPF
-trials.  The
-median successful example expands from \KSMedianKSSloc{} lines of \tool{} to
-\KSMedianGeneratedSloc{} lines of generated C and build logic, giving concrete
-evidence that the model centralizes recurring project structure.  The remaining gaps
-are equally clear: version-aware skeleton handling needs upstream integration
-and broader version coverage, scheduler-extension struct\_ops and broader
-callback-level TCP behavior remain incompletely tested, and the experimental map-update
-compiler patch needs upstream integration, semantic generalization, and broader
-runtime tests.  Taken together,
-the results frame \tool{}'s scientific contribution as an exploration of a
-compiler-checked unified programming model for eBPF, with a reproducible path for
-evaluating whether that model reduces complexity without abandoning the kernel
-toolchain.
+eBPF development.  The checked-in artifact supports three bounded claims.  First,
+the public compiler can centralize recurring project structure for this
+repository corpus: \KSKSCompileOK{} of \KSTotalExamples{} examples compile,
+\KSMakeOK{} build, and the median successful example expands from
+\KSMedianKSSloc{} \tool{} source lines to \KSMedianGeneratedSloc{} generated
+source and build lines.  Second, the implementation exposes selected errors
+before kernel loading: the targeted static corpus includes
+\KSStaticExpectedFailures{} expected invalid programs, and the evaluation keeps
+those diagnostics executable.  Third, the generated artifacts are not merely
+syntactic outputs on this host: verifier loading, isolated XDP attachment,
+matched XDP/TC, perf-event, ring-buffer, and tcp-congestion struct\_ops checks
+exercise local load, attach, event, traffic, and callback paths against explicit
+oracles.
+
+The contribution is therefore a reproducible prototype study rather than a
+finished eBPF replacement.  It shows how a compiler-checked unified programming
+model can make selected cross-boundary eBPF structure explicit while still
+lowering through libbpf and bpftool.  The remaining gates are also clear:
+version-aware skeleton handling needs upstream integration and broader version
+coverage, scheduler-extension struct\_ops and broader callback-level TCP
+behavior remain incompletely tested, generated-loader dispatch-loop throughput
+needs stronger workloads, and the experimental map-update compiler patch needs
+upstream integration plus broader semantic and runtime validation.
 
 \bibliographystyle{plain}
 \bibliography{references}

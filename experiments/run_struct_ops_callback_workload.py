@@ -22,8 +22,12 @@ LOGS = RESULTS / "logs" / "struct_ops_callback_workload"
 COMPILER = REPO / "_build" / "default" / "src" / "main.exe"
 TRIALS = int(os.environ.get("KERNELSCRIPT_STRUCT_OPS_CALLBACK_TRIALS", "10"))
 BYTES = int(os.environ.get("KERNELSCRIPT_STRUCT_OPS_CALLBACK_BYTES", str(4 * 1024 * 1024)))
+LOSS_TRIALS = int(os.environ.get("KERNELSCRIPT_STRUCT_OPS_CALLBACK_LOSS_TRIALS", "5"))
+LOSS_BYTES = int(os.environ.get("KERNELSCRIPT_STRUCT_OPS_CALLBACK_LOSS_BYTES", str(4 * 1024 * 1024)))
+LOSS_PERCENT = os.environ.get("KERNELSCRIPT_STRUCT_OPS_CALLBACK_LOSS_PERCENT", "5%")
 FLAG_NAMES = ["ssthresh", "undo_cwnd", "cong_avoid", "set_state", "cwnd_event"]
 REQUIRED_FLAGS = [2, 4]
+LOSS_REQUIRED_FLAGS = [0, 2, 3, 4]
 
 
 def run(
@@ -59,7 +63,7 @@ def check(cmd: subprocess.CompletedProcess[str], label: str) -> None:
 def check_prerequisites() -> str | None:
     if run(["true"], sudo=True).returncode != 0:
         return "sudo -n unavailable"
-    for cmd in ["bpftool", "clang", "gcc", "make", "pkg-config"]:
+    for cmd in ["bpftool", "clang", "gcc", "make", "pkg-config", "tc"]:
         if not shutil.which(cmd):
             return f"{cmd} unavailable"
     if not Path("/sys/kernel/btf/vmlinux").exists():
@@ -173,8 +177,21 @@ def callback_flags(values: dict[str, str]) -> list[int]:
     return [int_value(values, f"callback_flag_{idx}") for idx in range(len(FLAG_NAMES))]
 
 
-def callback_passed(flags: list[int]) -> bool:
-    return all(flags[idx] > 0 for idx in REQUIRED_FLAGS)
+def callback_passed(flags: list[int], required_flags: list[int]) -> bool:
+    return all(flags[idx] > 0 for idx in required_flags)
+
+
+def cleanup_loopback_qdisc(label: str, idx: int) -> None:
+    proc = run(["tc", "qdisc", "del", "dev", "lo", "root"], sudo=True)
+    write(LOGS / f"{label}.trial{idx}.tc_cleanup.stdout", proc.stdout)
+    write(LOGS / f"{label}.trial{idx}.tc_cleanup.stderr", proc.stderr)
+
+
+def add_loopback_loss(label: str, idx: int) -> None:
+    proc = run(["tc", "qdisc", "add", "dev", "lo", "root", "netem", "loss", LOSS_PERCENT], sudo=True)
+    write(LOGS / f"{label}.trial{idx}.tc_add.stdout", proc.stdout)
+    write(LOGS / f"{label}.trial{idx}.tc_add.stderr", proc.stderr)
+    check(proc, f"{label} trial {idx} add loopback netem loss")
 
 
 def trial(
@@ -185,22 +202,40 @@ def trial(
     flags_map: str,
     runner: Path,
     idx: int,
+    bytes_requested: int,
+    required_flags: list[int],
+    network_profile: str,
+    use_loss: bool = False,
 ) -> dict[str, object]:
+    if use_loss:
+        cleanup_loopback_qdisc(name, idx)
+        add_loopback_loss(name, idx)
+
     start = time.perf_counter()
-    proc = run(
-        [str(runner), str(obj), map_name, cc_name, str(BYTES), flags_map],
-        sudo=True,
-        timeout=120,
-    )
-    elapsed = time.perf_counter() - start
+    try:
+        proc = run(
+            [str(runner), str(obj), map_name, cc_name, str(bytes_requested), flags_map],
+            sudo=True,
+            timeout=180,
+        )
+        elapsed = time.perf_counter() - start
+    finally:
+        if use_loss:
+            cleanup_loopback_qdisc(name, idx)
+
     write(LOGS / f"{name}.trial{idx}.stdout", proc.stdout)
     write(LOGS / f"{name}.trial{idx}.stderr", proc.stderr)
     parsed = parse_key_values(proc.stdout + proc.stderr)
     bytes_received = int_value(parsed, "bytes_received")
     flags = callback_flags(parsed)
-    callback_ok = callback_passed(flags)
+    callback_ok = callback_passed(flags, required_flags)
+    runner_clean_required = int_value(parsed, "callback_clean_required")
+    if "callback_clean_required" not in parsed and "callback_required" in parsed:
+        runner_clean_required = int_value(parsed, "callback_required")
     return {
         "trial": idx,
+        "network_profile": network_profile,
+        "loss_percent": LOSS_PERCENT if use_loss else "",
         "returncode": proc.returncode,
         "elapsed_sec": round(elapsed, 6),
         "load_ok": int_value(parsed, "load_ok"),
@@ -213,7 +248,7 @@ def trial(
         "callback_flags": flags,
         "callback_any": int_value(parsed, "callback_any"),
         "callback_positive_slots": int_value(parsed, "callback_positive_slots"),
-        "callback_required": int_value(parsed, "callback_required"),
+        "runner_clean_callback_required": runner_clean_required,
         "callback_oracle_passed": callback_ok,
         "detach_ok": int_value(parsed, "detach_ok"),
         "oracle_passed": (
@@ -222,10 +257,10 @@ def trial(
             and int_value(parsed, "attach_ok") == 1
             and int_value(parsed, "client_ok") == 1
             and int_value(parsed, "cc_selected") == 1
-            and bytes_received == BYTES
+            and bytes_received == bytes_requested
             and int_value(parsed, "workload_ok") == 1
             and int_value(parsed, "callback_map_found") == 1
-            and int_value(parsed, "callback_required") == 1
+            and runner_clean_required == 1
             and callback_ok
             and int_value(parsed, "detach_ok") == 1
         ),
@@ -244,13 +279,33 @@ def summarize(
     cc_name: str,
     flags_map: str,
     runner: Path,
+    trials: int,
+    bytes_requested: int,
+    required_flags: list[int],
+    network_profile: str,
+    use_loss: bool = False,
 ) -> dict[str, object]:
-    samples = [trial(name, obj, map_name, cc_name, flags_map, runner, i) for i in range(TRIALS)]
+    samples = [
+        trial(
+            name,
+            obj,
+            map_name,
+            cc_name,
+            flags_map,
+            runner,
+            i,
+            bytes_requested,
+            required_flags,
+            network_profile,
+            use_loss=use_loss,
+        )
+        for i in range(trials)
+    ]
     elapsed = [float(row["elapsed_sec"]) for row in samples]
     rates = [
         (float(row["bytes_received"]) / (1024 * 1024)) / float(row["elapsed_sec"])
         for row in samples
-        if float(row["elapsed_sec"]) > 0 and int(row["bytes_received"]) == BYTES
+        if float(row["elapsed_sec"]) > 0 and int(row["bytes_received"]) == bytes_requested
     ]
     flags_by_slot = [
         [int(row["callback_flags"][idx]) for row in samples]
@@ -258,17 +313,20 @@ def summarize(
     ]
     required_ok = [
         sum(1 for row in samples if int(row["callback_flags"][idx]) > 0)
-        for idx in REQUIRED_FLAGS
+        for idx in required_flags
     ]
     return {
         "name": name,
         "implementation": implementation,
+        "network_profile": network_profile,
+        "loss_percent": LOSS_PERCENT if use_loss else "",
         "object": str(obj.relative_to(ROOT)),
         "map_name": map_name,
         "cc_name": cc_name,
         "flags_map": flags_map,
-        "trials": TRIALS,
-        "bytes_per_trial": BYTES,
+        "trials": trials,
+        "bytes_per_trial": bytes_requested,
+        "required_callback_flags": [FLAG_NAMES[idx] for idx in required_flags],
         "returncodes": [int(row["returncode"]) for row in samples],
         "load_ok_samples": [int(row["load_ok"]) for row in samples],
         "attach_ok_samples": [int(row["attach_ok"]) for row in samples],
@@ -281,7 +339,9 @@ def summarize(
         "required_callback_ok_counts": required_ok,
         "callback_any_samples": [int(row["callback_any"]) for row in samples],
         "callback_positive_slots_samples": [int(row["callback_positive_slots"]) for row in samples],
-        "callback_required_samples": [int(row["callback_required"]) for row in samples],
+        "runner_clean_callback_required_samples": [
+            int(row["runner_clean_callback_required"]) for row in samples
+        ],
         "callback_oracle_samples": [int(row["callback_oracle_passed"]) for row in samples],
         "detach_ok_samples": [int(row["detach_ok"]) for row in samples],
         "elapsed_sec_samples": elapsed,
@@ -319,6 +379,10 @@ def main() -> int:
             "minimal_cc",
             "callback_flags",
             runner,
+            TRIALS,
+            BYTES,
+            REQUIRED_FLAGS,
+            "clean_loopback",
         ),
         summarize(
             "c_libbpf",
@@ -328,28 +392,70 @@ def main() -> int:
             "ks_cb_cc",
             "callback_flags",
             runner,
+            TRIALS,
+            BYTES,
+            REQUIRED_FLAGS,
+            "clean_loopback",
         ),
     ]
-    status = "ok" if all(row["oracle_passed"] for row in rows) else "failed"
+    loss_rows = [
+        summarize(
+            "ks_generated",
+            "kernelscript",
+            ks_obj,
+            "minimal_congestion_control",
+            "minimal_cc",
+            "callback_flags",
+            runner,
+            LOSS_TRIALS,
+            LOSS_BYTES,
+            LOSS_REQUIRED_FLAGS,
+            "loopback_netem_loss",
+            use_loss=True,
+        ),
+        summarize(
+            "c_libbpf",
+            "handwritten_c",
+            c_obj,
+            "ks_paper_cb_cc",
+            "ks_cb_cc",
+            "callback_flags",
+            runner,
+            LOSS_TRIALS,
+            LOSS_BYTES,
+            LOSS_REQUIRED_FLAGS,
+            "loopback_netem_loss",
+            use_loss=True,
+        ),
+    ]
+    status = "ok" if all(row["oracle_passed"] for row in rows + loss_rows) else "failed"
     summary = {
         "status": status,
-        "description": "loopback TCP workload with struct_ops callback flags",
+        "description": "clean and loss-injected loopback TCP workloads with struct_ops callback flags",
         "trials": TRIALS,
         "bytes_per_trial": BYTES,
+        "loss_trials": LOSS_TRIALS,
+        "loss_bytes_per_trial": LOSS_BYTES,
+        "loss_percent": LOSS_PERCENT,
         "flag_names": FLAG_NAMES,
         "required_callback_flags": [FLAG_NAMES[idx] for idx in REQUIRED_FLAGS],
+        "loss_required_callback_flags": [FLAG_NAMES[idx] for idx in LOSS_REQUIRED_FLAGS],
         "rows": rows,
+        "loss_rows": loss_rows,
     }
 
     fields = [
         "name",
         "implementation",
+        "network_profile",
+        "loss_percent",
         "object",
         "map_name",
         "cc_name",
         "flags_map",
         "trials",
         "bytes_per_trial",
+        "required_callback_flags",
         "oracle_passed",
         "returncodes",
         "load_ok_samples",
@@ -363,7 +469,7 @@ def main() -> int:
         "required_callback_ok_counts",
         "callback_any_samples",
         "callback_positive_slots_samples",
-        "callback_required_samples",
+        "runner_clean_callback_required_samples",
         "callback_oracle_samples",
         "detach_ok_samples",
         "elapsed_sec_samples",
@@ -382,7 +488,7 @@ def main() -> int:
         "required_callback_ok_counts",
         "callback_any_samples",
         "callback_positive_slots_samples",
-        "callback_required_samples",
+        "runner_clean_callback_required_samples",
         "callback_oracle_samples",
         "detach_ok_samples",
         "elapsed_sec_samples",
@@ -390,10 +496,11 @@ def main() -> int:
     with (RESULTS / "struct_ops_callback_workload_summary.csv").open("w", newline="", encoding="utf-8") as f:
         writer = csv.DictWriter(f, fieldnames=fields, lineterminator="\n")
         writer.writeheader()
-        for row in rows:
+        for row in rows + loss_rows:
             out = dict(row)
             for key in list_fields:
                 out[key] = " ".join(str(value) for value in row[key])
+            out["required_callback_flags"] = " ".join(row["required_callback_flags"])
             out["callback_flags_by_slot"] = ";".join(
                 f"{FLAG_NAMES[idx]}:{' '.join(str(value) for value in values)}"
                 for idx, values in enumerate(row["callback_flags_by_slot"])
@@ -401,7 +508,8 @@ def main() -> int:
             writer.writerow({key: out[key] for key in fields})
 
     write(RESULTS / "struct_ops_callback_workload_summary.json", json.dumps(summary, indent=2, sort_keys=True) + "\n")
-    print(json.dumps({key: summary[key] for key in summary if key != "rows"}, indent=2, sort_keys=True))
+    compact = {key: summary[key] for key in summary if key not in {"rows", "loss_rows"}}
+    print(json.dumps(compact, indent=2, sort_keys=True))
     return 0 if status == "ok" else 1
 
 

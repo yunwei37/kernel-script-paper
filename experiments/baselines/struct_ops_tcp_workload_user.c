@@ -204,7 +204,7 @@ static int reset_callback_flags(struct bpf_map *map) {
     return 0;
 }
 
-static int print_callback_flags(struct bpf_map *map, int *any_out, int *positive_slots_out, int *required_out) {
+static int print_callback_flags(struct bpf_map *map, int *any_out, int *positive_slots_out, int *clean_required_out) {
     int map_fd = bpf_map__fd(map);
     int any = 0;
     int positive_slots = 0;
@@ -233,10 +233,10 @@ static int print_callback_flags(struct bpf_map *map, int *any_out, int *positive
 
     *any_out = any;
     *positive_slots_out = positive_slots;
-    *required_out = saw_cong_avoid && saw_cwnd_event;
+    *clean_required_out = saw_cong_avoid && saw_cwnd_event;
     printf("callback_any=%d\n", any);
     printf("callback_positive_slots=%d\n", positive_slots);
-    printf("callback_required=%d\n", *required_out);
+    printf("callback_clean_required=%d\n", *clean_required_out);
     return 0;
 }
 
@@ -254,7 +254,7 @@ int main(int argc, char **argv) {
     int workload_rc;
     int destroy_rc = 0;
     int callback_any = 1;
-    int callback_required = 1;
+    int callback_clean_required = 1;
     int callback_positive_slots = 0;
     int callback_map_rc = 0;
 
@@ -333,7 +333,7 @@ int main(int argc, char **argv) {
             callback_map,
             &callback_any,
             &callback_positive_slots,
-            &callback_required
+            &callback_clean_required
         );
         if (callback_map_rc != 0) {
             workload_rc = 1;
@@ -348,5 +348,5 @@ int main(int argc, char **argv) {
     }
 
     bpf_object__close(obj);
-    return workload_rc == 0 && received == bytes && destroy_rc == 0 && callback_required ? 0 : 1;
+    return workload_rc == 0 && received == bytes && destroy_rc == 0 && callback_clean_required ? 0 : 1;
 }
