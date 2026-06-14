@@ -1,6 +1,6 @@
 Last updated: 2026-06-13
 Stage at update: experiment-design
-Source/command: top-systems experiment-design follow-up after scheduler-extension verifier diagnostic
+Source/command: top-systems experiment-design follow-up after source-footprint proxy
 
 # Experiment Plan: KernelScript Paper
 
@@ -23,7 +23,7 @@ with measurable local compatibility and runtime behavior.
 
 | ID | Claim | Scope | Metric/evidence needed | Status |
 |----|-------|-------|------------------------|--------|
-| C1 | Unified source centralizes eBPF project structure. | Repository examples and generated artifacts. | Build matrix, feature coverage, SLOC expansion. | partial |
+| C1 | Unified source centralizes eBPF project structure. | Repository examples, generated artifacts, and matched local workload source files. | Build matrix, feature coverage, generated SLOC expansion, and matched source-footprint proxy. | partial |
 | C2 | Selected invalid programs are rejected before load/attach. | Covered static checks. | Unit/static check corpus. | partial |
 | C3 | Generated eBPF objects remain compatible with the local kernel verifier, can attach for an XDP subset, and perf_event/ringbuf/struct_ops examples can complete local lifecycle, object-level, workload, callback-reachability, generated-build, or boundary-diagnostic checks. | Local kernel/toolchain, generated repository examples, verifier-clean single-section XDP subset, perf_event examples, one ringbuf XDP object workload, one tcp-congestion struct_ops object with clean and loss-injected loopback TCP callback-flag workloads, two generated struct_ops userspace build repairs, one scheduler-extension verifier diagnostic, and one opt-in scheduler-extension attach/progress workload for a toy FIFO scheduler. | Strict verifier matrix, isolated XDP attach matrix, perf_event generated-loader and counter workloads, ringbuf submitted/received/drop oracle, struct_ops load/attach/detach, TCP socket workload, clean and loss-injected callback flags, skeleton build-repair oracle, scheduler-extension generated-vs-five-callback-control verifier diagnostic, and scheduler-extension register/progress/unregister oracle. | partial |
 | C4 | The observed XDP count runtime gap is caused by a specific map-update lowering choice, and generated objects can run matched local workloads for XDP, TC, perf_event counters, ringbuf emission, tcp-congestion struct_ops checks, and one toy scheduler-extension attach/progress workload. | XDP array-map count mechanism; local XDP/TC pass/count traffic including one longer stress rerun, perf_event page-fault counter, XDP ringbuf emission, tcp-congestion struct_ops load/attach/detach, loopback TCP transfer, clean callback-flag reachability for cong_avoid/cwnd_event, loss-injected reachability for ssthresh/cong_avoid/set_state/cwnd_event, local struct_ops generated-build repair, scheduler-extension verifier diagnostic, and one bounded scheduler-extension CPU progress/fairness proxy. | Hand-written C/eBPF baseline, compiler-source patch ablation, map-count correctness oracle, traffic and stress results, perf_event counter result, ringbuf event-rate/loss result, struct_ops direct compatibility, TCP workload, callback-flag workload, skeleton repair results, scheduler-extension loadall diagnostic, and scheduler-extension attach/progress summary. | partial |
@@ -35,7 +35,7 @@ with measurable local compatibility and runtime behavior.
 - Durable state: tracked source, result JSON/CSV, paper macros, build logs.
 - Trust/failure boundaries: kernel verifier, libbpf skeleton API, bpftool, local
   kernel BTF, privileged attach path.
-- Workloads: repository examples, static invalid programs, XDP pass/count
+- Workloads: repository examples, matched source-footprint rows, static invalid programs, XDP pass/count
   microbenchmarks, XDP and TC traffic over veth/netns, perf_event loader
   lifecycle latency, longer XDP/TC traffic stress, perf_event page-fault counter
   workload, ringbuf event-emission workload, direct tcp-congestion struct_ops
@@ -68,6 +68,7 @@ with measurable local compatibility and runtime behavior.
 | B14 | C3/C4 | Callback-flag tcp-congestion struct_ops workload | KS vs C/libbpf | TCP algorithm selection, bytes transferred, required callback flags | clean profile sets cong_avoid/cwnd_event; loss profile sets ssthresh/cong_avoid/set_state/cwnd_event | Runtime paragraph | done |
 | B15 | C3/C4 | Scheduler-extension struct_ops verifier diagnostic | KS vs C/eBPF | verifier-load status, pinned programs, sched_ext state | C/eBPF and generated objects verifier-load; no scheduler attach | Runtime paragraph | done |
 | B16 | C3/C4 | Scheduler-extension attach/progress workload | KS vs C/eBPF | register status, sched_ext state, worker progress, fairness dispersion, unregister status | both toy schedulers keep sched_ext enabled during five progress trials, all workers progress, and cleanup returns to disabled | Runtime paragraph | done |
+| B17 | C1 | Matched source-footprint proxy | KS source vs C/eBPF objects plus C/libbpf runners/loaders | nonblank noncomment SLOC, explicit exclusions | source files exist and aggregate counts reconcile to CSV/JSON | Generated-structure paragraph | done |
 
 ## Run Order
 
@@ -88,6 +89,7 @@ with measurable local compatibility and runtime behavior.
 | R012 | supplement | Callback-flag tcp-congestion struct_ops workload | `./experiments/run_struct_ops_callback_workload.py` | 10 clean 4MiB trials plus 5 loss-injected 4MiB trials per variant | generated and C/eBPF objects transfer all bytes; clean profile sets cong_avoid/cwnd_event; loss profile sets ssthresh/cong_avoid/set_state/cwnd_event | low | done |
 | R013 | supplement | Scheduler-extension struct_ops verifier diagnostic | `./experiments/run_sched_ext_verifier.py` | one generated object plus one five-callback C/eBPF control baseline, no attach | C/eBPF and generated objects verifier-load without changing sched_ext state | low | done |
 | R014 | supplement | Scheduler-extension attach/progress workload | `./experiments/run_sched_ext_attach.py --allow-host-scheduler` | C/eBPF and generated toy FIFO schedulers, 5 x 0.75s CPU trials | both variants register, stay enabled through five progress trials, every worker advances, unregister, and return sched_ext to disabled | medium | done |
+| R015 | supplement | Matched source-footprint proxy | `./experiments/run_source_footprint.py` | 11 local workload rows | counts reconcile; generated files and harness code excluded | low | done |
 
 ## Tracker Handoff
 
@@ -105,6 +107,10 @@ with measurable local compatibility and runtime behavior.
   baseline beyond idiomatic libbpf/eBPF for the same operation.
 - What each baseline proves: C/eBPF establishes the ordinary low-level artifact
   path and isolates overhead due to generated code/lowering choices.
+- Source-footprint policy: count maintained C/eBPF object sources and C/libbpf
+  runner or loader files used by matched local baselines, but exclude generated
+  headers, generated C, generated Makefiles, KernelScript library headers, and
+  Python experiment harnesses.
 - Baselines intentionally omitted and why: bpftrace, Aya, and cilium/ebpf are
   not matched for the current XDP C-level codegen question; they remain related
   systems for a broader developer-effort study.
@@ -114,7 +120,8 @@ with measurable local compatibility and runtime behavior.
 - Hardware/software versions: recorded in `results/environment.json`.
 - Seeds/repetitions: deterministic scripts; traffic scripts record trial count
   and seconds.
-- Workload generation: iperf3 TCP over isolated veth/netns for XDP and TC
+- Workload generation: source-footprint row construction for local matched
+  workloads; iperf3 TCP over isolated veth/netns for XDP and TC
   traffic runs plus a longer stress rerun; perf_event software and hardware
   counters for loader lifecycle; page-fault workload for perf_event counter
   runs; BPF_PROG_TEST_RUN plus ring-buffer consumption for ringbuf event runs;
@@ -131,7 +138,7 @@ with measurable local compatibility and runtime behavior.
 ## Residual Uncertainty
 
 - The plan still does not test broad production eBPF applications or developer
-  effort.
+  effort; the current C1 supplement is a local source-footprint proxy only.
 - The XDP and TC traffic experiments are local-host evidence, not NIC-rate
   benchmarks.
 - The generated scheduler-extension object is verifier-clean and one toy
@@ -146,7 +153,7 @@ with measurable local compatibility and runtime behavior.
 
 | Claim | Evidence file(s) | Verdict | Supported wording |
 |-------|------------------|---------|-------------------|
-| C1 | `results/evaluation_summary.json`, `results/examples_summary.csv` | partial | Centralizes generated project structure for repository examples. |
+| C1 | `results/evaluation_summary.json`, `results/examples_summary.csv`, `results/source_footprint_summary.json` | partial | Centralizes generated project structure for repository examples and reports a local matched source-footprint proxy: unique KernelScript application sources total 203 SLOC, C/eBPF object sources total 254 SLOC, and C/libbpf baseline sources total 1105 SLOC when runner or loader files are included. |
 | C2 | `results/static_checks_summary.json` | partial | Matches 28 selected static cases, including 27 expected rejections before load/attach across lifecycle, signature, map, type, symbol, config, helper-scope, kernel-context, perf-event group, ringbuf, and safety categories. |
 | C3 | `results/verifier_matrix_summary.json`, `results/attach_matrix_summary.json`, `results/perf_event_loader_summary.json`, `results/perf_event_counter_summary.json`, `results/ringbuf_workload_summary.json`, `results/struct_ops_compat_summary.json`, `results/struct_ops_workload_summary.json`, `results/struct_ops_callback_workload_summary.json`, `results/struct_ops_skeleton_repair_summary.json`, `results/sched_ext_verifier_summary.json`, `results/sched_ext_attach_summary.json` | partial | Most generated build-success objects load; verifier-clean single-section XDP objects attach; one generated perf_event loader completes 20 attach/read/detach trials with invocation timing; perf_event counter objects run a page-fault workload; ringbuf objects deliver 50000 events/trial with zero drops; tcp-congestion struct_ops objects load, attach, and detach in 3/3 direct libbpf trials; the generated and C/eBPF tcp-congestion objects each complete 10/10 loopback TCP workload trials, 10/10 clean callback-flag trials for cong_avoid/cwnd_event, and 5/5 loss-injected callback-flag trials for ssthresh/cong_avoid/set_state/cwnd_event; the two generated struct_ops userspace build failures repair to 2/2 on this host; scheduler-extension diagnostics show both the five-callback C/eBPF control object and generated object verifier-load, and the opt-in attach harness registers both toy schedulers, runs five bounded progress trials, and unregisters them cleanly. |
 | C4 | `results/compiler_patch_ablation_summary.json`, `results/xdp_traffic_summary.json`, `results/tc_traffic_summary.json`, `results/traffic_stress_summary.json`, `results/perf_event_counter_summary.json`, `results/ringbuf_workload_summary.json`, `results/struct_ops_compat_summary.json`, `results/struct_ops_workload_summary.json`, `results/struct_ops_callback_workload_summary.json`, `results/struct_ops_skeleton_repair_summary.json`, `results/sched_ext_verifier_summary.json`, `results/sched_ext_attach_summary.json` | partial | XDP count gap is tied to map-update lowering; local checks cover XDP and TC pass/count plus a longer stress rerun, a perf_event counter workload, ringbuf event emission, direct tcp-congestion struct_ops load/attach/detach compatibility, a loopback TCP struct_ops workload, clean and loss-injected callback flags, a local struct_ops skeleton build repair, and one toy scheduler-extension attach/progress workload; broader runtime equivalence remains unproven. |

@@ -1,0 +1,12 @@
+name,domain,ks_sources,c_ebpf_sources,c_user_sources,ks_sloc,c_ebpf_sloc,c_user_sloc,c_total_sloc,c_to_ks_ratio,ks_smaller,note
+xdp_pass,xdp,experiments/programs/perf_pass.ks,experiments/baselines/xdp_pass.c,,10,7,0,7,0.7,False,traffic harness supplies attach path for both variants
+xdp_count,xdp,experiments/programs/perf_count.ks,experiments/baselines/xdp_count.c,,12,18,0,18,1.5,True,traffic harness supplies attach path for both variants
+tc_pass,tc,experiments/programs/tc_pass.ks,experiments/baselines/tc_pass.c,,11,10,0,10,0.909,False,traffic harness supplies attach path for both variants
+tc_count,tc,experiments/programs/tc_count.ks,experiments/baselines/tc_count.c,,13,21,0,21,1.615,True,traffic harness supplies attach path for both variants
+perf_event_loader,perf_event,kernelscript/examples/perf_page_fault.ks,experiments/baselines/perf_event_loader.ebpf.c,experiments/baselines/perf_event_loader_user.c,23,7,155,162,7.043,True,counts a hand-written loader because the experiment compares loader lifecycle
+perf_event_counter,perf_event,experiments/programs/perf_event_count.ks,experiments/baselines/perf_event_count.c,experiments/baselines/perf_event_counter_user.c,13,18,150,168,12.923,True,counts the shared C/libbpf counter runner used by both objects
+ringbuf_emit,ringbuf,experiments/programs/ringbuf_emit.ks,experiments/baselines/ringbuf_emit.c,experiments/baselines/ringbuf_counter_user.c,24,39,181,220,9.167,True,counts the shared C/libbpf ring-buffer runner used by both objects
+struct_ops_direct,struct_ops,kernelscript/examples/struct_ops_simple.ks,experiments/baselines/struct_ops_tcp_cc.c,experiments/baselines/struct_ops_loader_user.c,20,37,55,92,4.6,True,direct load/attach/detach baseline without generated skeletons
+struct_ops_loopback,struct_ops,kernelscript/examples/struct_ops_simple.ks,experiments/baselines/struct_ops_tcp_cc.c,experiments/baselines/struct_ops_tcp_workload_user.c,20,37,310,347,17.35,True,loopback TCP workload baseline without generated skeletons
+struct_ops_callback_flags,struct_ops,experiments/programs/struct_ops_callback_count.ks,experiments/baselines/struct_ops_tcp_callback_flags.c,experiments/baselines/struct_ops_tcp_workload_user.c,26,52,310,362,13.923,True,callback reachability baseline reuses the TCP workload runner
+sched_ext_fifo,sched_ext,kernelscript/examples/sched_ext_simple.ks,experiments/baselines/sched_ext_simple.c,,51,45,0,45,0.882,False,bpftool registers both struct_ops objects in the attach harness

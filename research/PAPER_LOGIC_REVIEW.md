@@ -96,8 +96,12 @@ callback-flag workload results, and a scheduler-extension verifier diagnostic.
     attach workload, and keeps scheduler-policy quality and performance as
     remaining limits.
 19. Extended the scheduler-extension attach harness into a five-trial
-    progress/fairness oracle and refreshed the method summary to 20 measurement
-    scripts and fourteen outcomes.
+    progress/fairness oracle and refreshed the method summary to the then-current
+    measurement script and outcome counts.
+20. Added a matched source-footprint proxy for C1. The paper now separates
+    generated-structure expansion from a local hand-written C/libbpf
+    source-surface comparison, reports 11 local workload rows, and scopes the
+    result as source-maintenance evidence rather than developer time.
 
 ## Remaining Accepted Limits
 
@@ -115,14 +119,16 @@ callback-flag workload results, and a scheduler-extension verifier diagnostic.
   performance. The paper still does not cover every callback path, running
   repaired generated binaries, production TCP performance, or broad
   libbpf-version portability.
-- Generated-structure evidence is a corpus artifact result, not a developer
-  effort study against expert-written C/libbpf.
+- Generated-structure and source-footprint evidence are corpus artifact results,
+  not developer-time studies against expert-written C/libbpf or external
+  applications.
 
 ## Follow-Up Gate
 
 The next scientific-strength gate is additional evidence rather than prose:
-broader generated-dispatch-loop throughput, scheduler-extension attach/workload
-evidence after the verifier-load fix, every
+an external application corpus or developer-time study, broader
+generated-dispatch-loop throughput, scheduler-extension policy/performance
+evidence after the verifier-load and attach fixes, every
 tcp-congestion callback path beyond the two tested profiles,
 upstream-integrated skeleton generation across libbpf versions, or non-local
 deployment/longer-duration workload evidence.

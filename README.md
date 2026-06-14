@@ -7,6 +7,8 @@ evaluation scripts, generated results, and a paper draft.
 
 - `kernelscript/`: cloned upstream repository.
 - `experiments/run_evaluation.py`: compiler/test/example build evaluation.
+- `experiments/run_source_footprint.py`: matched source-footprint proxy against
+  hand-written C/eBPF and C/libbpf baseline source files.
 - `experiments/run_verifier_matrix.py`: bpftool verifier-load matrix for
   generated eBPF objects.
 - `experiments/run_attach_matrix.py`: isolated network-namespace XDP
@@ -67,6 +69,12 @@ Run the main evaluation:
 
 ```bash
 ./experiments/run_evaluation.py
+```
+
+Run the matched source-footprint proxy:
+
+```bash
+./experiments/run_source_footprint.py
 ```
 
 Run the verifier-load matrix, which requires `sudo -n` and the generated
@@ -214,6 +222,12 @@ The current run evaluates KernelScript commit `3b19cd2` on Linux
 - Unit tests: 85 suites, 1095 tests, 0 reported failures.
 - Examples: 44 total, 43 KernelScript compile successes, 41 full generated
   C/eBPF build successes.
+- Matched source-footprint proxy: across 11 local workload rows with
+  hand-written baselines, unique maintained KernelScript application sources
+  total 203 nonblank noncomment lines. The matching hand-written C/eBPF objects
+  total 254 lines, and the C/libbpf source footprint rises to 1105 lines when
+  the baseline runner or loader files used by the nontrivial workloads are
+  included. This is a source-maintenance proxy, not a developer-time study.
 - Verifier-load matrix: 39 of 43 generated eBPF objects load with
   `bpftool prog loadall` and pin at least one BPF program. Among the 41 objects
   from full generated-project build successes, 37 load successfully and 4 fail

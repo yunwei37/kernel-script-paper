@@ -5,7 +5,8 @@ Date: 2026-06-13
 ## Current Verdict
 
 The artifact is stronger after adding strict verifier-load accounting, the
-isolated XDP attach matrix, local XDP and TC traffic benchmarks, one generated
+isolated XDP attach matrix, a matched local source-footprint proxy, local XDP
+and TC traffic benchmarks, one generated
 perf_event loader lifecycle latency check, a perf_event page-fault counter
 workload, a ringbuf event-emission workload, a direct tcp-congestion struct_ops
 load/attach/detach compatibility check, a loopback TCP workload through selected
@@ -14,9 +15,12 @@ loss-injected reachability profiles, a local struct_ops skeleton build repair,
 a scheduler-extension load-only verifier diagnostic, an opt-in bounded
 scheduler-extension attach/progress check, and a broader 28-case static
 negative corpus. It now also includes a longer XDP/TC traffic stress rerun.
-It is closer to a top-systems weak accept, but still not there. The main
-remaining gap is representative scheduler-policy and performance evidence
-beyond one toy FIFO progress/fairness proxy, broader callback-level struct_ops behavior,
+It is closer to a top-systems weak accept, but still not there. The source
+footprint result partially addresses the missing hand-written-baseline concern
+for C1, but it is still a local source-surface proxy rather than an external
+application corpus or developer-time study. The main remaining gaps are
+representative scheduler-policy and performance evidence beyond one toy FIFO
+progress/fairness proxy, broader callback-level struct_ops behavior,
 generated-dispatch-loop throughput beyond one perf_event lifecycle loader
 workload, broader skeleton version coverage and compiler integration, and
 non-local or longer-duration deployment methodology.
@@ -72,30 +76,36 @@ non-local or longer-duration deployment methodology.
   enabled, records per-worker iteration counts and fairness dispersion,
   unregisters both schedulers, and verifies sched_ext returns to disabled with
   zero rejected tasks.
+- Added `experiments/run_source_footprint.py`, which counts nonblank noncomment
+  maintained source lines for 11 matched local workload rows. Unique
+  KernelScript application sources total 203 SLOC; matched C/eBPF object sources
+  total 254 SLOC, and C/libbpf baseline sources total 1105 SLOC when runner or
+  loader files are included. This is a source-maintenance proxy, not a
+  developer-time study.
 - Expanded `experiments/run_static_checks.py` to 28 deterministic cases,
   including 27 expected rejections across lifecycle, signature, map, type,
   symbol, config, helper-scope, kernel-context, perf-event group, ringbuf, and
   safety categories.
 - Updated the paper-number generator, paper, README, and research plan so the
-  verifier, attach, XDP traffic, TC traffic, perf_event loader latency, and
-  perf_event counter/ringbuf/struct_ops/scheduler-extension/static-check
-  results are generated from checked-in JSON summaries.
+  paper-number inputs are generated from checked-in JSON summaries.
 
 ## Remaining Experiments For Weak-Accept Bar
 
-1. Add scheduler-extension policy/performance evidence beyond the current toy
+1. Add an external application corpus or controlled developer-effort study for
+   C1, because the current source-footprint result is local and line-count based.
+2. Add scheduler-extension policy/performance evidence beyond the current toy
    FIFO progress/fairness proxy; also add broader callback-level struct_ops programs,
    broader skeleton version coverage with
    compiler-integrated generation, broader perf_event event types, and
    generated-dispatch-loop throughput.
-2. Larger XDP and TC stress runs using isolated network
+3. Larger XDP and TC stress runs using isolated network
    namespaces, `xdp-bench`, `pktgen`, a controlled packet generator, or a
    non-local VM/NIC setup.
-3. Packet-behavior checks for the XDP attach-matrix objects, not only
+4. Packet-behavior checks for the XDP attach-matrix objects, not only
    attach/detach.
-4. Further expand the static negative corpus beyond the current targeted
+5. Further expand the static negative corpus beyond the current targeted
    28-case suite, especially kfunc signature mismatch and more attach/detach
    ordering variants.
-5. Non-XDP workload balance beyond TC pass/count, perf_event lifecycle latency,
+6. Non-XDP workload balance beyond TC pass/count, perf_event lifecycle latency,
    page-fault counters, ringbuf emission, and loopback tcp-congestion checks so
    benchmark claims do not rest mostly on XDP programs.

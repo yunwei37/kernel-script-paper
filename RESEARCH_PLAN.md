@@ -22,6 +22,10 @@ Evidence: compare KernelScript source SLOC with generated userspace C, eBPF C,
 kernel-module C, and Makefile SLOC. This is not a hand-written C baseline. It is
 a conservative expansion-factor measurement showing the amount of generated
 artifact a developer does not have to maintain by hand.
+Then compare the maintained KernelScript source for matched local workloads
+with the hand-written C/eBPF object sources and C/libbpf runner or loader files
+used by the corresponding baselines. This second metric is a source-maintenance
+proxy, not a developer-time study.
 
 RQ3. Which classes of errors are rejected before load/attach time?
 
@@ -102,6 +106,15 @@ one libbpf runner.
      counts when `llvm-objdump` is available.
    - Writes `results/evaluation_summary.json`, `results/examples_summary.csv`,
      and `results/unit_tests_summary.json`.
+
+2. `experiments/run_source_footprint.py`
+   - Counts nonblank noncomment SLOC for matched local workload sources.
+   - Compares maintained KernelScript application source with hand-written
+     C/eBPF baseline objects and C/libbpf runner or loader sources.
+   - Excludes generated C, generated Makefiles, `vmlinux.h`, skeleton headers,
+     KernelScript library headers, and Python experiment harness code.
+   - Writes `results/source_footprint_summary.csv` and
+     `results/source_footprint_summary.json`.
 
 2. `experiments/run_static_checks.py`
    - Compiles a static-check corpus with expected success or expected failure
@@ -299,7 +312,8 @@ one libbpf runner.
      `results/lowering_ablation_summary.json`.
 
 20. `experiments/update_paper_numbers.py`
-   - Checks that unit tests, static checks, smoke test, microbenchmarks, and
+   - Checks that unit tests, static checks, source-footprint proxy, smoke test,
+     microbenchmarks, and
      XDP traffic, TC traffic, traffic stress, perf_event loader lifecycle,
      perf_event counter, ringbuf workload, struct_ops compatibility, struct_ops
      workload, struct_ops callback workload, struct_ops skeleton repair,
@@ -314,6 +328,12 @@ At commit `3b19cd2`, on Linux `6.15.11-061511-generic`:
 - 85 unit test suites and 1095 unit tests pass.
 - 43 of 44 examples compile from KernelScript.
 - 41 examples build fully into generated C/eBPF artifacts.
+- The matched source-footprint proxy covers 11 local workload rows. Unique
+  maintained KernelScript application sources total 203 nonblank noncomment
+  lines; the matching hand-written C/eBPF object sources total 254 lines, and
+  the C/libbpf baseline source footprint totals 1105 lines when runner or loader
+  files are included. This is source-maintenance evidence, not developer-time
+  evidence.
 - The verifier-load matrix loads 39 of 43 generated eBPF objects and confirms
   that each loadable object pins at least one BPF program. Among the 41 objects
   from full generated-project build successes, 37 load successfully and 4 expose

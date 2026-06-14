@@ -1,6 +1,6 @@
 Last updated: 2026-06-13
 Stage at update: audit
-Source/command: manual/fallback experiment audit after scheduler-extension attach workload
+Source/command: manual/fallback experiment audit after source-footprint proxy
 Completeness: complete
 
 # Experiment Audit
@@ -18,7 +18,7 @@ general runtime-equivalence or production-deployment claim.
 | Check | Evidence | Result |
 |---|---|---|
 | Required result files exist | Python audit over `results/*.json` inputs used by `experiments/update_paper_numbers.py` | pass |
-| Required status fields are clean | `smoke`, `microbench`, `static`, `lowering`, `compiler_patch`, `verifier`, `attach`, `xdp_traffic`, `tc_traffic`, `traffic_stress`, `perf_event_loader`, `perf_event_counter`, `ringbuf`, `struct_ops`, `struct_ops_workload`, `struct_ops_callback_workload`, `struct_ops_skeleton_repair`, `sched_ext_verifier`, and `sched_ext_attach` summaries all report `ok` | pass |
+| Required status fields are clean | `smoke`, `microbench`, `source_footprint`, `static`, `lowering`, `compiler_patch`, `verifier`, `attach`, `xdp_traffic`, `tc_traffic`, `traffic_stress`, `perf_event_loader`, `perf_event_counter`, `ringbuf`, `struct_ops`, `struct_ops_workload`, `struct_ops_callback_workload`, `struct_ops_skeleton_repair`, `sched_ext_verifier`, and `sched_ext_attach` summaries all report `ok` | pass |
 | Example corpus present | `results/examples_summary.json` contains 44 rows | pass |
 | Paper macro coverage | Parsed `paper/kernelscript-paper.tex` and `results/paper_numbers.tex`: all used `KS...` macros are defined | pass |
 | Paper-number reproducibility | `./experiments/update_paper_numbers.py && git diff --exit-code -- results/paper_numbers.tex` | pass |
@@ -35,6 +35,7 @@ The audit checked these paper-number inputs:
 - `results/unit_tests_summary.json`
 - `results/evaluation_summary.json`
 - `results/examples_summary.json`
+- `results/source_footprint_summary.json`
 - `results/smoke_summary.json`
 - `results/microbench_summary.json`
 - `results/static_checks_summary.json`
@@ -67,6 +68,10 @@ build completes from those macros.
 
 - Compiler and example results come from `dune`, the KernelScript compiler,
   generated Makefiles, and recorded per-example rows.
+- Source-footprint results count nonblank noncomment maintained source files
+  listed in `results/source_footprint_summary.json`; generated C, generated
+  Makefiles, generated `vmlinux.h`, skeleton headers, KernelScript library
+  headers, and Python experiment harnesses are excluded.
 - Static checks use explicit expected pass/fail programs and diagnostic
   category matching.
 - Verifier-load results use `bpftool prog loadall` and require at least one
@@ -108,7 +113,8 @@ The paper reports absolute counts, medians, ranges, and local median differences
 from result files. Ratios and percentage differences are derived against matched
 C/eBPF baselines and are labeled as local comparisons. The audit found no
 headline claim that normalizes by KernelScript's own output distribution. The
-paper keeps generated SLOC expansion separate from developer-effort claims.
+paper keeps generated SLOC expansion and matched source-footprint accounting
+separate from developer-time claims.
 
 ## Scope Language Review
 
@@ -122,6 +128,8 @@ evidence rather than full callback coverage, labels the skeleton repair as a
 local generated-userspace build repair rather than cross-version portability,
 and labels the scheduler-extension attach result as one toy bounded
 progress/fairness proxy rather than scheduler-policy or performance evidence.
+The source-footprint result is labeled as a local source-maintenance proxy
+rather than an external application corpus or developer-time study.
 
 ## Accepted Warnings
 
@@ -141,8 +149,9 @@ progress/fairness proxy rather than scheduler-policy or performance evidence.
    only. These checks do not cover scheduler-extension policy quality or
    performance, every tcp-congestion callback path, running the repaired
    binaries, or broad libbpf-version portability.
-4. The generated-structure result is a corpus artifact result, not a
-   developer-effort study against an expert C implementation.
+4. The generated-structure and source-footprint results are corpus artifact
+   results, not a developer-effort study against an expert C implementation or
+   external application corpus.
 
 ## Gate Status
 

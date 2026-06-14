@@ -1,12 +1,13 @@
 Last updated: 2026-06-13
 Stage at update: analyze
-Source/command: `./experiments/run_xdp_traffic.py`, `./experiments/run_tc_traffic.py`, `./experiments/run_traffic_stress.py`, `./experiments/run_perf_event_loader.py`, `./experiments/run_perf_event_counter.py`, `./experiments/run_ringbuf_workload.py`, `./experiments/run_struct_ops_workload.py`, `./experiments/run_struct_ops_callback_workload.py`, `./experiments/run_sched_ext_verifier.py`, `./experiments/run_sched_ext_attach.py --allow-host-scheduler`, and checked-in result summaries
+Source/command: `./experiments/run_source_footprint.py`, `./experiments/run_xdp_traffic.py`, `./experiments/run_tc_traffic.py`, `./experiments/run_traffic_stress.py`, `./experiments/run_perf_event_loader.py`, `./experiments/run_perf_event_counter.py`, `./experiments/run_ringbuf_workload.py`, `./experiments/run_struct_ops_workload.py`, `./experiments/run_struct_ops_callback_workload.py`, `./experiments/run_sched_ext_verifier.py`, `./experiments/run_sched_ext_attach.py --allow-host-scheduler`, and checked-in result summaries
 
 # Results Summary
 
 ## Headline Result
 
-The artifact now has a broader 28-case static rejection corpus, local
+The artifact now has a matched source-footprint proxy, a broader 28-case static
+rejection corpus, local
 traffic-driven XDP and TC checks, one generated perf_event loader lifecycle
 latency check, one perf_event page-fault counter workload, and one ringbuf
 event-emission workload, direct tcp-congestion struct_ops load/attach/detach
@@ -15,7 +16,12 @@ algorithms, a callback-flag workload with clean and loss-injected reachability
 profiles, a version-aware struct_ops skeleton build repair, a scheduler-extension
 struct_ops verifier diagnostic, an opt-in scheduler-extension attach/workload
 check, and a longer XDP/TC traffic stress rerun in addition to
-BPF_PROG_TEST_RUN microbenchmarks. On
+BPF_PROG_TEST_RUN microbenchmarks. The source-footprint proxy covers 11 local
+workload rows: unique maintained KernelScript application sources total 203
+nonblank noncomment lines, the matching hand-written C/eBPF object sources
+total 254 lines, and the C/libbpf baseline source footprint totals 1105 lines
+when runner or loader files are included. This is source-maintenance evidence,
+not a developer-time study. On
 fresh veth/netns
 pairs with iperf3 TCP, KernelScript and hand-written C/eBPF pass/count objects
 all pass the traffic oracles. XDP count medians are 17.2Gb/s for KernelScript
@@ -74,6 +80,7 @@ pass, with XDP count medians of 17.3 versus 15.3Gb/s and TC count medians of
 | R012 | `results/struct_ops_callback_workload_summary.json` | ok | Generated and C/eBPF tcp-congestion objects each complete 10/10 clean 4MiB loopback TCP trials with cong_avoid plus cwnd_event, then complete 5/5 5% loss-injected 4MiB trials with ssthresh, cong_avoid, set_state, and cwnd_event. |
 | R013 | `results/sched_ext_verifier_summary.json` | ok | Five-callback C/eBPF scheduler-extension control object verifier-loads and pins 5 programs; generated `sched_ext_simple` verifier-loads and pins 12 programs; no scheduler attach is attempted and sched_ext state remains disabled. |
 | R014 | `results/sched_ext_attach_summary.json` | ok | Opt-in scheduler-extension attach harness registers the C/eBPF and generated toy FIFO schedulers, keeps sched_ext enabled during five bounded 0.75s CPU progress trials, records per-worker iteration counts, unregisters both, and returns sched_ext to disabled with zero rejected tasks. |
+| R015 | `results/source_footprint_summary.json` | ok | Matched source-footprint proxy covers 11 local workload rows; unique maintained KernelScript sources total 203 SLOC, C/eBPF objects alone total 254 SLOC, and C/libbpf sources total 1105 SLOC with runner/loader files included. |
 
 ## Anomalies And Negative Results
 
@@ -103,6 +110,9 @@ pass, with XDP count medians of 17.3 versus 15.3Gb/s and TC count medians of
   through a shared libbpf runner, and the generated-loader latency check is one
   perf_event lifecycle workload rather than a broad generated-dispatch-loop
   throughput study.
+- The source-footprint proxy is not an external application corpus and does not
+  measure developer time, debugging effort, or code review effort. It should be
+  read as local source-maintenance surface evidence only.
 
 ## Figure/Table Candidates
 
@@ -114,6 +124,7 @@ pass, with XDP count medians of 17.3 versus 15.3Gb/s and TC count medians of
 ## Result Files Used
 
 - `results/evaluation_summary.json`
+- `results/source_footprint_summary.json`
 - `results/static_checks_summary.json`
 - `results/verifier_matrix_summary.json`
 - `results/attach_matrix_summary.json`

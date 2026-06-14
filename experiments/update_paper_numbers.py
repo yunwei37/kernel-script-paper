@@ -132,6 +132,7 @@ def main() -> int:
     struct_ops_callback = load_json("struct_ops_callback_workload_summary.json")
     sched_ext_verifier = load_json("sched_ext_verifier_summary.json")
     sched_ext_attach = load_json("sched_ext_attach_summary.json")
+    source_footprint = load_json("source_footprint_summary.json")
 
     if unit.get("returncode") != 0 or unit.get("reported_failures") != 0:
         raise SystemExit("unit tests are not clean; refusing to generate paper numbers")
@@ -195,6 +196,28 @@ def main() -> int:
     content += macro("KSMedianGeneratedSloc", f"{summary['median_generated_sloc_success']:.0f}")
     content += macro("KSMedianGeneratedRatio", f"{summary['median_generated_to_ks_ratio_success']:.1f}x")
     content += macro("KSMedianInstructions", f"{summary['median_ebpf_instructions_success']:.1f}")
+    source_footprint_workload = source_footprint["aggregate_workload_rows"]
+    source_footprint_unique = source_footprint["aggregate_unique_sources"]
+    content += macro("KSSourceFootprintWorkloads", source_footprint["workload_count"])
+    content += macro("KSSourceFootprintRowsKSSloc", source_footprint_workload["ks_sloc"])
+    content += macro("KSSourceFootprintRowsCSloc", source_footprint_workload["c_total_sloc"])
+    content += macro("KSSourceFootprintRowsCEbpfSloc", source_footprint_workload["c_ebpf_sloc"])
+    content += macro("KSSourceFootprintRowsCUserSloc", source_footprint_workload["c_user_sloc"])
+    content += macro("KSSourceFootprintRowsRatio", f"{source_footprint_workload['c_to_ks_ratio']:.2f}x")
+    content += macro("KSSourceFootprintMedianKSSloc", integer(source_footprint_workload["median_ks_sloc"]))
+    content += macro("KSSourceFootprintMedianCSloc", integer(source_footprint_workload["median_c_total_sloc"]))
+    content += macro("KSSourceFootprintMedianRatio", f"{source_footprint_workload['median_c_to_ks_ratio']:.1f}x")
+    content += macro("KSSourceFootprintKSSmaller", source_footprint_workload["ks_smaller_rows"])
+    content += macro("KSSourceFootprintKSNotSmaller", source_footprint_workload["ks_not_smaller_rows"])
+    content += macro("KSSourceFootprintUniqueKSSloc", source_footprint_unique["ks_sloc"])
+    content += macro("KSSourceFootprintUniqueCSloc", source_footprint_unique["c_total_sloc"])
+    content += macro("KSSourceFootprintUniqueCEbpfSloc", source_footprint_unique["c_ebpf_sloc"])
+    content += macro("KSSourceFootprintUniqueCUserSloc", source_footprint_unique["c_user_sloc"])
+    content += macro("KSSourceFootprintUniqueRatio", f"{source_footprint_unique['c_to_ks_ratio']:.2f}x")
+    content += macro(
+        "KSSourceFootprintUniqueObjectRatio",
+        f"{(source_footprint_unique['c_ebpf_sloc'] / source_footprint_unique['ks_sloc']):.2f}x",
+    )
     content += macro("KSStaticTotal", static["total_cases"])
     content += macro("KSStaticMatched", static["matched_cases"])
     content += macro("KSStaticExpectedFailures", static["expected_failures"])

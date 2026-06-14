@@ -67,8 +67,7 @@ verifier loading and bounded attachment: both the hand-written C/eBPF object and
 the generated object verifier-load and pin programs, and an opt-in harness
 registers both toy schedulers, runs five bounded progress trials, and
 unregisters them cleanly.
-The
-results support an artifact/prototype
+The results support an artifact/prototype
 claim: \tool{} centralizes recurring project structure for this repository
 corpus and exposes concrete compatibility limits, but it does not yet establish
 broad runtime equivalence or broad struct\_ops portability.
@@ -310,10 +309,11 @@ microbenchmarks and object workloads do not pin CPUs or change the governor, so
 their nanosecond and event-rate differences are not statistically interpreted
 and should be read as local comparisons rather than general performance claims.
 The evaluated commit is
-\KSCommitShort{}.  The artifact contains 20 measurement scripts under
+\KSCommitShort{}.  The artifact contains 21 measurement scripts under
 \texttt{experiments/}.  They cover compiler tests and example builds,
-static-check cases, strict verifier loading, isolated XDP attach/detach, XDP and
-TC traffic over fresh veth/netns pairs, perf-event loader and counter workloads,
+matched source-footprint accounting, static-check cases, strict verifier
+loading, isolated XDP attach/detach, XDP and TC traffic over fresh veth/netns
+pairs, perf-event loader and counter workloads,
 ring-buffer event emission, direct struct\_ops load/attach/detach
 compatibility, loopback TCP and callback-flag workloads for tcp-congestion
 struct\_ops, a
@@ -337,7 +337,7 @@ compiler source, applies a tracked compiler-source patch for array-map
 increment lowering, rebuilds the patched compiler, and reruns the same count
 benchmark.
 
-We measure fourteen outcomes.  \textbf{Compiler regression coverage} is
+We measure fifteen outcomes.  \textbf{Compiler regression coverage} is
 approximated by the repository test suite.  \textbf{Early rejection} is
 measured by static cases whose expected diagnostics are checked by the harness.
 \textbf{Example marker coverage} is
@@ -350,6 +350,9 @@ centralization} is measured as an expansion factor: lines of \tool{} source
 compared to generated C and Makefile lines.  \textbf{Compatibility} is measured
 by generated build successes, failures, verifier-load outcomes, and isolated
 XDP attach/detach outcomes against the local kernel toolchain.
+\textbf{Matched source footprint} is measured by comparing the maintained
+\tool{} source for local matched workloads with the hand-written C/eBPF objects
+and C/libbpf runners used by the corresponding baselines.
 \textbf{Mechanism isolation} is measured by the map-update lowering ablation.
 \textbf{Runtime sanity} is measured by iperf3 over veth/netns for matched XDP
 and TC pass/count objects, by a perf-event page-fault counter workload, and by
@@ -401,6 +404,7 @@ invocation timing for generated and hand-written loaders.
 Claim & Artifact under test & Baseline or actor & Oracle & Boundary \\
 \midrule
 Project generation & Repository examples lowered to generated projects & Compiler and make harness & Build rows, feature markers, generated source lines & Repository corpus only \\
+Source footprint & Matched local workload sources & Hand-written C/eBPF objects and C/libbpf runners & Nonblank noncomment source-line counts with explicit exclusions & Source-maintenance proxy, not developer time \\
 Early checks & Unit tests and targeted invalid programs & Dune and static-check harnesses & Test success and expected diagnostic categories & Selected cases, not soundness \\
 Compatibility & Generated objects and generated perf loader & Local kernel/toolchain & Pinned-program load criterion, attach state, loader attach/read/detach and invocation timing & Local host only \\
 Runtime sanity & Generated XDP, TC, perf-counter, and ring-buffer objects & Matched C/eBPF objects or shared libbpf runner & iperf3 JSON, positive map counts, perf-counter equality, submitted/received/drop counts & Local workloads only \\
@@ -429,6 +433,15 @@ produced directly by \tool{}: userspace C, eBPF C, optional kernel-module C, and
 Makefile lines.  This definition is conservative for the generated-structure
 claim because it omits the large skeleton header that a low-level build still
 needs.
+
+\texttt{run\_source\_footprint.py} adds a separate source-maintenance proxy for
+the local matched workloads.  It counts nonblank noncomment lines in the
+maintained \tool{} application source, the hand-written C/eBPF baseline objects,
+and the C/libbpf runner or loader files when that workload requires one.
+Generated C, generated Makefiles, generated \texttt{vmlinux.h}, skeleton
+headers, \tool{} library headers, and Python experiment harness code are
+excluded.  This metric is closer to a hand-written baseline than the generated
+expansion factor, but it is still not a developer-time study.
 
 \section{Results}
 
@@ -701,11 +714,27 @@ rather than a direct developer-effort result.
 
 The metric is intentionally conservative.  It does not say that every
 generated line is exactly a hand-written line saved, and it does not compare
-against an expert-written minimal C baseline.  It does show that \tool{}
+against an external application corpus.  It does show that \tool{}
 centralizes recurring eBPF project structure.  Examples such
 as perf events have particularly high expansion factors because attaching and
 reading counters requires substantial userspace coordination code relative to the
 kernel program itself.
+
+\textbf{Matched source-footprint proxy.}
+The matched source-footprint script covers \KSSourceFootprintWorkloads{} local
+workloads that already have hand-written C/eBPF baselines.  Counting unique
+source files, those workloads use \KSSourceFootprintUniqueKSSloc{} maintained
+\tool{} application lines, while the hand-written C/eBPF objects alone use
+\KSSourceFootprintUniqueCEbpfSloc{} lines
+(\KSSourceFootprintUniqueObjectRatio{} as many).  Including the C/libbpf runner
+or loader files used by the matched nontrivial workloads raises the maintained
+C/libbpf source footprint to \KSSourceFootprintUniqueCSloc{} lines
+(\KSSourceFootprintUniqueRatio{} as many as the \tool{} source).  Across
+per-workload rows, \tool{} is smaller in \KSSourceFootprintKSSmaller{} of
+\KSSourceFootprintWorkloads{} rows, while the three rows where it is not smaller
+are tiny pass or scheduler-control cases with little userspace coordination.
+This result is a source-surface comparison for the local workload corpus, not a
+claim about programmer time or external applications.
 
 \textbf{Runtime microbenchmarks and lowering ablation.}
 Table~\ref{tab:micro} uses BPF\_PROG\_TEST\_RUN for 100000 repetitions over
@@ -910,24 +939,27 @@ systems-research perspective, this is part of the contribution: the artifact
 exposes where a unified model centralizes structure and where the underlying
 Linux BPF stack still leaks through.
 
-The expansion-factor metric should also be interpreted carefully.  Generated
-C is not automatically better than hand-written C.  It can be verbose,
-unidiomatic, or harder to debug, so the practical benefit depends on diagnostic
-quality and source-level mapping from generated errors back to \tool{} source.
-Future work should therefore measure not only lines of code but time to fix
-injected errors, quality of compiler messages, and whether developers can
-understand generated verifier failures.
+The expansion-factor and source-footprint metrics should also be interpreted
+carefully.  Generated C is not automatically better than hand-written C.  It
+can be verbose, unidiomatic, or harder to debug, so the practical benefit
+depends on diagnostic quality and source-level mapping from generated errors
+back to \tool{} source.  The matched source-footprint proxy improves on a
+generated-only expansion factor, but it still uses local baselines and line
+counts rather than a controlled developer study.  Future work should therefore
+measure time to fix injected errors, quality of compiler messages, and whether
+developers can understand generated verifier failures.
 
 \section{Threats to Validity}
 
-\textbf{No expert C baseline.}  The expansion factor compares \tool{} source
-against generated artifacts, not against carefully hand-written C/libbpf
-programs.  The comparison is appropriate for measuring how much project structure the
-compiler creates, but it is not a direct developer-effort study.  An expert
-could write smaller C for some examples, especially tiny XDP pass/drop
-programs.  Conversely, generated code omits comments and may be denser than
-maintainable production C.  The right interpretation is therefore ``generated
-project structure centralized by the compiler,'' not ``exact lines saved.''
+\textbf{No developer-time study.}  The source-footprint proxy compares
+\tool{} source against the hand-written C/eBPF baselines and C/libbpf runners
+used by the local matched workload corpus.  It is more direct than comparing
+\tool{} input with generated output, but it still measures lines rather than
+task time, debugging effort, review burden, or expert familiarity.  An expert
+could write smaller C for some examples, especially tiny XDP pass/drop programs.
+Conversely, generated code omits comments and may be denser than maintainable
+production C.  The right interpretation is therefore ``source surface
+centralized for these local workloads,'' not ``developer time saved.''
 
 \textbf{Repository examples may be biased.}  The corpus comes from the
 \tool{} artifact repository, so it naturally reflects the features the implementation
@@ -1021,7 +1053,11 @@ the evaluated compiler can centralize recurring project structure for this
 repository corpus: \KSKSCompileOK{} of \KSTotalExamples{} examples compile,
 \KSMakeOK{} build, and the median successful example expands from
 \KSMedianKSSloc{} \tool{} source lines to \KSMedianGeneratedSloc{} generated
-source and build lines.  Second, the implementation exposes selected errors
+source and build lines.  A matched source-footprint proxy adds
+\KSSourceFootprintWorkloads{} local workload rows in which unique maintained
+\tool{} sources total \KSSourceFootprintUniqueKSSloc{} lines versus
+\KSSourceFootprintUniqueCSloc{} hand-written C/libbpf lines when baseline
+runners are included.  Second, the implementation exposes selected errors
 before kernel loading: the targeted static corpus includes
 \KSStaticExpectedFailures{} expected invalid programs, and the evaluation keeps
 those diagnostics executable.  Third, the generated artifacts are not merely

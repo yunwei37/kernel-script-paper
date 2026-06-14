@@ -1,0 +1,280 @@
+{
+  "aggregate_unique_sources": {
+    "c_ebpf_sloc": 254,
+    "c_ebpf_sources": [
+      "experiments/baselines/perf_event_count.c",
+      "experiments/baselines/perf_event_loader.ebpf.c",
+      "experiments/baselines/ringbuf_emit.c",
+      "experiments/baselines/sched_ext_simple.c",
+      "experiments/baselines/struct_ops_tcp_callback_flags.c",
+      "experiments/baselines/struct_ops_tcp_cc.c",
+      "experiments/baselines/tc_count.c",
+      "experiments/baselines/tc_pass.c",
+      "experiments/baselines/xdp_count.c",
+      "experiments/baselines/xdp_pass.c"
+    ],
+    "c_to_ks_ratio": 5.443,
+    "c_total_sloc": 1105,
+    "c_user_sloc": 851,
+    "c_user_sources": [
+      "experiments/baselines/perf_event_counter_user.c",
+      "experiments/baselines/perf_event_loader_user.c",
+      "experiments/baselines/ringbuf_counter_user.c",
+      "experiments/baselines/struct_ops_loader_user.c",
+      "experiments/baselines/struct_ops_tcp_workload_user.c"
+    ],
+    "ks_sloc": 203,
+    "ks_sources": [
+      "experiments/programs/perf_count.ks",
+      "experiments/programs/perf_event_count.ks",
+      "experiments/programs/perf_pass.ks",
+      "experiments/programs/ringbuf_emit.ks",
+      "experiments/programs/struct_ops_callback_count.ks",
+      "experiments/programs/tc_count.ks",
+      "experiments/programs/tc_pass.ks",
+      "kernelscript/examples/perf_page_fault.ks",
+      "kernelscript/examples/sched_ext_simple.ks",
+      "kernelscript/examples/struct_ops_simple.ks"
+    ]
+  },
+  "aggregate_workload_rows": {
+    "c_ebpf_sloc": 291,
+    "c_to_ks_ratio": 6.511,
+    "c_total_sloc": 1452,
+    "c_user_sloc": 1161,
+    "ks_not_smaller_rows": 3,
+    "ks_sloc": 223,
+    "ks_smaller_rows": 8,
+    "median_c_to_ks_ratio": 4.6,
+    "median_c_total_sloc": 92.0,
+    "median_ks_sloc": 20.0
+  },
+  "description": "Nonblank, noncomment source-footprint proxy for matched local KernelScript and hand-written C/libbpf baselines.",
+  "kernelscript_repo_head": "3b19cd2bfa1db0428da6d735864a31d6ea62c7cd",
+  "policy": {
+    "counts": "repository-maintained KernelScript, C/eBPF, and C/libbpf runner source files",
+    "excludes": [
+      "generated C",
+      "generated Makefiles",
+      "generated vmlinux.h",
+      "generated skeleton headers",
+      "KernelScript library headers",
+      "experiment harness Python code"
+    ],
+    "interpretation": "maintenance-surface proxy, not developer-time measurement"
+  },
+  "rows": [
+    {
+      "c_ebpf_sloc": 7,
+      "c_ebpf_sources": [
+        "experiments/baselines/xdp_pass.c"
+      ],
+      "c_to_ks_ratio": 0.7,
+      "c_total_sloc": 7,
+      "c_user_sloc": 0,
+      "c_user_sources": [],
+      "domain": "xdp",
+      "ks_sloc": 10,
+      "ks_smaller": false,
+      "ks_sources": [
+        "experiments/programs/perf_pass.ks"
+      ],
+      "name": "xdp_pass",
+      "note": "traffic harness supplies attach path for both variants"
+    },
+    {
+      "c_ebpf_sloc": 18,
+      "c_ebpf_sources": [
+        "experiments/baselines/xdp_count.c"
+      ],
+      "c_to_ks_ratio": 1.5,
+      "c_total_sloc": 18,
+      "c_user_sloc": 0,
+      "c_user_sources": [],
+      "domain": "xdp",
+      "ks_sloc": 12,
+      "ks_smaller": true,
+      "ks_sources": [
+        "experiments/programs/perf_count.ks"
+      ],
+      "name": "xdp_count",
+      "note": "traffic harness supplies attach path for both variants"
+    },
+    {
+      "c_ebpf_sloc": 10,
+      "c_ebpf_sources": [
+        "experiments/baselines/tc_pass.c"
+      ],
+      "c_to_ks_ratio": 0.909,
+      "c_total_sloc": 10,
+      "c_user_sloc": 0,
+      "c_user_sources": [],
+      "domain": "tc",
+      "ks_sloc": 11,
+      "ks_smaller": false,
+      "ks_sources": [
+        "experiments/programs/tc_pass.ks"
+      ],
+      "name": "tc_pass",
+      "note": "traffic harness supplies attach path for both variants"
+    },
+    {
+      "c_ebpf_sloc": 21,
+      "c_ebpf_sources": [
+        "experiments/baselines/tc_count.c"
+      ],
+      "c_to_ks_ratio": 1.615,
+      "c_total_sloc": 21,
+      "c_user_sloc": 0,
+      "c_user_sources": [],
+      "domain": "tc",
+      "ks_sloc": 13,
+      "ks_smaller": true,
+      "ks_sources": [
+        "experiments/programs/tc_count.ks"
+      ],
+      "name": "tc_count",
+      "note": "traffic harness supplies attach path for both variants"
+    },
+    {
+      "c_ebpf_sloc": 7,
+      "c_ebpf_sources": [
+        "experiments/baselines/perf_event_loader.ebpf.c"
+      ],
+      "c_to_ks_ratio": 7.043,
+      "c_total_sloc": 162,
+      "c_user_sloc": 155,
+      "c_user_sources": [
+        "experiments/baselines/perf_event_loader_user.c"
+      ],
+      "domain": "perf_event",
+      "ks_sloc": 23,
+      "ks_smaller": true,
+      "ks_sources": [
+        "kernelscript/examples/perf_page_fault.ks"
+      ],
+      "name": "perf_event_loader",
+      "note": "counts a hand-written loader because the experiment compares loader lifecycle"
+    },
+    {
+      "c_ebpf_sloc": 18,
+      "c_ebpf_sources": [
+        "experiments/baselines/perf_event_count.c"
+      ],
+      "c_to_ks_ratio": 12.923,
+      "c_total_sloc": 168,
+      "c_user_sloc": 150,
+      "c_user_sources": [
+        "experiments/baselines/perf_event_counter_user.c"
+      ],
+      "domain": "perf_event",
+      "ks_sloc": 13,
+      "ks_smaller": true,
+      "ks_sources": [
+        "experiments/programs/perf_event_count.ks"
+      ],
+      "name": "perf_event_counter",
+      "note": "counts the shared C/libbpf counter runner used by both objects"
+    },
+    {
+      "c_ebpf_sloc": 39,
+      "c_ebpf_sources": [
+        "experiments/baselines/ringbuf_emit.c"
+      ],
+      "c_to_ks_ratio": 9.167,
+      "c_total_sloc": 220,
+      "c_user_sloc": 181,
+      "c_user_sources": [
+        "experiments/baselines/ringbuf_counter_user.c"
+      ],
+      "domain": "ringbuf",
+      "ks_sloc": 24,
+      "ks_smaller": true,
+      "ks_sources": [
+        "experiments/programs/ringbuf_emit.ks"
+      ],
+      "name": "ringbuf_emit",
+      "note": "counts the shared C/libbpf ring-buffer runner used by both objects"
+    },
+    {
+      "c_ebpf_sloc": 37,
+      "c_ebpf_sources": [
+        "experiments/baselines/struct_ops_tcp_cc.c"
+      ],
+      "c_to_ks_ratio": 4.6,
+      "c_total_sloc": 92,
+      "c_user_sloc": 55,
+      "c_user_sources": [
+        "experiments/baselines/struct_ops_loader_user.c"
+      ],
+      "domain": "struct_ops",
+      "ks_sloc": 20,
+      "ks_smaller": true,
+      "ks_sources": [
+        "kernelscript/examples/struct_ops_simple.ks"
+      ],
+      "name": "struct_ops_direct",
+      "note": "direct load/attach/detach baseline without generated skeletons"
+    },
+    {
+      "c_ebpf_sloc": 37,
+      "c_ebpf_sources": [
+        "experiments/baselines/struct_ops_tcp_cc.c"
+      ],
+      "c_to_ks_ratio": 17.35,
+      "c_total_sloc": 347,
+      "c_user_sloc": 310,
+      "c_user_sources": [
+        "experiments/baselines/struct_ops_tcp_workload_user.c"
+      ],
+      "domain": "struct_ops",
+      "ks_sloc": 20,
+      "ks_smaller": true,
+      "ks_sources": [
+        "kernelscript/examples/struct_ops_simple.ks"
+      ],
+      "name": "struct_ops_loopback",
+      "note": "loopback TCP workload baseline without generated skeletons"
+    },
+    {
+      "c_ebpf_sloc": 52,
+      "c_ebpf_sources": [
+        "experiments/baselines/struct_ops_tcp_callback_flags.c"
+      ],
+      "c_to_ks_ratio": 13.923,
+      "c_total_sloc": 362,
+      "c_user_sloc": 310,
+      "c_user_sources": [
+        "experiments/baselines/struct_ops_tcp_workload_user.c"
+      ],
+      "domain": "struct_ops",
+      "ks_sloc": 26,
+      "ks_smaller": true,
+      "ks_sources": [
+        "experiments/programs/struct_ops_callback_count.ks"
+      ],
+      "name": "struct_ops_callback_flags",
+      "note": "callback reachability baseline reuses the TCP workload runner"
+    },
+    {
+      "c_ebpf_sloc": 45,
+      "c_ebpf_sources": [
+        "experiments/baselines/sched_ext_simple.c"
+      ],
+      "c_to_ks_ratio": 0.882,
+      "c_total_sloc": 45,
+      "c_user_sloc": 0,
+      "c_user_sources": [],
+      "domain": "sched_ext",
+      "ks_sloc": 51,
+      "ks_smaller": false,
+      "ks_sources": [
+        "kernelscript/examples/sched_ext_simple.ks"
+      ],
+      "name": "sched_ext_fifo",
+      "note": "bpftool registers both struct_ops objects in the attach harness"
+    }
+  ],
+  "status": "ok",
+  "workload_count": 11
+}
