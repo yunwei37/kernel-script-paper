@@ -56,6 +56,11 @@ and callback-flag workload results.
 10. Integrated the callback-flag struct_ops workload as cong_avoid/cwnd_event
     reachability evidence, while preserving the limits around production TCP
     performance, scheduler-extension struct_ops, and broader callback behavior.
+11. Integrated the expanded 28-case static corpus into the contribution,
+    result-map, static-result, discussion, and table-caption wording after a
+    delegated top-systems review found no must-fix contradictions but flagged
+    stale static-category summaries and an implicit generated-code-size
+    denominator.
 
 ## Remaining Accepted Limits
 

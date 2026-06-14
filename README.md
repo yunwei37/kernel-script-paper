@@ -201,8 +201,10 @@ The current run evaluates KernelScript commit `ccb15b4` on Linux
   struct_ops object exposes an argument-type rejection.
 - Attach matrix: 27 of 27 verifier-clean single-section XDP objects attach and
   detach on a fresh veth inside an isolated network namespace.
-- Static checks: 23 total cases, including 22 expected compiler rejections and
-  1 positive control, all matching expected outcomes.
+- Static checks: 28 total cases, including 27 expected compiler rejections and
+  1 positive control, all matching expected outcomes across lifecycle,
+  signature, map, type, symbol, config, helper-scope, kernel-context,
+  perf-event group, ringbuf, and safety categories.
 - Safety: `safety_demo.ks` is rejected before C generation for 608 bytes of
   stack usage against the 512-byte eBPF limit.
 - Compatibility limit: two struct_ops examples build eBPF objects but fail when

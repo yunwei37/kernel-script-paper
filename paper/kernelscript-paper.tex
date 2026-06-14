@@ -74,8 +74,7 @@ object.  A callback-instrumented TCP workload then transfers
 matching \KSStructOpsCallbackCOracleOK{}/\KSStructOpsCallbackTrials{} C/eBPF
 trials.  These checks separate object compatibility, socket-level workload
 behavior, and two callback-reachability flags from a skeleton-header version
-mismatch; a
-version-aware skeleton repair then builds
+mismatch.  A version-aware skeleton repair then builds
 \KSStructOpsRepairBuildOK{}/\KSStructOpsRepairExamples{} generated
 struct\_ops userspace projects on libbpf \KSStructOpsRepairLibbpfVersion{}.
 The
@@ -148,8 +147,9 @@ applications, where programs, maps, loaders, pinning choices, and optional
 kernel-extension code are represented before artifact boundaries are split.
 Second, it analyzes how the public compiler uses that model to check selected
 cross-boundary invariants, including program-handle use, program signatures,
-map access types, ring-buffer API use, config mutability, and stack-limit
-violations before load or attach time.  Third, it
+map access types, ring-buffer API use, config mutability, helper-scope
+restrictions, kernel-context allocation checks, perf-event group bounds, and
+stack-limit violations before load or attach time.  Third, it
 implements a reproducible artifact evaluation of test coverage, example
 buildability, generated-code expansion, example marker coverage, static
 rejection cases, strict verifier loading, isolated XDP attachment, matched XDP
@@ -421,6 +421,14 @@ needs.
 
 \section{Results}
 
+\textbf{Result map.}  The evaluation is organized by four claims.  The example
+build matrix and generated-code expansion test the unified-source structure
+claim.  The unit tests, static rejection corpus, and safety rejection test the
+early-checking claim.  The verifier, attach, perf-event, ring-buffer, and
+struct\_ops checks test local compatibility.  The microbenchmarks, compiler
+patch, traffic runs, and object workloads test runtime behavior and mechanism
+isolation without claiming broad performance equivalence.
+
 \textbf{Test suite.}  The compiler test suite reports \KSTotalUnitSuites{}
 successful suites and \KSTotalUnitTests{} passing tests with no reported
 failures.  The tests cover lexer/parser behavior, type checking, maps, map
@@ -438,8 +446,10 @@ matches the expected result.  The corpus includes one positive control and
 program-signature violations, \KSStaticMapType{} map type or symbol errors,
 \KSStaticTypeSystem{} general type-system errors, \KSStaticSymbolValidation{}
 symbol-validation errors, \KSStaticConfigBoundary{} config-boundary violation,
-\KSStaticRingbuf{} ring-buffer API misuse, and \KSStaticSafety{} stack-limit
-violation.  These cases are not a
+\KSStaticHelperScope{} helper-scope violation, \KSStaticKernelContext{}
+kernel-context allocation violations, \KSStaticPerfEventGroup{} perf-event
+group-bound violations, \KSStaticRingbuf{} ring-buffer API misuse, and
+\KSStaticSafety{} stack-limit violation.  These cases are not a
 soundness proof, but they make the early-rejection claim falsifiable: a future
 compiler change that accepts one of these invalid programs or changes the
 diagnostic contract will fail the paper-number generation path.
@@ -454,7 +464,9 @@ verifier-relevant problem early and provides a specific repair suggestion.
 
 \begin{table}[t]
 \centering
-\caption{Repository examples at commit \KSCommitShort{}.}
+\caption{Repository examples at commit \KSCommitShort{}: \KSMakeOK{}/\KSTotalExamples{}
+build fully, with one intended safety rejection and two local
+struct\_ops/libbpf skeleton mismatches.}
 \label{tab:build}
 \begin{tabular}{lrr}
 \toprule
@@ -732,7 +744,9 @@ median lifecycle invocation rates are \KSPerfLoaderKsIps{} and
 \KSPerfLoaderCIps{} invocations/s.  Because this timing includes process
 startup, sudo, load, attach, counter read, detach, and teardown, we treat it as
 generated-loader lifecycle sanity evidence rather than a dispatch-loop
-throughput claim.  To add a sustained non-XDP object workload,
+throughput claim.
+
+To add a sustained non-XDP object workload,
 \texttt{run\_perf\_event\_counter.py} compiles matched page-fault counter
 objects and runs both with one libbpf runner.  Each trial faults
 \KSPerfCounterPages{} pages for \KSPerfCounterRounds{} rounds, then requires the
@@ -760,8 +774,8 @@ with \KSRingbufKsDropped{} drops.  The generated object reaches
 ring-buffer evidence, and it does not measure generated userspace
 dispatch-loop throughput.
 
-\textbf{Generated code size.}  Among successful repository examples where
-disassembly is available, the median generated eBPF object contains
+\textbf{Generated code size.}  Among the \KSMakeOK{} successful repository
+examples with disassembly, the median generated eBPF object contains
 \KSMedianInstructions{} instructions.  Small examples compile to tiny programs,
 while map-heavy examples generate much larger objects.  The metric helps
 choose where runtime work is needed: examples with many generated map
@@ -785,9 +799,10 @@ generated-structure claim: one source model can generate the multi-file project
 structure needed by several eBPF example classes.  The test suite, expanded
 static corpus, and safety demo support a narrower checking claim: the current
 compiler rejects selected lifecycle, program-signature, map-type,
-ring-buffer-API, config-boundary, symbol, and stack-limit errors before kernel
-loading.  The runtime evidence is deliberately smaller.  It shows that a
-minimal pass program has no measurable BPF\_PROG\_TEST\_RUN overhead in this
+ring-buffer-API, config-boundary, helper-scope, kernel-context allocation,
+perf-event group-bound, symbol-validation, type-system, and stack-limit errors
+before kernel loading.  The runtime evidence is deliberately smaller.  It
+shows that a minimal pass program has no measurable BPF\_PROG\_TEST\_RUN overhead in this
 harness and that the map-update gap is caused by a specific lowering choice,
 not by the unified source model alone.  The
 compiler-source patch result strengthens that mechanism claim.  The XDP attach

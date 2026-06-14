@@ -10,7 +10,7 @@ perf_event loader lifecycle latency check, a perf_event page-fault counter
 workload, a ringbuf event-emission workload, a direct tcp-congestion struct_ops
 load/attach/detach compatibility check, a loopback TCP workload through selected
 BPF tcp-congestion algorithms, a callback-flag workload for cong_avoid and
-cwnd_event, a local struct_ops skeleton build repair, and a broader 23-case
+cwnd_event, a local struct_ops skeleton build repair, and a broader 28-case
 static negative corpus. It now also includes a longer XDP/TC traffic stress
 rerun.
 It is closer to a top-systems weak accept, but still not there. The main
@@ -58,9 +58,10 @@ compiler integration, and non-local or longer-duration deployment methodology.
 - Added `experiments/run_struct_ops_skeleton_repair.py`, which detects the
   local libbpf skeleton map-link mismatch, removes two generated map-link
   assignments, and repairs both affected generated struct_ops userspace builds.
-- Expanded `experiments/run_static_checks.py` to 23 deterministic cases,
-  including 22 expected rejections across lifecycle, signature, map, type,
-  symbol, config, ringbuf, and safety categories.
+- Expanded `experiments/run_static_checks.py` to 28 deterministic cases,
+  including 27 expected rejections across lifecycle, signature, map, type,
+  symbol, config, helper-scope, kernel-context, perf-event group, ringbuf, and
+  safety categories.
 - Updated the paper-number generator, paper, README, and research plan so the
   verifier, attach, XDP traffic, TC traffic, perf_event loader latency, and
   perf_event counter/ringbuf/struct_ops/static-check results are generated from
@@ -77,9 +78,9 @@ compiler integration, and non-local or longer-duration deployment methodology.
    non-local VM/NIC setup.
 3. Packet-behavior checks for the XDP attach-matrix objects, not only
    attach/detach.
-4. Expanded static negative corpus beyond the current targeted 23-case suite,
-   especially invalid helper contracts, kfunc signature mismatch, and more
-   attach/detach ordering variants.
+4. Further expand the static negative corpus beyond the current targeted
+   28-case suite, especially kfunc signature mismatch and more attach/detach
+   ordering variants.
 5. Non-XDP workload balance beyond TC pass/count, perf_event lifecycle latency,
    page-fault counters, ringbuf emission, and loopback tcp-congestion checks so
    benchmark claims do not rest mostly on XDP programs.

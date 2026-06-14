@@ -28,7 +28,9 @@ RQ3. Which classes of errors are rejected before load/attach time?
 Evidence: run the full compiler test suite and a targeted static-check corpus.
 The corpus includes lifecycle API misuse, program-signature violations, map
 type and symbol errors, general type errors, config-boundary violations,
-ring-buffer API misuse, an eBPF stack-limit violation, and one positive control.
+helper-scope violations, kernel-context allocation violations, perf-event group
+bound violations, ring-buffer API misuse, an eBPF stack-limit violation, and
+one positive control.
 
 RQ4. Do generated artifacts remain compatible with the local kernel toolchain?
 
@@ -96,8 +98,8 @@ one libbpf runner.
    - Compiles a static-check corpus with expected success or expected failure
      outcomes.
    - Verifies lifecycle API, program signature, map type/symbol, type-system,
-     config-boundary, ringbuf API, symbol-validation, and stack-limit
-     diagnostics.
+     config-boundary, helper-scope, kernel-context allocation, perf-event
+     group-bound, ringbuf API, symbol-validation, and stack-limit diagnostics.
    - Writes `results/static_checks_summary.csv` and
      `results/static_checks_summary.json`.
 
@@ -291,8 +293,10 @@ At commit `ccb15b4`, on Linux `6.15.11-061511-generic`:
   single-section XDP objects on fresh veth devices inside network namespaces.
 - The one KernelScript rejection is an intentional safety rejection for stack
   usage above the eBPF limit.
-- The static-check corpus has 23 cases, including 22 expected compiler
-  rejections and 1 positive control, all matching expected outcomes.
+- The static-check corpus has 28 cases, including 27 expected compiler
+  rejections and 1 positive control across lifecycle, signature, map, type,
+  symbol, config, helper-scope, kernel-context, perf-event group, ringbuf, and
+  safety categories, all matching expected outcomes.
 - The two generated build failures are struct_ops examples whose generated
   skeletons expect a `struct bpf_map_skeleton.link` field unavailable in the
   installed libbpf 1.3.0 headers.

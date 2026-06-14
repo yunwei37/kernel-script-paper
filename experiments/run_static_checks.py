@@ -28,6 +28,7 @@ class Case:
     category: str
     expect_success: bool
     expected_substrings: tuple[str, ...] = ()
+    env: tuple[tuple[str, str], ...] = ()
 
 
 CASES = [
@@ -81,6 +82,28 @@ CASES = [
         ("Type mismatch in function call: add_one",),
     ),
     Case(
+        "gfp_from_userspace",
+        "kernel_context",
+        False,
+        ("GFP allocation flags can only be used in @kfunc functions (kernel context), not in userspace",),
+    ),
+    Case(
+        "gfp_from_xdp",
+        "kernel_context",
+        False,
+        (
+            "GFP allocation flags can only be used in @kfunc functions (kernel context), not in eBPF programs",
+        ),
+    ),
+    Case(
+        "helper_from_userspace",
+        "helper_scope",
+        False,
+        (
+            "Helper function 'kernel_helper' can only be called from eBPF programs or other helper functions",
+        ),
+    ),
+    Case(
         "load_string",
         "lifecycle_api",
         False,
@@ -109,6 +132,24 @@ CASES = [
         "program_signature",
         False,
         ("@perf_event attributed function parameter must be ctx: *bpf_perf_event_data",),
+    ),
+    Case(
+        "perf_group_too_large",
+        "perf_event_group",
+        False,
+        (
+            "perf event group rooted at 'cache' needs 5 PMU counter slot(s), but target PMU group limit is 4",
+        ),
+        (("KERNELSCRIPT_PERF_GROUP_MAX_EVENTS", "4"),),
+    ),
+    Case(
+        "perf_group_too_many_members",
+        "perf_event_group",
+        False,
+        (
+            "perf event group rooted at 'leader' has 17 member(s), but target perf group limit is 16",
+        ),
+        (("KERNELSCRIPT_PERF_GROUP_MAX_EVENTS", "16"),),
     ),
     Case(
         "probe_wrong_return",
@@ -167,9 +208,16 @@ CASES = [
 ]
 
 
-def run(argv: list[str], cwd: Path, timeout: int = 120) -> subprocess.CompletedProcess[str]:
+def run(
+    argv: list[str],
+    cwd: Path,
+    timeout: int = 120,
+    extra_env: dict[str, str] | None = None,
+) -> subprocess.CompletedProcess[str]:
     env = os.environ.copy()
     env["PWD"] = str(cwd)
+    if extra_env:
+        env.update(extra_env)
     return subprocess.run(
         argv,
         cwd=str(cwd),
@@ -217,7 +265,11 @@ def run_case(case: Case) -> dict[str, object]:
     out.mkdir(parents=True, exist_ok=True)
 
     start = time.perf_counter()
-    res = run([str(COMPILER), "compile", str(source), "-o", str(out)], ROOT)
+    res = run(
+        [str(COMPILER), "compile", str(source), "-o", str(out)],
+        ROOT,
+        extra_env=dict(case.env),
+    )
     elapsed = time.perf_counter() - start
 
     text = res.stdout + res.stderr

@@ -71,7 +71,7 @@ runtime behavior.
 
 | Run ID | Stage | Purpose | Config | Seed/reps | Decision gate | Cost | Risk |
 |--------|-------|---------|--------|-----------|---------------|------|------|
-| R000 | sanity | Static rejection corpus | `./experiments/run_static_checks.py` | 23 cases | all expected diagnostics match | low | done |
+| R000 | sanity | Static rejection corpus | `./experiments/run_static_checks.py` | 28 cases | all expected diagnostics match | low | done |
 | R001 | sanity | Strict verifier matrix | `./experiments/run_verifier_matrix.py` | full corpus | no empty program false positives | low | done |
 | R002 | sanity | XDP attach matrix | `./experiments/run_attach_matrix.py` | full eligible subset | all eligible attach/detach | low | done |
 | R003 | main | XDP traffic baseline | `./experiments/run_xdp_traffic.py` | 10 trials, 1s TCP by default | KS and C pass traffic; count maps increase | low | done |

@@ -1,10 +1,13 @@
 {
-  "expected_failures": 22,
+  "expected_failures": 27,
   "expected_successes": 1,
   "matched_by_category": {
     "config_boundary": 1,
+    "helper_scope": 1,
+    "kernel_context": 2,
     "lifecycle_api": 5,
     "map_type": 3,
+    "perf_event_group": 2,
     "positive_control": 1,
     "program_signature": 5,
     "ringbuf_api": 1,
@@ -12,12 +15,12 @@
     "symbol_validation": 2,
     "type_system": 4
   },
-  "matched_cases": 23,
+  "matched_cases": 28,
   "rows": [
     {
       "category": "positive_control",
       "diagnostic_excerpt": "",
-      "elapsed_sec": 0.004,
+      "elapsed_sec": 0.0025,
       "expected": "success",
       "expected_substrings": "",
       "matched": true,
@@ -41,7 +44,7 @@
     {
       "category": "lifecycle_api",
       "diagnostic_excerpt": " Found 0 config declarations\nPhase 4: Type Checking\n Type error in phase Type Checking at :0:-1: attach() requires (handle, target, flags) - target is a string or perf_options { ... }",
-      "elapsed_sec": 0.0022,
+      "elapsed_sec": 0.0017,
       "expected": "failure",
       "expected_substrings": "attach() requires (handle, target, flags)",
       "matched": true,
@@ -53,7 +56,7 @@
     {
       "category": "lifecycle_api",
       "diagnostic_excerpt": " Found 0 config declarations\nPhase 4: Type Checking\n Type error in phase Type Checking at :0:-1: attach() requires (handle, target, flags) - target is a string or perf_options { ... }",
-      "elapsed_sec": 0.0019,
+      "elapsed_sec": 0.0014,
       "expected": "failure",
       "expected_substrings": "attach() requires (handle, target, flags)",
       "matched": true,
@@ -65,7 +68,7 @@
     {
       "category": "config_boundary",
       "diagnostic_excerpt": " Found 1 config declarations\nPhase 4: Type Checking\n Type error in phase Type Checking at :0:-1: Config field assignments are not allowed in eBPF programs. Config fields can only be modified from userspace code.",
-      "elapsed_sec": 0.0017,
+      "elapsed_sec": 0.0016,
       "expected": "failure",
       "expected_substrings": "Config field assignments are not allowed in eBPF programs",
       "matched": true,
@@ -89,7 +92,7 @@
     {
       "category": "lifecycle_api",
       "diagnostic_excerpt": " Found 0 config declarations\nPhase 4: Type Checking\n Type error in phase Type Checking at :0:-1: detach() requires a ProgramHandle or PerfAttachment",
-      "elapsed_sec": 0.0016,
+      "elapsed_sec": 0.0015,
       "expected": "failure",
       "expected_substrings": "detach() requires a ProgramHandle or PerfAttachment",
       "matched": true,
@@ -101,7 +104,7 @@
     {
       "category": "symbol_validation",
       "diagnostic_excerpt": " KernelScript Compiler\n========================\n Source: /home/yunwei37/workspace/kernel-script-paper/experiments/static_checks/duplicate_main.ks\nPhase 1: Parsing\n Successfully parsed 2 declarations\nPhase 1.5: Import Resolution\n Resolved 0 imports\nPhase 1.6: Include Processing",
-      "elapsed_sec": 0.0016,
+      "elapsed_sec": 0.0015,
       "expected": "failure",
       "expected_substrings": "Duplicate main function",
       "matched": true,
@@ -113,7 +116,7 @@
     {
       "category": "type_system",
       "diagnostic_excerpt": " Found 0 config declarations\nPhase 4: Type Checking\n Type error in phase Type Checking at :0:-1: Type mismatch in function call: add_one",
-      "elapsed_sec": 0.0013,
+      "elapsed_sec": 0.0016,
       "expected": "failure",
       "expected_substrings": "Type mismatch in function call: add_one",
       "matched": true,
@@ -123,9 +126,45 @@
       "source": "experiments/static_checks/fn_wrong_arg_type.ks"
     },
     {
+      "category": "kernel_context",
+      "diagnostic_excerpt": " Found 0 config declarations\nPhase 4: Type Checking\n Type error in phase Type Checking at :0:-1: GFP allocation flags can only be used in @kfunc functions (kernel context), not in userspace",
+      "elapsed_sec": 0.0016,
+      "expected": "failure",
+      "expected_substrings": "GFP allocation flags can only be used in @kfunc functions (kernel context), not in userspace",
+      "matched": true,
+      "name": "gfp_from_userspace",
+      "observed": "failure",
+      "returncode": 1,
+      "source": "experiments/static_checks/gfp_from_userspace.ks"
+    },
+    {
+      "category": "kernel_context",
+      "diagnostic_excerpt": " Found 0 config declarations\nPhase 4: Type Checking\n Type error in phase Type Checking at :0:-1: GFP allocation flags can only be used in @kfunc functions (kernel context), not in eBPF programs",
+      "elapsed_sec": 0.0021,
+      "expected": "failure",
+      "expected_substrings": "GFP allocation flags can only be used in @kfunc functions (kernel context), not in eBPF programs",
+      "matched": true,
+      "name": "gfp_from_xdp",
+      "observed": "failure",
+      "returncode": 1,
+      "source": "experiments/static_checks/gfp_from_xdp.ks"
+    },
+    {
+      "category": "helper_scope",
+      "diagnostic_excerpt": " Found 0 config declarations\nPhase 4: Type Checking\n Type error in phase Type Checking at :0:-1: Helper function 'kernel_helper' can only be called from eBPF programs or other helper functions, not from userspace code",
+      "elapsed_sec": 0.0014,
+      "expected": "failure",
+      "expected_substrings": "Helper function 'kernel_helper' can only be called from eBPF programs or other helper functions",
+      "matched": true,
+      "name": "helper_from_userspace",
+      "observed": "failure",
+      "returncode": 1,
+      "source": "experiments/static_checks/helper_from_userspace.ks"
+    },
+    {
       "category": "lifecycle_api",
       "diagnostic_excerpt": " Found 0 config declarations\nPhase 4: Type Checking\n Type error in phase Type Checking at :0:-1: Type mismatch in function call: load",
-      "elapsed_sec": 0.0018,
+      "elapsed_sec": 0.0015,
       "expected": "failure",
       "expected_substrings": "Type mismatch in function call: load",
       "matched": true,
@@ -137,7 +176,7 @@
     {
       "category": "map_type",
       "diagnostic_excerpt": " Found 0 config declarations\nPhase 4: Type Checking\n Type error in phase Type Checking at :0:-1: Map key type mismatch",
-      "elapsed_sec": 0.0015,
+      "elapsed_sec": 0.0014,
       "expected": "failure",
       "expected_substrings": "Map key type mismatch",
       "matched": true,
@@ -149,7 +188,7 @@
     {
       "category": "map_type",
       "diagnostic_excerpt": " Found 0 config declarations\nPhase 4: Type Checking\n Type error in phase Type Checking at :0:-1: Map value type mismatch",
-      "elapsed_sec": 0.0015,
+      "elapsed_sec": 0.0018,
       "expected": "failure",
       "expected_substrings": "Map value type mismatch",
       "matched": true,
@@ -161,7 +200,7 @@
     {
       "category": "map_type",
       "diagnostic_excerpt": " KernelScript Compiler\n========================\n Source: /home/yunwei37/workspace/kernel-script-paper/experiments/static_checks/map_undefined.ks\nPhase 1: Parsing\n Successfully parsed 2 declarations\nPhase 1.5: Import Resolution\n Resolved 0 imports\nPhase 1.6: Include Processing",
-      "elapsed_sec": 0.0014,
+      "elapsed_sec": 0.0013,
       "expected": "failure",
       "expected_substrings": "Undefined symbol: missing_map",
       "matched": true,
@@ -173,7 +212,7 @@
     {
       "category": "program_signature",
       "diagnostic_excerpt": " Found 0 config declarations\nPhase 4: Type Checking\n Type error in phase Type Checking at :0:-1: @perf_event attributed function parameter must be ctx: *bpf_perf_event_data",
-      "elapsed_sec": 0.0015,
+      "elapsed_sec": 0.0016,
       "expected": "failure",
       "expected_substrings": "@perf_event attributed function parameter must be ctx: *bpf_perf_event_data",
       "matched": true,
@@ -183,9 +222,33 @@
       "source": "experiments/static_checks/perf_wrong_context.ks"
     },
     {
+      "category": "perf_event_group",
+      "diagnostic_excerpt": " Found 0 config declarations\nPhase 4: Type Checking\n Type error in phase Type Checking at :0:-1: perf event group rooted at 'cache' needs 5 PMU counter slot(s), but target PMU group limit is 4; split the events into separate groups or reduce the group size",
+      "elapsed_sec": 0.0016,
+      "expected": "failure",
+      "expected_substrings": "perf event group rooted at 'cache' needs 5 PMU counter slot(s), but target PMU group limit is 4",
+      "matched": true,
+      "name": "perf_group_too_large",
+      "observed": "failure",
+      "returncode": 1,
+      "source": "experiments/static_checks/perf_group_too_large.ks"
+    },
+    {
+      "category": "perf_event_group",
+      "diagnostic_excerpt": " Found 0 config declarations\nPhase 4: Type Checking\n Type error in phase Type Checking at :0:-1: perf event group rooted at 'leader' has 17 member(s), but target perf group limit is 16; split the events into separate groups or reduce the group size",
+      "elapsed_sec": 0.0016,
+      "expected": "failure",
+      "expected_substrings": "perf event group rooted at 'leader' has 17 member(s), but target perf group limit is 16",
+      "matched": true,
+      "name": "perf_group_too_many_members",
+      "observed": "failure",
+      "returncode": 1,
+      "source": "experiments/static_checks/perf_group_too_many_members.ks"
+    },
+    {
       "category": "program_signature",
       "diagnostic_excerpt": " Found 0 config declarations\nPhase 4: Type Checking\n Type error in phase Type Checking at :0:-1: @fprobe attributed function must return i32",
-      "elapsed_sec": 0.0014,
+      "elapsed_sec": 0.0017,
       "expected": "failure",
       "expected_substrings": "@fprobe attributed function must return i32",
       "matched": true,
@@ -197,7 +260,7 @@
     {
       "category": "ringbuf_api",
       "diagnostic_excerpt": " Found 0 config declarations\nPhase 4: Type Checking\n Type error in phase Type Checking at :0:-1: Type mismatch: expected pointer to Event",
-      "elapsed_sec": 0.0014,
+      "elapsed_sec": 0.0016,
       "expected": "failure",
       "expected_substrings": "Type mismatch: expected pointer to Event",
       "matched": true,
@@ -245,7 +308,7 @@
     {
       "category": "type_system",
       "diagnostic_excerpt": " Found 0 config declarations\nPhase 4: Type Checking\n Type error in phase Type Checking at :0:-1: Undefined struct: MissingStruct",
-      "elapsed_sec": 0.0015,
+      "elapsed_sec": 0.0016,
       "expected": "failure",
       "expected_substrings": "Undefined struct: MissingStruct",
       "matched": true,
@@ -257,7 +320,7 @@
     {
       "category": "symbol_validation",
       "diagnostic_excerpt": " KernelScript Compiler\n========================\n Source: /home/yunwei37/workspace/kernel-script-paper/experiments/static_checks/xdp_main.ks\nPhase 1: Parsing\n Successfully parsed 2 declarations\nPhase 1.5: Import Resolution\n Resolved 0 imports\nPhase 1.6: Include Processing",
-      "elapsed_sec": 0.0015,
+      "elapsed_sec": 0.0017,
       "expected": "failure",
       "expected_substrings": "main function cannot have attributes",
       "matched": true,
@@ -269,7 +332,7 @@
     {
       "category": "program_signature",
       "diagnostic_excerpt": " Found 0 config declarations\nPhase 4: Type Checking\n Type error in phase Type Checking at :0:-1: @xdp attributed function must have signature (ctx: *xdp_md) -> xdp_action",
-      "elapsed_sec": 0.0014,
+      "elapsed_sec": 0.0019,
       "expected": "failure",
       "expected_substrings": "@xdp attributed function must have signature",
       "matched": true,
@@ -281,7 +344,7 @@
     {
       "category": "program_signature",
       "diagnostic_excerpt": " Found 0 config declarations\nPhase 4: Type Checking\n Type error in phase Type Checking at :0:-1: @xdp attributed function must have signature (ctx: *xdp_md) -> xdp_action",
-      "elapsed_sec": 0.0014,
+      "elapsed_sec": 0.0017,
       "expected": "failure",
       "expected_substrings": "@xdp attributed function must have signature",
       "matched": true,
@@ -292,5 +355,5 @@
     }
   ],
   "status": "ok",
-  "total_cases": 23
+  "total_cases": 28
 }

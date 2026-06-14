@@ -6,7 +6,7 @@ Source/command: `./experiments/run_xdp_traffic.py`, `./experiments/run_tc_traffi
 
 ## Headline Result
 
-The artifact now has a broader 23-case static rejection corpus, local
+The artifact now has a broader 28-case static rejection corpus, local
 traffic-driven XDP and TC checks, one generated perf_event loader lifecycle
 latency check, one perf_event page-fault counter workload, and one ringbuf
 event-emission workload, direct tcp-congestion struct_ops load/attach/detach
@@ -44,7 +44,7 @@ pass, with XDP count medians of 17.8 versus 18.1Gb/s and TC count medians of
 
 | Run ID | Result file | Status | Key result |
 |--------|-------------|--------|------------|
-| R000 | `results/static_checks_summary.json` | ok | 23/23 static cases match expectation, including 22 expected rejections across lifecycle, signature, map, type, symbol, config, ringbuf, and safety categories. |
+| R000 | `results/static_checks_summary.json` | ok | 28/28 static cases match expectation, including 27 expected rejections across lifecycle, signature, map, type, symbol, config, helper-scope, kernel-context, perf-event group, ringbuf, and safety categories. |
 | R001 | `results/verifier_matrix_summary.json` | ok | 38/43 generated objects load and pin at least one program; build-success subset is 37/41. |
 | R002 | `results/attach_matrix_summary.json` | ok | 27/27 verifier-clean single-section XDP objects attach/detach in isolated namespaces. |
 | R003 | `results/xdp_traffic_summary.json` | ok | XDP pass/count KS and C baselines all pass iperf3 traffic; count gap is 0.6% in this local setup. |
