@@ -196,6 +196,43 @@ eBPF execution model.  For example, a language can know that a function marked
 model maps as typed global variables, and distinguish userspace functions from
 eBPF functions and kfunc definitions.
 
+\section{Design Principles}
+
+The design principles map directly to the three complexities above.  Lifecycle
+complexity motivates explicit domains and lifecycle typing, representation
+complexity motivates typed maps, program handles, and generated project
+structure, and compatibility complexity motivates preserving the kernel
+toolchain while exposing escape hatches for fast-moving kernel interfaces.  The
+next two sections then show how the language realizes these principles.
+
+\textbf{Preserve the kernel toolchain.}  \tool{} does not replace the kernel
+verifier, clang, bpftool, or libbpf.  Instead it generates C and Makefiles that
+flow through the same toolchain used by C/libbpf projects.  This choice gives
+the prototype immediate access to BTF, skeleton generation, and existing
+kernel diagnostics.  It also means compatibility failures remain visible and
+measurable.
+
+\textbf{Make domains explicit.}  The attribute system separates userspace,
+eBPF, helper, and kernel-module code.  This matters because the same surface
+syntax cannot mean the same thing in every domain.  Userspace can allocate and
+print freely, eBPF code must obey stack and helper restrictions, and kfunc code
+targets a module build.  A unified source model is useful only if the compiler
+keeps these domains separate internally.
+
+\textbf{Move verifier-relevant checks earlier.}  The compiler performs safety
+analysis before code generation.  In our run, \texttt{safety\_demo.ks} is
+rejected because the compiler estimates 608 bytes of stack use, above the
+512-byte eBPF limit.  The check does not make the verifier redundant, but it
+can reduce late failures for covered cases that would otherwise require
+inspecting verifier logs.
+
+\textbf{Expose low-level escape hatches.}  eBPF users often need new helpers,
+kernel functions, or BTF-specific types before high-level libraries expose
+them.  \tool{} supports includes and extern declarations so that a program can
+refer to generated header declarations.  For a research prototype, this escape
+hatch matters because the Linux BPF API surface changes faster than a DSL can
+stabilize.
+
 \section{\tool{} Overview}
 
 \tool{} uses attributes to assign functions to execution domains.  A function
@@ -221,22 +258,17 @@ fn main() -> i32 {
 }
 \end{lstlisting}
 
-Maps are declared as typed globals rather than as separate C sections and
-userspace lookup code.  A \tool{} program can declare a hash map from
-\texttt{u32} to a struct, use it in an XDP function, and read or update it in
-userspace.  The compiler lowers the declaration to eBPF map definitions,
-skeleton references, and helper functions.  The same pattern applies to ring
-buffers and perf events: high-level operations remain explicit in source, but
-the generated code performs the required libbpf calls.
-
-The language also experiments with lifecycle typing.  In the source model,
-\texttt{load} returns a program value and \texttt{attach} consumes a compatible
-loaded program and target.  The repository contains tests for detach API
-generation and type errors around program references.  The implementation is
-not a proof of full typestate soundness, but it shows the research direction:
-lifecycle
-ordering can be treated as a language-level property rather than only as a
-runtime convention.
+This small example already exhibits the three relationships that the next
+section makes precise: functions are assigned to execution domains by attribute,
+maps are declared as typed globals shared across domains rather than as separate
+C sections and userspace lookup code, and the program lifecycle
+(\texttt{load}/\texttt{attach}/\texttt{detach}) is expressed over typed program
+handles.  The same global-declaration pattern applies to ring buffers and perf
+events: high-level operations stay explicit in source while the generated code
+performs the required libbpf calls.  All of this structure lives in one source
+file that the compiler later splits into kernel C, userspace C, skeleton
+references, and build logic.  Section~\ref{sec:typesystem} gives the typing
+rules behind each relationship.
 
 \section{Language and Type System}
 \label{sec:typesystem}
@@ -317,42 +349,6 @@ attach-time failure.  Section~\ref{sec:eval} measures the current diagnostic
 behavior; Section~\ref{sec:threats} is explicit that the existing corpus tests
 whether these checks are wired and stable, not yet whether they catch the
 mistakes developers make in practice.
-
-\section{Design Principles}
-
-The design principles map directly to the three complexities above.  Lifecycle
-complexity motivates explicit domains and lifecycle typing, representation
-complexity motivates typed maps, program handles, and generated project
-structure, and compatibility complexity motivates preserving the kernel
-toolchain while exposing escape hatches for fast-moving kernel interfaces.
-
-\textbf{Preserve the kernel toolchain.}  \tool{} does not replace the kernel
-verifier, clang, bpftool, or libbpf.  Instead it generates C and Makefiles that
-flow through the same toolchain used by C/libbpf projects.  This choice gives
-the prototype immediate access to BTF, skeleton generation, and existing
-kernel diagnostics.  It also means compatibility failures remain visible and
-measurable.
-
-\textbf{Make domains explicit.}  The attribute system separates userspace,
-eBPF, helper, and kernel-module code.  This matters because the same surface
-syntax cannot mean the same thing in every domain.  Userspace can allocate and
-print freely, eBPF code must obey stack and helper restrictions, and kfunc code
-targets a module build.  A unified source model is useful only if the compiler
-keeps these domains separate internally.
-
-\textbf{Move verifier-relevant checks earlier.}  The compiler performs safety
-analysis before code generation.  In our run, \texttt{safety\_demo.ks} is
-rejected because the compiler estimates 608 bytes of stack use, above the
-512-byte eBPF limit.  The check does not make the verifier redundant, but it
-can reduce late failures for covered cases that would otherwise require
-inspecting verifier logs.
-
-\textbf{Expose low-level escape hatches.}  eBPF users often need new helpers,
-kernel functions, or BTF-specific types before high-level libraries expose
-them.  \tool{} supports includes and extern declarations so that a program can
-refer to generated header declarations.  For a research prototype, this escape
-hatch matters because the Linux BPF API surface changes faster than a DSL can
-stabilize.
 
 \section{Implementation}
 
@@ -441,72 +437,29 @@ compiler source, applies a tracked compiler-source patch for array-map
 increment lowering, rebuilds the patched compiler, and reruns the same count
 benchmark.
 
-We measure seventeen outcomes.  \textbf{Compiler regression coverage} is
-approximated by the repository test suite.  \textbf{Early rejection} is
-measured by static cases whose expected diagnostics are checked by the harness.
-\textbf{Example marker coverage} is
-approximated by whether examples for XDP, TC, probes, tracepoints, perf events,
-maps, ring buffers, dynptrs, tail calls, kfuncs, and struct\_ops pass through
-the compiler and generated build.  Feature labels are derived from lexical
-markers in the example source, so they are a coarse corpus classifier rather
-than a manual feature-completeness audit.  \textbf{Generated-structure
-centralization} is measured as an expansion factor: lines of \tool{} source
-compared to generated C and Makefile lines.  \textbf{Compatibility} is measured
-by generated build successes, failures, verifier-load outcomes, and isolated
-XDP attach/detach outcomes against the local kernel toolchain.
-\textbf{Matched source footprint} is measured by comparing the maintained
-\tool{} source for local matched workloads with the hand-written C/eBPF objects
-and C/libbpf runners used by the corresponding baselines.
-\textbf{External source-corpus context} is measured by cloning pinned commits
-of public eBPF example/application repositories, scanning selected
-application/example source paths, and counting feature markers without building,
-translating, or running those projects.
-\textbf{External port/build/runtime} is measured by manually porting
-\KSExternalPortWorkloads{} pinned \texttt{xdp-tutorial} XDP sources to \tool{},
-building those ports through generated Makefiles, compiling the corresponding
-original external C/eBPF objects directly with clang, attaching each object to
-an isolated veth, and running iperf3 traffic.  The pass-only workloads require
-traffic to pass, and the map-counter workload also requires map key XDP\_PASS to
-increment.
-\textbf{Mechanism isolation} is measured by the map-update lowering ablation.
-\textbf{Runtime sanity} is measured by iperf3 over veth/netns for matched XDP
-and TC pass/count objects, by a perf-event page-fault counter workload, and by
-a ring-buffer event-emission workload with a submitted/received/drop oracle.
-The traffic stress rerun repeats the XDP and TC traffic checks with longer
-per-trial iperf3 runs.
-\textbf{Struct\_ops object compatibility} is measured by a direct libbpf
-runner that loads, attaches, and detaches the generated
-tcp-congestion-control struct\_ops object and a minimal C/eBPF object with the
-same function set, avoiding generated skeleton code.
-\textbf{Struct\_ops TCP workload compatibility} is measured by selecting the
-registered BPF congestion-control algorithm on a loopback TCP sender socket,
-transferring a fixed byte count, and checking algorithm selection, byte count,
-and detach success for generated and C/eBPF objects.
-\textbf{Struct\_ops callback reachability} is measured by instrumenting the
-generated and C/eBPF tcp-congestion callbacks with BPF array-map flags and
-checking that the clean loopback workload reaches \KSStructOpsCallbackRequired{}
-while a \KSStructOpsCallbackLossPct{} loss-injected loopback workload reaches
-\KSStructOpsCallbackLossRequired{} for both variants.  The loss setting is a
-callback-trigger profile chosen to enter loss-recovery paths, not a robustness
-or TCP-performance sweep.
-\textbf{Struct\_ops skeleton repair} is measured by rebuilding the two
-generated struct\_ops userspace projects, detecting whether the installed
-libbpf skeleton header exposes map-link fields, and applying a minimal
-generated-header repair only when that field is absent.
-\textbf{Scheduler-extension verifier diagnostic} is measured by comparing the
-generated \texttt{sched\_ext\_simple} object with a five-callback C/eBPF control
-object under \texttt{bpftool prog loadall} only, recording pinned-program
-counts, load status, and scheduler-extension state without attaching a
-scheduler.
-\textbf{Scheduler-extension attach/progress} is measured by an opt-in harness
-that registers generated and C/eBPF toy FIFO schedulers, requires sched\_ext to
-stay enabled across five bounded CPU workload trials, records per-worker
-iteration progress and fairness dispersion, and checks cleanup to disabled
-state.
-\textbf{Generated-loader lifecycle}
-is measured by a perf-event loader latency check that requires successful
-load/attach, positive page-fault counter reads, clean detach, and end-to-end
-invocation timing for generated and hand-written loaders.
+We measure seventeen outcomes across the four claims, and report each one with
+its full procedure in the correspondingly grouped subsections of
+Section~\ref{sec:results}; Table~\ref{tab:claimscope} gives the artifact,
+baseline, oracle, and boundary per claim.  For \emph{early checking} we report
+compiler regression coverage (the repository test suite) and early rejection
+(static cases whose expected diagnostics are checked by the harness).  For
+\emph{build, load, and compatibility} we report example buildability,
+verifier-load and isolated XDP attach/detach outcomes, direct struct\_ops object
+compatibility, the struct\_ops TCP-workload and callback-reachability checks, the
+struct\_ops skeleton repair, the scheduler-extension verifier diagnostic and
+opt-in attach/progress harness, and generated-loader lifecycle timing.  For
+\emph{generated structure} we report example marker coverage, the
+generated-structure expansion factor (lines of \tool{} source versus generated C
+and Makefile lines), the matched source-footprint proxy, the external
+source-corpus scan, and the external port/build/runtime portfolio.  For
+\emph{runtime behavior} we report the map-update mechanism-isolation ablation and
+runtime-sanity workloads (matched XDP/TC iperf3 traffic with a longer stress
+rerun, a perf-event page-fault counter, and a ring-buffer event-emission
+workload).  Two caveats apply throughout and are not repeated at each outcome:
+example feature labels are derived from lexical markers in the source and are a
+coarse corpus classifier rather than a feature-completeness audit, and all timing
+and event-rate numbers are local, unpinned samples on the host described above
+rather than statistically controlled benchmarks.
 
 \begin{table*}[t]
 \centering
@@ -592,6 +545,7 @@ upstream-project build coverage, exact packet-count equivalence, or broad
 external application portability.
 
 \section{Results}
+\label{sec:results}
 
 \textbf{Result map.}  The evaluation is organized by four claims.  The example
 build matrix and generated-code expansion test the unified-source structure
@@ -599,7 +553,12 @@ claim.  The unit tests, static rejection corpus, and safety rejection test the
 early-checking claim.  The verifier, attach, perf-event, ring-buffer, and
 struct\_ops checks test local compatibility.  The microbenchmarks, compiler
 patch, traffic runs, and object workloads test runtime behavior and mechanism
-isolation without claiming broad performance equivalence.
+isolation without claiming broad performance equivalence.  The remainder of this
+section presents the results in four groups that follow these claims: early
+checking, build/load/attach compatibility, generated structure and source
+footprint, and runtime behavior.
+
+\subsection{Early checking}
 
 \textbf{Test suite.}  The compiler test suite reports \KSTotalUnitSuites{}
 successful suites and \KSTotalUnitTests{} passing tests with no reported
@@ -635,6 +594,8 @@ C/libbpf path would only surface late at verifier-load or attach time.  That
 stronger claim requires an organic mistake corpus rather than a synthetic one;
 we make this gap explicit in Section~\ref{sec:threats} and treat the organic
 study as the key remaining early-checking experiment.
+
+\subsection{Build, load, attach, and compatibility}
 
 \textbf{Example buildability.}  Table~\ref{tab:build} summarizes the example
 build results.  Of \KSTotalExamples{} examples, \KSKSCompileOK{} compile from
@@ -822,6 +783,8 @@ and removes the namespace.  The matrix attaches and detaches \KSAttachOK{} of
 \KSAttachFailed{} failures.  This broadens the deployment evidence beyond one
 smoke-test loader, but it is not a packet-behavior or throughput test.
 
+\subsection{Generated structure and source footprint}
+
 \textbf{Example marker coverage.}  The examples exercise many eBPF domains.
 Table~\ref{tab:features} reports attempted examples, examples that pass the
 \tool{} compiler, and examples that fully build against the local toolchain.
@@ -955,6 +918,8 @@ respectively.  Receiver-throughput medians range from
 throughput and counter-rate numbers are descriptive local samples, not a
 ranking.  The check is useful external port sanity evidence, but it remains a
 small manual XDP portfolio.
+
+\subsection{Runtime behavior and mechanism isolation}
 
 \textbf{Runtime microbenchmarks and lowering ablation.}
 Table~\ref{tab:micro} uses BPF\_PROG\_TEST\_RUN for 100000 repetitions over
