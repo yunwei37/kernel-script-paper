@@ -238,6 +238,86 @@ lifecycle
 ordering can be treated as a language-level property rather than only as a
 runtime convention.
 
+\section{Language and Type System}
+\label{sec:typesystem}
+
+Because the paper's central claim is a \emph{typed} unified-source model, this
+section specifies the parts of the type system that encode cross-boundary
+structure.  We describe the model informally but precisely; we do not give a
+full formal semantics or a soundness proof, and we are explicit below about what
+each rule does and does not guarantee.  Every rule in this section corresponds
+to a concrete diagnostic exercised by the rejection corpus in
+Section~\ref{sec:eval} (the file names in parentheses are the cases in
+\texttt{experiments/static\_checks/}).
+
+\textbf{Domains as attributes.}  A \tool{} program is a flat sequence of
+declarations.  A function attribute assigns each function to an execution domain
+$d \in \{\textit{user}, \textit{ebpf}, \textit{helper}, \textit{kfunc}\}$:
+\texttt{@xdp}, \texttt{@tc}, \texttt{@probe}, \texttt{@tracepoint}, and
+\texttt{@perf\_event} mark eBPF entry points; \texttt{@helper} marks
+kernel-shared eBPF code; \texttt{@kfunc} and \texttt{@private} mark
+kernel-module code; an unattributed \texttt{fn} is userspace.  The type checker
+tags each function with its domain and rejects calls that cross the domain
+lattice illegally, for example a userspace function calling an \texttt{@helper}
+(\texttt{helper\_from\_userspace}) or kernel-context allocation requested from a
+userspace or XDP domain (\texttt{gfp\_from\_userspace}, \texttt{gfp\_from\_xdp}).
+Each eBPF attribute also fixes a context type and a return type: \texttt{@xdp}
+requires \texttt{ctx:\,*xdp\_md} and returns \texttt{xdp\_action}; \texttt{@tc}
+requires \texttt{*\_\_sk\_buff} and returns \texttt{i32}.  A function whose
+signature disagrees with its attribute is rejected before code generation
+(\texttt{xdp\_wrong\_context}, \texttt{tc\_wrong\_context},
+\texttt{xdp\_wrong\_return}, \texttt{probe\_wrong\_return}).
+
+\textbf{Maps as typed globals.}  A map is a typed global declaration
+\texttt{var m : hash<K,V>(N)} or \texttt{array<K,V>(N)}, rather than a separate C
+section plus userspace lookup code.  The element types form a contract checked
+at every access site: an index \texttt{m[k]} requires \texttt{k\,:\,K} and yields
+a value of type \texttt{V}, in both eBPF and userspace domains.  Map accesses
+with the wrong key or value type, or to an undeclared map, are rejected
+(\texttt{map\_string\_key}, \texttt{map\_string\_value}, \texttt{map\_undefined}).
+
+\textbf{Program lifecycle as typestate.}  The core cross-boundary invariant is
+program lifecycle.  \tool{} distinguishes a \texttt{FunctionRef} (a reference to
+an \texttt{@}-attributed function) from a \texttt{ProgramHandle} (a loaded
+program), and types the lifecycle builtins so that only \texttt{load} can
+produce a \texttt{ProgramHandle}:
+\[
+\frac{\Gamma \vdash f : \texttt{FunctionRef}}
+     {\Gamma \vdash \texttt{load}(f) : \texttt{ProgramHandle}}
+\qquad
+\frac{\Gamma \vdash h : \texttt{ProgramHandle}}
+     {\Gamma \vdash \texttt{detach}(h) : \texttt{unit}}
+\]
+\[
+\frac{\Gamma \vdash h : \texttt{ProgramHandle} \quad
+      \Gamma \vdash t : \texttt{string},\; \mathit{fl} : \texttt{u32}}
+     {\Gamma \vdash \texttt{attach}(h, t, \mathit{fl}) : \texttt{u32}}
+\]
+Because \texttt{attach} and \texttt{detach} consume a \texttt{ProgramHandle} and
+only \texttt{load} produces one, ``attach before load'' is a \emph{type} error
+rather than a runtime failure: passing a bare \texttt{FunctionRef}
+(\texttt{attach\_without\_load}), an integer (\texttt{attach\_integer\_handle}),
+or a string (\texttt{load\_string}, \texttt{detach\_string}) to a lifecycle
+builtin does not type-check.  This is a deliberately lightweight typestate
+discipline.  What it guarantees is that lifecycle builtins are only applied to
+values of the correct lifecycle type, so the producer/consumer relationship
+between \texttt{FunctionRef} and \texttt{ProgramHandle} encodes the intended
+\texttt{load}\,$\rightarrow$\,\texttt{attach}\,$\rightarrow$\,\texttt{detach}
+ordering.  What it does \emph{not} guarantee is full path-sensitive typestate
+soundness: the current checker does not statically rule out use-after-detach,
+double-attach, or leaked handles on every control-flow path.  Establishing those
+properties would require a flow-sensitive analysis we have not implemented, and
+we therefore treat lifecycle typing as a research direction rather than a closed
+result.
+
+\textbf{From invariants to diagnostics.}  The value of making these relationships
+typed is that each cross-boundary invariant becomes a localized compiler
+diagnostic instead of an implicit naming convention or a late verifier or
+attach-time failure.  Section~\ref{sec:eval} measures the current diagnostic
+behavior; Section~\ref{sec:threats} is explicit that the existing corpus tests
+whether these checks are wired and stable, not yet whether they catch the
+mistakes developers make in practice.
+
 \section{Design Principles}
 
 The design principles map directly to the three complexities above.  Lifecycle
@@ -297,6 +377,7 @@ field typing, stack estimates, function signature validation, and userspace
 API generation.
 
 \section{Evaluation Methodology}
+\label{sec:eval}
 
 We evaluate \tool{} as a compiler and systems artifact.  The goal is to test
 whether the unified-source model centralizes recurring eBPF project structure,
@@ -541,9 +622,19 @@ symbol-validation errors, \KSStaticConfigBoundary{} config-boundary violation,
 kernel-context allocation violations, \KSStaticPerfEventGroup{} perf-event
 group-bound violations, \KSStaticRingbuf{} ring-buffer API misuse, and
 \KSStaticSafety{} stack-limit violation.  These cases are not a
-soundness proof, but they make the early-rejection claim falsifiable: a future
-compiler change that accepts one of these invalid programs or changes the
-diagnostic contract will fail the paper-number generation path.
+soundness proof, and we are deliberately careful about what they do and do not
+show.  The corpus is author-constructed: each invalid program was written to
+exercise one specific check and confirmed to be rejected.  It is therefore a
+\emph{diagnostic-contract regression test}.  It demonstrates that the checks of
+Section~\ref{sec:typesystem} are implemented, attached to the right error
+classes, and stable, so that a future compiler change which silently accepts one
+of these invalid programs, or changes its diagnostic category, will fail the
+paper-number generation path.  It does \emph{not} establish that these checks
+catch the mistakes developers actually make, nor that they reject errors the
+C/libbpf path would only surface late at verifier-load or attach time.  That
+stronger claim requires an organic mistake corpus rather than a synthetic one;
+we make this gap explicit in Section~\ref{sec:threats} and treat the organic
+study as the key remaining early-checking experiment.
 
 \textbf{Example buildability.}  Table~\ref{tab:build} summarizes the example
 build results.  Of \KSTotalExamples{} examples, \KSKSCompileOK{} compile from
@@ -782,11 +873,17 @@ rather than a direct developer-effort result.
 
 The metric is intentionally conservative.  It does not say that every
 generated line is exactly a hand-written line saved, and it does not compare
-against a ported external application corpus.  It does show that \tool{}
-centralizes recurring eBPF project structure.  Examples such
-as perf events have particularly high expansion factors because attaching and
-reading counters requires substantial userspace coordination code relative to the
-kernel program itself.
+against a ported external application corpus.  Within these bounds it shows that
+\tool{} \emph{centralizes recurring eBPF project structure for this
+self-authored corpus}: the large ratios are evidence of concern centralization
+on examples written by the implementation authors, not a corpus-independent
+claim that \tool{} source is always smaller than hand-written code.  The external
+port portfolio below is the cleanest available check on that boundary, and it
+shows the ratio does not transfer unchanged to independent code (the \tool{}
+ports and the external eBPF program bodies have the same line count).  Examples
+such as perf events have particularly high expansion factors because attaching
+and reading counters requires substantial userspace coordination code relative
+to the kernel program itself.
 
 \textbf{Matched source-footprint proxy.}
 The matched source-footprint script covers \KSSourceFootprintWorkloads{} local
@@ -833,7 +930,18 @@ The external port harness uses three pinned \texttt{xdp-tutorial} XDP programs
 as concrete checks beyond source-only scanning: \texttt{basic01-xdp-pass},
 \texttt{basic02-prog-by-name}, and \texttt{basic03-map-counter}.  The \tool{}
 ports total \KSExternalPortKSSloc{} nonblank noncomment lines, while the
-original external C/eBPF program bodies total \KSExternalPortCSloc{} lines.  The
+original external C/eBPF program bodies total \KSExternalPortCSloc{} lines.  This
+parity is the most important number in the external check, and it directly
+qualifies the generated-structure result: on code the \tool{} authors did not
+write, the large source-footprint ratios of the self-authored corpus do not
+reproduce.  The comparison is not perfectly matched---the \tool{} count includes
+the userspace \texttt{main} that loads and attaches the program, whereas the
+external C count is the eBPF program body alone and relies on
+\texttt{xdp-tutorial}'s shared userspace loader that this count excludes---so the
+honest reading is that the external port neither confirms a corpus-independent
+line-count advantage nor shows \tool{} to be larger; it shows that the
+centralization benefit is corpus-dependent and must be measured per workload
+rather than assumed.  The
 \tool{} ports build through generated Makefiles, and the original external
 C/eBPF sources compile directly to BPF objects with clang.  All
 \KSExternalPortVariants{} objects attach to isolated veth devices and pass
@@ -1069,6 +1177,7 @@ same-repository port set and cannot justify a broad external-application
 portability claim.
 
 \section{Threats to Validity}
+\label{sec:threats}
 
 \textbf{No developer-time study.}  The source-footprint proxy compares
 \tool{} source against the hand-written C/eBPF baselines and C/libbpf runners
@@ -1090,15 +1199,34 @@ observability agents, then reimplement each in \tool{} and C/libbpf.  The
 external source scan adds independent feature context, but it is source-only and
 does not remove this threat.  The external port portfolio lowers the risk for
 three small XDP tutorial workloads but leaves the broader corpus threat in
-place.
+place.  This bias bears directly on the generated-structure and source-footprint
+results: the large expansion and footprint ratios are measured on
+author-written examples, and on the one independent workload set the \tool{} and
+external eBPF line counts are equal.  We therefore scope the centralization claim
+to ``concern centralization for this corpus'' and do not claim a
+corpus-independent reduction in source size; establishing the latter requires the
+broader reimplement-in-both study described above.
 
-\textbf{Static checks are targeted, not complete.}  The static rejection
-corpus is a regression test for selected compiler checks, not a formal proof of
-lifecycle soundness or memory safety.  It strengthens the paper by making
-early-rejection claims executable across \KSStaticExpectedFailures{} invalid
-programs, but it does not cover all invalid attach orders, helper contracts,
-context-dependent verifier failures, or semantic equivalence with hand-written
-C/libbpf.
+\textbf{Static checks are targeted and synthetic, not organic or complete.}
+The static rejection corpus is an author-constructed regression test for
+selected compiler checks, not a formal proof of lifecycle soundness or memory
+safety, and not a sample of real developer mistakes.  Because each program was
+written to be rejected, the corpus shows that the checks of
+Section~\ref{sec:typesystem} are wired and stable, but it cannot by itself show
+that early checking pays off in practice: it does not cover all invalid attach
+orders, helper contracts, context-dependent verifier failures, or semantic
+equivalence with hand-written C/libbpf, and it cannot quantify how often \tool{}
+moves a real failure earlier than the C/libbpf path.  The experiment that would
+settle this is an \emph{organic} early-checking study, which we have not yet run:
+collect real eBPF mistakes (for example from the revision history and issue
+trackers of \texttt{xdp-tutorial}, \texttt{libbpf-bootstrap}, and Cilium, or via
+mutation of working programs), port each to \tool{}, and report the failure
+stage in each toolchain---\tool{} compile-time rejection versus C/libbpf
+clang-compile, verifier-load, or attach-time failure.  Such a study would
+convert the current regression test into a measured claim about which late
+failures \tool{} actually shifts earlier; until it is done, the early-checking
+contribution should be read as ``these checks exist and are stable,'' not ``these
+checks catch the bugs developers hit.''
 
 \textbf{The compiler patch is narrow and experimental.}  The patch used in the
 ablation is a tracked compiler-source patch applied to a copied compiler tree,
@@ -1150,23 +1278,65 @@ dependency diagnostic when a generated feature cannot be compiled locally.
 
 \section{Related Work}
 
-C/libbpf remains the reference workflow for general-purpose eBPF development~\cite{libbpf}.
-It exposes the full API surface and integrates with BTF and Compile Once, Run
-Everywhere (CO-RE), but it
-requires developers to manage multiple artifacts manually.  Go and Rust
-libraries such as cilium/ebpf and Aya improve userspace integration and type
-safety within their host languages, but still separate the eBPF program from
-the controlling application~\cite{aya,cilium-ebpf}.  bpftrace takes the opposite approach: it offers
-a concise high-level language, but focuses on tracing rather than arbitrary
-XDP, TC, struct\_ops, or kfunc-oriented applications~\cite{bpftrace}.
+\textbf{eBPF and XDP foundations.}  XDP established the in-kernel programmable
+packet-processing model that \tool{} targets, executing verified eBPF at the
+earliest receive point~\cite{xdp}, and the broader eBPF/XDP design space and its
+application classes have since been surveyed in
+detail~\cite{ebpfsurvey,linux-ebpf}.  C/libbpf remains the reference workflow:
+it exposes the full API surface and integrates BTF and Compile Once, Run
+Everywhere (CO-RE), but it requires developers to manage kernel code, userspace
+loaders, skeletons, maps, and build logic as separate
+artifacts~\cite{libbpf}.  \tool{} keeps this toolchain underneath but moves the
+multi-artifact structure into one type-checked source.
 
-\tool{} occupies a different point in the design space.  The language is
-compiled rather than interpreted, targets more domains than tracing-only
-languages, and is more opinionated than host-language bindings.  Its closest research question is whether eBPF
-application structure can be made explicit enough for a compiler to generate
-the low-level project while preserving compatibility with the Linux BPF
-toolchain.  The evaluated \tool{} implementation is therefore best read as both
-an implementation and a concrete design artifact for this space.
+\textbf{Verification and optimization of kernel extensions.}  A separate line of
+work hardens or optimizes the eBPF programs themselves.  PREVAIL replaces parts
+of the in-kernel verifier with an abstract-interpretation analysis that is more
+precise on larger programs~\cite{prevail}, and K2 uses program synthesis to
+produce smaller, safe eBPF objects from existing ones~\cite{k2}.  hXDP compiles
+eBPF for execution on FPGA NICs~\cite{hxdp}.  These systems operate on the
+eBPF \emph{bytecode} after it exists; \tool{} is complementary and earlier in
+the pipeline, generating the bytecode (and the surrounding loader and build) and
+moving selected checks ahead of the verifier rather than replacing or
+re-optimizing it.  Our compiler-source ablation
+(Section~\ref{sec:eval}) touches the same instruction-lowering concerns that K2
+optimizes, but as a single hand-identified rule, not an optimizer.
+
+\textbf{Languages and bindings for eBPF.}  bpftrace offers a concise high-level
+language but deliberately narrows the target to tracing, excluding XDP, TC,
+struct\_ops, and kfunc workflows~\cite{bpftrace}.  Host-language libraries such
+as Aya (Rust) and cilium/ebpf (Go) improve userspace integration and type safety
+within their host language, but preserve the split between the eBPF program and
+the controlling application~\cite{aya,cilium-ebpf}.  \tool{} differs on both
+axes: it is compiled and multi-domain rather than tracing-only, and it unifies
+the program and its controller in one source rather than binding a separately
+written program from a host language.
+
+\textbf{Domain-specific languages for packet and dataplane processing.}  The
+idea of compiling one typed description into a split low-level implementation has
+strong precedent outside eBPF.  P4 compiles a single protocol-independent
+program into target-specific parser and match-action
+pipelines~\cite{p4}, and the Click modular router composes packet processing
+from typed elements~\cite{click}.  \tool{} attacks an analogous but distinct
+unification problem: unlike a P4 pipeline, an eBPF application must also generate
+its userspace coordinator and survive a late, general-purpose kernel verifier
+and fast-moving libbpf/bpftool ABIs, which is the source of the compatibility
+limits we measure.
+
+\textbf{Typestate and resource-lifecycle typing.}  \tool{}'s lifecycle discipline
+(Section~\ref{sec:typesystem}) is a lightweight instance of typestate, the idea
+that an object's legal operations depend on its current
+state~\cite{typestate}.  We enforce only the producer/consumer handle
+distinction rather than a full flow-sensitive typestate analysis, so this
+connection is a design influence and a direction for future work rather than a
+claim of equivalent guarantees.
+
+\textbf{Positioning.}  \tool{} therefore occupies a point not covered by the
+above: a compiled, multi-domain, single-source language whose research question
+is whether eBPF application structure can be made explicit enough for a compiler
+to generate the low-level project \emph{while preserving} the existing Linux BPF
+toolchain.  The evaluated implementation is best read as both an implementation
+and a concrete design artifact for that point in the space.
 
 \section{Conclusion}
 
