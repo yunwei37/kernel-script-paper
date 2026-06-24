@@ -120,7 +120,12 @@ between programs.  A program reference is simultaneously a source-level
 function name, a generated BPF program section, a skeleton field, a file
 descriptor, and possibly a BPF link.  In C/libbpf, these relationships are
 implicit naming conventions and generated-header dependencies.  In \tool{},
-they can be first-class language values.
+they can be first-class language values.  The same idea also applies to
+cross-language handoff: a userspace stage can \texttt{exec()} into a Python
+script while inheriting already-open map file descriptors, and the compiler can
+generate the Python-side wrapper from the same source declarations.  In that
+case, the shared map schema is not restated in ad hoc FFI glue; it remains part
+of the unified source model.
 
 This observation motivates the paper's main scientific question: can a typed
 unified-source model make cross-boundary eBPF application structure explicit to
@@ -135,8 +140,10 @@ structure to generate the loader, maps, and build logic.
 write eBPF entry points, helper functions, userspace control flow, maps,
 tail-call style delegation, ring buffers, perf events, kfunc declarations, and
 kernel-module code in one source language.  The compiler lowers this source to
-eBPF C, userspace C, optional module C, a Makefile, and then the normal libbpf
-and bpftool path can produce objects, skeletons, and binaries.  Because
+eBPF C, userspace C, optional module C, a Makefile, and, when a userspace stage
+hands off to Python through \texttt{exec()}, an auto-generated Python wrapper
+for inherited map descriptors.  The normal libbpf and bpftool path can then
+produce objects, skeletons, and binaries.  Because
 \tool{} is explicitly beta software, its most useful research role today is as
 a prototype for studying the design space rather than as a production-ready
 replacement for libbpf.
@@ -275,7 +282,15 @@ map-value field reads can likewise lower through
 \texttt{bpf\_dynptr\_from\_mem} plus \texttt{bpf\_dynptr\_data}.  All of this structure lives in one source
 file that the compiler later splits into kernel C, userspace C, skeleton
 references, and build logic.  Section~\ref{sec:typesystem} gives the typing
-rules behind each relationship.
+rules behind each relationship.  The same splitting mechanism also supports a
+less conventional path exercised by the repository's
+\texttt{examples/test\_exec.ks}: after attaching an XDP program, the generated
+userspace stage can replace itself with a Python process, preserve the relevant
+map file descriptors across \texttt{exec()}, and import an auto-generated
+wrapper that exposes those maps as Python objects.  This is still the same
+unified-source claim, just carried across a
+kernel$\leftrightarrow$userspace$\leftrightarrow$script boundary instead of
+stopping at a C loader.
 
 \section{Language and Type System}
 \label{sec:typesystem}
@@ -385,6 +400,10 @@ be emitted as \texttt{bpf\_dynptr\_write} calls and the corresponding
 For helper-visible map-value field reads, the backend can emit
 \texttt{bpf\_dynptr\_from\_mem} plus \texttt{bpf\_dynptr\_data} instead of
 requiring the developer to hand-assemble that helper sequence.
+Those generated userspace APIs are not limited to C entry
+points: the implementation also contains explicit support for \texttt{exec()}
+handoff, including generated Python wrappers that reconstruct typed access to
+inherited eBPF maps from compile-time map metadata.
 
 \section{Evaluation Methodology}
 \label{sec:eval}
@@ -1120,6 +1139,19 @@ fairness proxy for one toy FIFO policy.  The
 artifact still does not establish broad runtime equivalence with hand-written
 C/libbpf.
 
+One especially suggestive design point is the repository's \texttt{exec()}
+bridge to Python.  In that path, \tool{} does not merely generate a C loader
+for a BPF object; it also carries typed map declarations across a process
+replacement boundary by preserving file descriptors and emitting a Python
+wrapper from the same source metadata.  This matters to the paper's
+cross-boundary-structure claim because the compiler, rather than the developer,
+performs the bookkeeping needed to reopen the shared state on the Python side.
+The checked-in example stops at direct map reads and writes, so we do not claim
+a full machine-learning integration result.  But the mechanism does expose a
+practical path from eBPF-collected state into the Python analysis ecosystem,
+where many current data-processing and ML workflows already live, without
+requiring the map schema and descriptor plumbing to be rewritten by hand.
+
 The struct\_ops failures are instructive.  A DSL can hide coordination code, but it
 cannot hide all ABI and API drift.  When bpftool-generated skeletons and
 installed libbpf headers disagree, the generated userspace C fails.  A direct
@@ -1291,12 +1323,30 @@ optimizes, but as a single hand-identified rule, not an optimizer.
 
 \textbf{Languages and bindings for eBPF.}  bpftrace offers a concise high-level
 language but deliberately narrows the target to tracing, excluding XDP, TC,
-struct\_ops, and kfunc workflows~\cite{bpftrace}.  Host-language libraries such
-as Aya (Rust) and cilium/ebpf (Go) improve userspace integration and type safety
-within their host language, but preserve the split between the eBPF program and
-the controlling application~\cite{aya,cilium-ebpf}.  \tool{} differs on both
-axes: it is compiled and multi-domain rather than tracing-only, and it unifies
-the program and its controller in one source rather than binding a separately
+struct\_ops, and kfunc workflows~\cite{bpftrace}.  Python-facing systems are also
+important context here: BCC makes eBPF substantially easier to script from
+Python and is especially influential for tracing, observability, and rapid
+tooling, but its usual model still places Python as the userspace controller
+around embedded or separate BPF code rather than making both sides one typed
+source artifact~\cite{bcc}.  This Python-facing direction also appears in
+application-level work on AI observability: eInfer uses eBPF to provide
+transparent, fine-grained tracing for distributed LLM inference, reconstructing
+per-request behavior across inference components without requiring source-level
+instrumentation of the target serving stack~\cite{einfer-ebpf}.  That line of
+work uses eBPF to \emph{observe} AI systems.  By contrast, \tool{}'s
+\texttt{exec()}-to-Python path targets a different boundary: it brings the
+glue between eBPF-resident state and a Python analysis consumer into the
+compiler's unified-source model, so that map schemas, descriptor handoff, and
+generated wrappers are derived from one typed source rather than assembled as
+separate integration code.  For AI observability systems such as eInfer, this
+kind of unified-source glue offers a path to reduce handwritten coordination
+code between eBPF-resident state and Python-side analysis logic.  Host-language
+libraries such as Aya (Rust) and
+cilium/ebpf (Go) likewise improve userspace integration and type safety within
+their host language, but preserve the split between the eBPF program and the
+controlling application~\cite{aya,cilium-ebpf}.  \tool{} differs on both axes:
+it is compiled and multi-domain rather than tracing-only, and it unifies the
+program and its controller in one source rather than binding a separately
 written program from a host language.
 
 \textbf{Domain-specific languages for packet and dataplane processing.}  The
