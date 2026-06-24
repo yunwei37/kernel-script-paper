@@ -32,7 +32,9 @@ evaluation scripts, generated results, and a paper draft.
 - `experiments/run_perf_event_counter.py`: perf_event page-fault map-counter
   workload against a hand-written C/eBPF baseline.
 - `experiments/run_ringbuf_workload.py`: XDP ring-buffer event-emission
-  workload against a hand-written C/eBPF baseline.
+  workload against a hand-written C/eBPF baseline, plus a generated-code check
+  that high-level `reserve()`/field-write/`submit()` source operations lower to
+  an expected dynptr helper pattern.
 - `experiments/run_struct_ops_compat.py`: direct struct_ops load/attach/detach
   compatibility check against a hand-written C/eBPF baseline.
 - `experiments/run_struct_ops_workload.py`: loopback TCP workload using selected
@@ -166,7 +168,8 @@ Run the optional perf_event page-fault counter workload, which also requires
 ```
 
 Run the optional ring-buffer event-emission workload, which also requires
-`sudo -n`:
+`sudo -n` and additionally records whether the generated KernelScript eBPF C
+contains the expected dynptr helper lowering pattern:
 
 ```bash
 ./experiments/run_ringbuf_workload.py

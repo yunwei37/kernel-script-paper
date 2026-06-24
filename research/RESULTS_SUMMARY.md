@@ -46,7 +46,9 @@ end-to-end invocation latencies are 15.7ms and 18.2ms, with p90 latencies of
 perf_event counter workload reports 1.02 versus 1.05 million events/s for
 generated and hand-written objects with exact BPF/perf counter agreement. The
 ringbuf workload reports 2.09 versus 2.18 million events/s with exact
-submitted/received agreement and zero drops. The struct_ops compatibility
+submitted/received agreement and zero drops, and the generated `.ebpf.c`
+contains the expected `bpf_ringbuf_reserve_dynptr` / `bpf_dynptr_data` /
+`bpf_dynptr_write` / `bpf_ringbuf_submit_dynptr` helper pattern. The struct_ops compatibility
 check loads, attaches, and detaches both generated and C/eBPF tcp-congestion
 objects in 3/3 privileged trials without using generated skeletons. The
 struct_ops TCP workload selects the registered generated and C/eBPF BPF
@@ -85,7 +87,7 @@ pass, with XDP count medians of 17.3 versus 15.3 Gb/s and TC count medians of
 | R004 | `results/tc_traffic_summary.json` | ok | TC ingress pass/count KS and C baselines all pass iperf3 traffic; count medians are within 2.5% in this local setup, with this run favoring KernelScript. |
 | R005 | `results/perf_event_loader_summary.json` | ok | Generated perf_event loader and C/libbpf baseline both pass 20/20 lifecycle trials; median invocation latencies are 15.7ms and 18.2ms, with p90 latencies of 20.6ms and 21.1ms. |
 | R006 | `results/perf_event_counter_summary.json` | ok | Perf_event page-fault counter objects both pass 10/10 trials; median BPF map counts exactly match perf counts at 262147 events. |
-| R007 | `results/ringbuf_workload_summary.json` | ok | Ringbuf event-emission objects both pass 10/10 trials; submitted and received counts match at 50000 events with zero drops. |
+| R007 | `results/ringbuf_workload_summary.json` | ok | Ringbuf event-emission objects both pass 10/10 trials; submitted and received counts match at 50000 events with zero drops, and the generated source contains the expected dynptr helper lowering pattern. |
 | R008 | `results/struct_ops_compat_summary.json` | ok | Generated and C/eBPF tcp-congestion struct_ops objects both load, attach, and detach in 3/3 trials through one direct libbpf runner. |
 | R009 | `results/traffic_stress_summary.json` | ok | Longer 3 x 5s XDP/TC traffic stress rerun passes all oracles; in this local setup, XDP and TC count medians are within 13.0% and 3.9% respectively, with this run favoring KernelScript. |
 | R010 | `results/struct_ops_skeleton_repair_summary.json` | ok | Original generated struct_ops userspace builds are 0/2; after a local version-aware skeleton header repair, 2/2 generated userspace projects build. |
