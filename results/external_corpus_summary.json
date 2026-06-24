@@ -3,8 +3,8 @@
     "false_negative_count": 0,
     "false_positive_count": 0,
     "interpretation": "small manual spot-check of the lexical feature classifier, not a statistical precision/recall estimate",
-    "matched_samples": 7,
-    "sample_count": 7,
+    "matched_samples": 8,
+    "sample_count": 8,
     "samples": [
       {
         "detected_features": [
@@ -133,48 +133,64 @@
         "path": "tools/scxtop/src/bpf/main.bpf.c",
         "rationale": "observability tool with mixed probe, perf-event, ringbuf, and scheduler markers",
         "repo": "scx"
+      },
+      {
+        "detected_features": [
+          "maps",
+          "tail_call"
+        ],
+        "expected_features": [
+          "maps",
+          "tail_call"
+        ],
+        "false_negatives": [],
+        "false_positives": [],
+        "matched": true,
+        "path": "bpf/lib/tailcall.h",
+        "rationale": "header that defines a prog-array map for internal tail-call dispatch",
+        "repo": "cilium"
       }
     ],
     "status": "ok"
   },
   "description": "Pinned source-only scan of external eBPF application/example repositories.",
-  "feature_count": 14,
+  "feature_count": 15,
   "feature_file_counts": {
     "iterator": 6,
     "kfunc": 45,
     "kprobe": 5,
     "lsm": 1,
-    "maps": 66,
+    "maps": 71,
     "perf_event": 5,
     "ringbuf": 13,
     "sched_ext": 76,
     "socket": 1,
     "struct_ops": 20,
-    "tail_call": 0,
+    "tail_call": 5,
     "tc": 4,
     "tracepoint": 12,
     "uprobe": 3,
-    "xdp": 45
+    "xdp": 46
   },
   "feature_repo_counts": {
     "iterator": 2,
     "kfunc": 1,
     "kprobe": 2,
     "lsm": 1,
-    "maps": 3,
+    "maps": 4,
     "perf_event": 3,
     "ringbuf": 2,
     "sched_ext": 1,
     "socket": 1,
     "struct_ops": 1,
-    "tail_call": 0,
+    "tail_call": 1,
     "tc": 2,
     "tracepoint": 3,
     "uprobe": 2,
-    "xdp": 1
+    "xdp": 2
   },
-  "file_count": 166,
-  "repo_count": 3,
+  "file_count": 171,
+  "repo_count": 4,
   "repos": [
     {
       "commit": "fac4e8ddf011aead8e14962bf8db74542331264b",
@@ -208,12 +224,23 @@
       "sloc": 27574,
       "url": "https://github.com/sched-ext/scx.git",
       "userspace_files": 0
+    },
+    {
+      "commit": "07e29035bfd904b5fad8729a0e0c9d8515a500c0",
+      "commit_short": "07e29035bfd9",
+      "files": 5,
+      "header_files": 2,
+      "kernel_files": 0,
+      "name": "cilium",
+      "sloc": 3845,
+      "url": "https://github.com/cilium/cilium.git",
+      "userspace_files": 3
     }
   ],
   "roles": {
-    "header": 52,
+    "header": 54,
     "kernel": 82,
-    "userspace": 32
+    "userspace": 35
   },
   "rows": [
     {
@@ -4033,6 +4060,121 @@
       "role": "kernel",
       "sections": ".maps ?tp_btf/gpu_mem_total ?tp_btf/hw_pressure_update ?tp_btf/sched_process_hang ?tp_btf/sched_process_wait kprobe/__scx_bpf_dsq_insert_vtime kprobe/bpf_scx_reg kprobe/bpf_scx_unreg kprobe/generic_kprobe kprobe/scx_bpf_cpuperf_set kprobe/scx_bpf_dispatch kprobe/scx_bpf_dispatch_from_dsq kprobe/scx_bpf_dispatch_from_dsq_set_slice kprobe/scx_bpf_dispatch_from_dsq_set_vtime kprobe/scx_bpf_dispatch_vtime kprobe/scx_bpf_dispatch_vtime_from_dsq kprobe/scx_bpf_dsq_insert kprobe/scx_bpf_dsq_insert___v2 kprobe/scx_bpf_dsq_insert_vtime kprobe/scx_bpf_dsq_move kprobe/scx_bpf_dsq_move_set_slice kprobe/scx_bpf_dsq_move_set_vtime kprobe/scx_bpf_dsq_move_vtime license perf_event syscall tp_btf/cpuhp_enter tp_btf/cpuhp_exit tp_btf/ipi_send_cpu tp_btf/sched_migrate_task tp_btf/sched_process_exec tp_btf/sched_process_exit tp_btf/sched_process_fork tp_btf/sched_switch tp_btf/sched_wakeup tp_btf/sched_wakeup_new tp_btf/sched_waking tp_btf/softirq_entry tp_btf/softirq_exit uprobe uretprobe",
       "sloc": 1083
+    },
+    {
+      "feature_iterator": false,
+      "feature_kfunc": false,
+      "feature_kprobe": false,
+      "feature_lsm": false,
+      "feature_maps": true,
+      "feature_perf_event": false,
+      "feature_ringbuf": false,
+      "feature_sched_ext": false,
+      "feature_socket": false,
+      "feature_struct_ops": false,
+      "feature_tail_call": true,
+      "feature_tc": false,
+      "feature_tracepoint": false,
+      "feature_uprobe": false,
+      "feature_xdp": false,
+      "path": "bpf/bpf_host.c",
+      "repo": "cilium",
+      "repo_commit": "07e29035bfd9",
+      "role": "userspace",
+      "sections": "",
+      "sloc": 1372
+    },
+    {
+      "feature_iterator": false,
+      "feature_kfunc": false,
+      "feature_kprobe": false,
+      "feature_lsm": false,
+      "feature_maps": true,
+      "feature_perf_event": false,
+      "feature_ringbuf": false,
+      "feature_sched_ext": false,
+      "feature_socket": false,
+      "feature_struct_ops": false,
+      "feature_tail_call": true,
+      "feature_tc": false,
+      "feature_tracepoint": false,
+      "feature_uprobe": false,
+      "feature_xdp": false,
+      "path": "bpf/bpf_lxc.c",
+      "repo": "cilium",
+      "repo_commit": "07e29035bfd9",
+      "role": "userspace",
+      "sections": "",
+      "sloc": 1976
+    },
+    {
+      "feature_iterator": false,
+      "feature_kfunc": false,
+      "feature_kprobe": false,
+      "feature_lsm": false,
+      "feature_maps": true,
+      "feature_perf_event": false,
+      "feature_ringbuf": false,
+      "feature_sched_ext": false,
+      "feature_socket": false,
+      "feature_struct_ops": false,
+      "feature_tail_call": true,
+      "feature_tc": false,
+      "feature_tracepoint": false,
+      "feature_uprobe": false,
+      "feature_xdp": true,
+      "path": "bpf/bpf_xdp.c",
+      "repo": "cilium",
+      "repo_commit": "07e29035bfd9",
+      "role": "userspace",
+      "sections": "",
+      "sloc": 226
+    },
+    {
+      "feature_iterator": false,
+      "feature_kfunc": false,
+      "feature_kprobe": false,
+      "feature_lsm": false,
+      "feature_maps": true,
+      "feature_perf_event": false,
+      "feature_ringbuf": false,
+      "feature_sched_ext": false,
+      "feature_socket": false,
+      "feature_struct_ops": false,
+      "feature_tail_call": true,
+      "feature_tc": false,
+      "feature_tracepoint": false,
+      "feature_uprobe": false,
+      "feature_xdp": false,
+      "path": "bpf/lib/local_delivery.h",
+      "repo": "cilium",
+      "repo_commit": "07e29035bfd9",
+      "role": "header",
+      "sections": "",
+      "sloc": 165
+    },
+    {
+      "feature_iterator": false,
+      "feature_kfunc": false,
+      "feature_kprobe": false,
+      "feature_lsm": false,
+      "feature_maps": true,
+      "feature_perf_event": false,
+      "feature_ringbuf": false,
+      "feature_sched_ext": false,
+      "feature_socket": false,
+      "feature_struct_ops": false,
+      "feature_tail_call": true,
+      "feature_tc": false,
+      "feature_tracepoint": false,
+      "feature_uprobe": false,
+      "feature_xdp": false,
+      "path": "bpf/lib/tailcall.h",
+      "repo": "cilium",
+      "repo_commit": "07e29035bfd9",
+      "role": "header",
+      "sections": "",
+      "sloc": 106
     }
   ],
   "scope": {
@@ -4084,10 +4226,10 @@
     "kprobe/scx_bpf_dispatch_from_dsq_set_vtime"
   ],
   "sloc_by_role": {
-    "header": 4074,
+    "header": 4345,
     "kernel": 25906,
-    "userspace": 4863
+    "userspace": 8437
   },
   "status": "ok",
-  "total_sloc": 34843
+  "total_sloc": 38688
 }

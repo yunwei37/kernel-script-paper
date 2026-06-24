@@ -11,9 +11,11 @@ from __future__ import annotations
 
 import csv
 import json
+import os
 import re
 import shutil
 import subprocess
+import time
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Iterable
@@ -21,7 +23,10 @@ from typing import Iterable
 
 ROOT = Path(__file__).resolve().parents[1]
 RESULTS = ROOT / "results"
-BUILD = RESULTS / "build" / "external_corpus"
+ARTIFACT_ROOT = Path(
+    os.environ.get("KERNELSCRIPT_EXTERNAL_CORPUS_ARTIFACT_ROOT", str(ROOT / ".external_corpus"))
+).resolve()
+BUILD = ARTIFACT_ROOT / "build"
 SUMMARY_JSON = RESULTS / "external_corpus_summary.json"
 SUMMARY_CSV = RESULTS / "external_corpus_summary.csv"
 AUDIT_CSV = RESULTS / "external_corpus_audit.csv"
@@ -71,6 +76,19 @@ REPOS = [
             "tools/*/src/bpf/**/*.h",
         ),
         exclude_parts=("vmlinux", "target", "build"),
+    ),
+    RepoSpec(
+        name="cilium",
+        url="https://github.com/cilium/cilium.git",
+        commit="07e29035bfd904b5fad8729a0e0c9d8515a500c0",
+        include_globs=(
+            "bpf/bpf_host.c",
+            "bpf/bpf_lxc.c",
+            "bpf/bpf_xdp.c",
+            "bpf/lib/tailcall.h",
+            "bpf/lib/local_delivery.h",
+        ),
+        exclude_parts=("include", "linux"),
     ),
 ]
 
@@ -136,6 +154,12 @@ AUDIT_SAMPLES = [
         "expected_features": ("iterator", "kfunc", "kprobe", "maps", "perf_event", "ringbuf", "sched_ext", "uprobe"),
         "rationale": "observability tool with mixed probe, perf-event, ringbuf, and scheduler markers",
     },
+    {
+        "repo": "cilium",
+        "path": "bpf/lib/tailcall.h",
+        "expected_features": ("maps", "tail_call"),
+        "rationale": "header that defines a prog-array map for internal tail-call dispatch",
+    },
 ]
 
 
@@ -156,6 +180,18 @@ def check(cmd: subprocess.CompletedProcess[str], label: str) -> None:
         raise SystemExit(f"{label} failed\nstdout:\n{cmd.stdout}\nstderr:\n{cmd.stderr}")
 
 
+def retry_run(argv: list[str], cwd: Path, label: str, timeout: int = 120, attempts: int = 3) -> subprocess.CompletedProcess[str]:
+    last: subprocess.CompletedProcess[str] | None = None
+    for attempt in range(1, attempts + 1):
+        last = run(argv, cwd, timeout=timeout)
+        if last.returncode == 0:
+            return last
+        if attempt < attempts:
+            time.sleep(float(attempt))
+    assert last is not None
+    raise SystemExit(f"{label} failed after {attempts} attempts\nstdout:\n{last.stdout}\nstderr:\n{last.stderr}")
+
+
 def prepare_repo(spec: RepoSpec) -> Path:
     repo_dir = BUILD / spec.name
     if repo_dir.exists():
@@ -163,9 +199,11 @@ def prepare_repo(spec: RepoSpec) -> Path:
     repo_dir.mkdir(parents=True, exist_ok=True)
     check(run(["git", "init", "-q"], repo_dir), f"git init {spec.name}")
     check(run(["git", "remote", "add", "origin", spec.url], repo_dir), f"git remote {spec.name}")
-    check(
-        run(["git", "fetch", "--depth", "1", "origin", spec.commit], repo_dir, timeout=240),
+    retry_run(
+        ["git", "fetch", "--depth", "1", "origin", spec.commit],
+        repo_dir,
         f"git fetch {spec.name} {spec.commit}",
+        timeout=240,
     )
     check(run(["git", "checkout", "-q", "FETCH_HEAD"], repo_dir), f"git checkout {spec.name}")
     return repo_dir
@@ -246,7 +284,17 @@ def detect_features(path: Path, text: str, sections: list[str]) -> dict[str, boo
         ),
         "maps": 'sec(".maps")' in low or "bpf_map_type" in low or "__uint(type" in low or "bpf_map" in low,
         "ringbuf": "ringbuf" in low or "ring_buffer" in low or "bpf_ringbuf" in low,
-        "tail_call": "bpf_tail_call" in low or "bpf_map_type_prog_array" in low,
+        # Still intentionally conservative, but broader than a pure helper-name
+        # grep: count explicit helper or prog-array markers, direct inclusion of
+        # a tail-call support header, and files that explicitly discuss
+        # tail-call dispatch in source comments or identifiers.
+        "tail_call": (
+            "bpf_tail_call" in low
+            or "bpf_map_type_prog_array" in low
+            or 'tailcall.h' in low
+            or "tail call" in low
+            or "tailcall" in low
+        ),
         "struct_ops": "struct_ops" in sec_join or "struct_ops" in low or "sched_ext_ops" in low,
         "sched_ext": "sched_ext_ops" in low or "scx_bpf_" in low or "/scx_" in rel,
         "kfunc": "bpf_kfunc" in low or "scx_bpf_" in low or "bpf_obj_new" in low or "bpf_obj_drop" in low,

@@ -372,6 +372,18 @@ where domain-specific checks can be added: map type compatibility, context
 field typing, stack estimates, function signature validation, and userspace
 API generation.
 
+Tail-call orchestration is a concrete example of that design.  When a
+return-position call targets another attributed program with the same program
+type and compatible signature, the tail-call analysis records the dependency,
+assigns a prog-array index, and rewrites the call as tail-call metadata in the
+IR.  The eBPF backend then emits a \texttt{BPF\_MAP\_TYPE\_PROG\_ARRAY}
+declaration and a \texttt{bpf\_tail\_call()} with a context-appropriate
+fallback return, while the userspace backend resolves target program file
+descriptors and populates the prog array at load time.  The programmer can
+therefore write \texttt{return drop\_handler(ctx)} or a \texttt{match} arm such
+as \texttt{TCP: tcp\_port\_classifier(ctx)} without spelling out the
+C/libbpf boilerplate directly.
+
 \section{Evaluation Methodology}
 \label{sec:eval}
 
@@ -450,11 +462,12 @@ struct\_ops skeleton repair, the scheduler-extension verifier diagnostic and
 opt-in attach/progress harness, and generated-loader lifecycle timing.  For
 \emph{generated structure} we report example marker coverage, the
 generated-structure expansion factor (lines of \tool{} source versus generated C
-and Makefile lines), the matched source-footprint proxy, the external
+and Makefile lines), a matched tail-call automation case study, the matched source-footprint proxy, the external
 source-corpus scan, and the external port/build/runtime portfolio.  For
 \emph{runtime behavior} we report the map-update mechanism-isolation ablation and
-runtime-sanity workloads (matched XDP/TC iperf3 traffic with a longer stress
-rerun, a perf-event page-fault counter, and a ring-buffer event-emission
+runtime-sanity workloads (tail-call BPF\_PROG\_TEST\_RUN microbenchmarks,
+matched XDP/TC iperf3 traffic with a longer stress rerun, a perf-event
+page-fault counter, and a ring-buffer event-emission
 workload).  Two caveats apply throughout and are not repeated at each outcome:
 example feature labels are derived from lexical markers in the source and are a
 coarse corpus classifier rather than a feature-completeness audit, and all timing
@@ -473,6 +486,7 @@ Claim & Artifact under test & Baseline or actor & Oracle & Boundary \\
 \midrule
 Project generation & Repository examples lowered to generated projects & Compiler and make harness & Build rows, feature markers, generated source lines & Repository corpus only \\
 Source footprint & Matched local workload sources & Hand-written C/eBPF objects and C/libbpf runners & Nonblank noncomment source-line counts with explicit exclusions & Matched source-footprint proxy, not developer time \\
+Tail-call automation & Two matched local XDP dispatch examples & Hand-written C/eBPF objects and C/libbpf loaders & Nonblank noncomment source-line counts plus generated \texttt{prog\_array}, \texttt{bpf\_tail\_call()}, fallback, and loader-update markers & Two local examples only, not a broad workload sample \\
 External source corpus & Pinned public eBPF example/application repositories & Source-only feature classifier & File/SLOC counts, \texttt{SEC()} sections, and feature markers & No translation, build, verifier, attach, or runtime evidence \\
 External port portfolio & \KSExternalPortWorkloads{} pinned \texttt{xdp-tutorial} XDP sources & Original external C/eBPF sources & Generated-Makefile build for \tool{} ports, direct clang compile for C/eBPF, XDP attach, iperf3 traffic, and map-key increment for the counter workload & Small manual XDP portfolio only, not automated or broad portability \\
 Early checks & Unit tests and targeted invalid programs & Dune and static-check harnesses & Test success and expected diagnostic categories & Selected cases, not soundness \\
@@ -817,6 +831,26 @@ Userspace & \KSFeatUserspaceAttempt{} & \KSFeatUserspaceKS{} & \KSFeatUserspaceB
 \end{tabular}
 \end{table}
 
+\textbf{Tail-call automation case study.}
+Tail calls are easy to misread in a source-only feature table because the point
+of the language feature is that \tool{} source does not need to mention
+\texttt{BPF\_MAP\_TYPE\_PROG\_ARRAY}, \texttt{bpf\_tail\_call()}, or userspace
+\texttt{bpf\_map\_update\_elem()} registration code.  We therefore add a
+matched case study for \KSTailCallAutoWorkloads{} local XDP dispatch workloads:
+a simple \texttt{return drop\_handler(ctx)} example and a \texttt{match}-based
+protocol classifier.  The \tool{} sources total \KSTailCallAutoKSSloc{} lines,
+while the matched hand-written C/libbpf baselines total
+\KSTailCallAutoCSloc{} lines (\KSTailCallAutoRatio{} as many), split across
+\KSTailCallAutoCEbpfSloc{} eBPF lines and \KSTailCallAutoCUserSloc{} userspace
+lines.  Compiling the \tool{} sources emits \KSTailCallAutoProgArrays{}
+prog-array maps (up to \KSTailCallAutoProgArrayMaxEntries{} entries),
+\KSTailCallAutoTailSites{} \texttt{bpf\_tail\_call()} sites,
+\KSTailCallAutoFallbackSites{} explicit fallback returns, and
+\KSTailCallAutoLoaderUpdates{} userspace prog-array registration updates.  This
+is a narrow source-footprint and generated-artifact result rather than a
+throughput claim, but it directly measures the boilerplate that \tool{} removes
+from source.
+
 The coverage table also highlights a weakness in the current benchmark suite:
 XDP dominates.  That skew is common in early eBPF tools because XDP examples
 are easy to compile and do not require tracepoint discovery or workload
@@ -878,11 +912,19 @@ kprobe in \KSExternalCorpusKprobeFiles{}, perf-event in
 \KSExternalCorpusPerfEventFiles{}, ring-buffer in
 \KSExternalCorpusRingbufFiles{}, struct\_ops in
 \KSExternalCorpusStructOpsFiles{}, scheduler-extension markers in
-\KSExternalCorpusSchedExtFiles{}, and kfunc-related markers in
-\KSExternalCorpusKfuncFiles{}.  These rows provide external feature-context
-evidence for the paper's chosen local program classes.  They also narrow the claim: the
-scan found no tail-call marker in this selected corpus, and no external program
-is translated, built, verifier-loaded, attached, or run by this experiment.
+\KSExternalCorpusSchedExtFiles{}, kfunc-related markers in
+\KSExternalCorpusKfuncFiles{}, and tail-call markers in
+\KSExternalCorpusTailCallFiles{} files.  These rows provide external
+feature-context evidence for the paper's chosen local program classes.  They
+also narrow the claim: the source scan now includes some explicit tail-call
+context, but the separate external port portfolio below is still limited to
+three very small \texttt{xdp-tutorial} XDP programs that cover pass,
+program-selection, and map-counter behavior rather than tail-call dispatch.
+The honest reading is therefore that external tail-call context is present only
+in the source scan, not in the port/build/runtime check; the matched tail-call
+case study above remains the relevant direct check for \tool{}'s automatic
+tail-call support.  No external program is translated, built,
+verifier-loaded, attached, or run by this experiment.
 A manual spot-check of the lexical classifier matches
 \KSExternalCorpusAuditMatched{} of \KSExternalCorpusAuditSamples{} sampled files,
 with \KSExternalCorpusAuditFalsePositives{} false-positive feature labels and
@@ -904,7 +946,10 @@ external C count is the eBPF program body alone and relies on
 honest reading is that the external port neither confirms a corpus-independent
 line-count advantage nor shows \tool{} to be larger; it shows that the
 centralization benefit is corpus-dependent and must be measured per workload
-rather than assumed.  The
+rather than assumed.  It is also intentionally too small and simple to say
+anything useful about more orchestration-heavy features such as automatic
+tail-call dispatch: these three ports are all single-entry XDP examples without
+prog-array registration or multi-stage dispatch logic.  The
 \tool{} ports build through generated Makefiles, and the original external
 C/eBPF sources compile directly to BPF objects with clang.  All
 \KSExternalPortVariants{} objects attach to isolated veth devices and pass
@@ -938,6 +983,32 @@ lookup plus \texttt{\_\_sync\_fetch\_and\_add} reduces the object by
 \KSCPInstrReduction{} instructions (\KSCPInstrReductionPct{}) and
 \KSCPNsReduction{}ns median (\KSCPNsReductionPct{}), matching the hand-written
 C/eBPF baseline in this harness.
+
+\textbf{Tail-call microbenchmark.}
+The tail-call performance check uses the same BPF\_PROG\_TEST\_RUN mechanism
+for \KSTailCallMicroRepeat{} repetitions over \KSTailCallMicroTrials{} trials
+on two XDP dispatch workloads.  It compares generated tail-call objects against
+hand-written tail-call baselines, then compares tail-call dispatch against a
+flattened direct-dispatch version of the same logic.  In the simple one-target
+dispatch workload, the generated tail-call object remains close to the
+hand-written tail-call object at \KSTailCallDispatchKsTailInstr{} versus
+\KSTailCallDispatchCTailInstr{} instructions and \KSTailCallDispatchKsTailNs{}
+versus \KSTailCallDispatchCTailNs{} ns median
+(\KSTailCallDispatchGenVsCOverheadPct{}), but this pair is small enough that
+local timing noise obscures any stable tail-versus-flat ordering.  In the
+larger protocol-classifier workload, the generated tail-call object is likewise
+close to the hand-written tail-call object at \KSTailCallBasicKsTailInstr{}
+versus \KSTailCallBasicCTailInstr{} instructions and
+\KSTailCallBasicKsTailNs{} versus \KSTailCallBasicCTailNs{} ns median
+(\KSTailCallBasicGenVsCOverheadPct{}).  Comparing the generated tail-call
+object against the generated flattened variant shows the mechanism cost more
+directly here: the classifier adds \KSTailCallBasicKsTailDeltaInstr{}
+instructions and \KSTailCallBasicKsTailDeltaNs{} ns median
+(\KSTailCallBasicKsTailOverheadPct{}) over the flattened
+\KSTailCallBasicKsFlatInstr{}-instruction, \KSTailCallBasicKsFlatNs{} ns
+variant.  The point of this check is narrow: automatic tail-call lowering stays
+close to hand-written tail-call code, while the mechanism itself has a visible
+but small per-invocation cost in the larger local dispatch microbenchmark.
 
 \begin{table}[t]
 \centering

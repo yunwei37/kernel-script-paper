@@ -133,6 +133,8 @@ def main() -> int:
     sched_ext_verifier = load_json("sched_ext_verifier_summary.json")
     sched_ext_attach = load_json("sched_ext_attach_summary.json")
     source_footprint = load_json("source_footprint_summary.json")
+    tail_call_automation = load_json("tail_call_automation_summary.json")
+    tail_call_micro = load_json("tail_call_microbench_summary.json")
     external_corpus = load_json("external_corpus_summary.json")
     external_port = load_json("external_port_summary.json")
 
@@ -178,6 +180,10 @@ def main() -> int:
         raise SystemExit("sched_ext attach workload did not complete successfully")
     if source_footprint.get("status") != "ok":
         raise SystemExit("source-footprint proxy did not complete successfully")
+    if tail_call_automation.get("status") != "ok":
+        raise SystemExit("tail-call automation case study did not complete successfully")
+    if tail_call_micro.get("status") != "ok":
+        raise SystemExit("tail-call microbench did not complete successfully")
     if external_corpus.get("status") != "ok":
         raise SystemExit("external corpus scan did not complete successfully")
     external_audit = external_corpus.get("classifier_audit", {})
@@ -229,6 +235,45 @@ def main() -> int:
         "KSSourceFootprintUniqueObjectRatio",
         f"{(source_footprint_unique['c_ebpf_sloc'] / source_footprint_unique['ks_sloc']):.2f}x",
     )
+    tail_call_aggregate = tail_call_automation["aggregate"]
+    content += macro("KSTailCallAutoWorkloads", tail_call_aggregate["workload_count"])
+    content += macro("KSTailCallAutoKSSloc", tail_call_aggregate["ks_sloc"])
+    content += macro("KSTailCallAutoCEbpfSloc", tail_call_aggregate["hand_bpf_sloc"])
+    content += macro("KSTailCallAutoCUserSloc", tail_call_aggregate["hand_user_sloc"])
+    content += macro("KSTailCallAutoCSloc", tail_call_aggregate["hand_total_sloc"])
+    content += macro("KSTailCallAutoRatio", f"{tail_call_aggregate['hand_to_ks_ratio']:.2f}x")
+    content += macro("KSTailCallAutoProgArrays", tail_call_aggregate["generated_prog_array_maps"])
+    content += macro("KSTailCallAutoProgArrayMaxEntries", tail_call_aggregate["generated_prog_array_max_entries"])
+    content += macro("KSTailCallAutoTailSites", tail_call_aggregate["generated_tail_call_sites"])
+    content += macro("KSTailCallAutoFallbackSites", tail_call_aggregate["generated_fallback_sites"])
+    content += macro("KSTailCallAutoLoaderUpdates", tail_call_aggregate["generated_loader_update_sites"])
+    tail_call_micro_cmp = tail_call_micro["comparisons"]
+    dispatch_gen = tail_call_micro_cmp["dispatch_generated_vs_hand_tail"]
+    dispatch_ks = tail_call_micro_cmp["dispatch_ks_tail_vs_flat"]
+    basic_gen = tail_call_micro_cmp["basic_match_generated_vs_hand_tail"]
+    basic_ks = tail_call_micro_cmp["basic_match_ks_tail_vs_flat"]
+    content += macro("KSTailCallMicroRepeat", tail_call_micro["repeat"])
+    content += macro("KSTailCallMicroTrials", tail_call_micro["trials"])
+    content += macro("KSTailCallDispatchKsTailInstr", integer(dispatch_gen["left_instructions"]))
+    content += macro("KSTailCallDispatchCTailInstr", integer(dispatch_gen["right_instructions"]))
+    content += macro("KSTailCallDispatchKsTailNs", integer(dispatch_gen["left_median_avg_ns"]))
+    content += macro("KSTailCallDispatchCTailNs", integer(dispatch_gen["right_median_avg_ns"]))
+    content += macro("KSTailCallDispatchKsFlatInstr", integer(tail_call_micro_cmp["dispatch_ks_tail_vs_flat"]["right_instructions"]))
+    content += macro("KSTailCallDispatchKsFlatNs", integer(tail_call_micro_cmp["dispatch_ks_tail_vs_flat"]["right_median_avg_ns"]))
+    content += macro("KSTailCallDispatchKsTailDeltaInstr", integer(dispatch_ks["delta_instructions"]))
+    content += macro("KSTailCallDispatchKsTailDeltaNs", integer(dispatch_ks["delta_ns"]))
+    content += macro("KSTailCallDispatchKsTailOverheadPct", f"{dispatch_ks['overhead_pct']:.1f}\\%")
+    content += macro("KSTailCallBasicKsTailInstr", integer(basic_gen["left_instructions"]))
+    content += macro("KSTailCallBasicCTailInstr", integer(basic_gen["right_instructions"]))
+    content += macro("KSTailCallBasicKsTailNs", integer(basic_gen["left_median_avg_ns"]))
+    content += macro("KSTailCallBasicCTailNs", integer(basic_gen["right_median_avg_ns"]))
+    content += macro("KSTailCallBasicKsFlatInstr", integer(basic_ks["right_instructions"]))
+    content += macro("KSTailCallBasicKsFlatNs", integer(basic_ks["right_median_avg_ns"]))
+    content += macro("KSTailCallBasicKsTailDeltaInstr", integer(basic_ks["delta_instructions"]))
+    content += macro("KSTailCallBasicKsTailDeltaNs", integer(basic_ks["delta_ns"]))
+    content += macro("KSTailCallBasicKsTailOverheadPct", f"{basic_ks['overhead_pct']:.1f}\\%")
+    content += macro("KSTailCallDispatchGenVsCOverheadPct", f"{dispatch_gen['overhead_pct']:.1f}\\%")
+    content += macro("KSTailCallBasicGenVsCOverheadPct", f"{basic_gen['overhead_pct']:.1f}\\%")
     external_features = external_corpus["feature_file_counts"]
     external_roles = external_corpus["roles"]
     external_sloc_by_role = external_corpus["sloc_by_role"]
