@@ -88,6 +88,24 @@ def compile_ks() -> Path:
     return obj
 
 
+def inspect_generated_dynptr_lowering() -> dict[str, object]:
+    generated = BUILD / "kernelscript" / "ringbuf_emit.ebpf.c"
+    text = generated.read_text(encoding="utf-8")
+    required = {
+        "reserve_dynptr": "bpf_ringbuf_reserve_dynptr",
+        "reserve_data": "bpf_dynptr_data",
+        "write_field": "bpf_dynptr_write",
+        "submit_dynptr": "bpf_ringbuf_submit_dynptr",
+    }
+    present = {name: (needle in text) for name, needle in required.items()}
+    return {
+        "generated_file": str(generated.relative_to(ROOT)),
+        "required_helpers": required,
+        "present": present,
+        "oracle_passed": all(present.values()),
+    }
+
+
 def compile_c() -> Path:
     out = BUILD / "handwritten"
     if out.exists():
@@ -285,19 +303,21 @@ def main() -> int:
     ks_obj = compile_ks()
     c_obj = compile_c()
     runner = compile_runner()
+    lowering = inspect_generated_dynptr_lowering()
 
     row_list = [
         summarize("ks_generated", "kernelscript", ks_obj, runner),
         summarize("c_libbpf", "handwritten_c", c_obj, runner),
     ]
     rows = {row["name"]: row for row in row_list}
-    status = "ok" if all(row["oracle_passed"] for row in row_list) else "failed"
+    status = "ok" if all(row["oracle_passed"] for row in row_list) and bool(lowering["oracle_passed"]) else "failed"
     summary = {
         "status": status,
-        "description": "XDP ring-buffer event emission workload using one libbpf runner for KernelScript-generated and hand-written C/eBPF objects",
+        "description": "XDP ring-buffer event emission workload using one libbpf runner for KernelScript-generated and hand-written C/eBPF objects, plus a generated-code check that high-level reserve/write/submit source operations lower to dynptr helpers",
         "trials": TRIALS,
         "target_events": EVENTS,
         "poll_every": POLL_EVERY,
+        "dynptr_lowering": lowering,
         "rows": row_list,
         "comparison": comparison(rows),
     }

@@ -265,7 +265,14 @@ C sections and userspace lookup code, and the program lifecycle
 (\texttt{load}/\texttt{attach}/\texttt{detach}) is expressed over typed program
 handles.  The same global-declaration pattern applies to ring buffers and perf
 events: high-level operations stay explicit in source while the generated code
-performs the required libbpf calls.  All of this structure lives in one source
+performs the required libbpf calls.  In the current implementation, this also
+extends to selected dynptr-heavy paths: a source-level
+\texttt{events.reserve()} can lower to
+\texttt{bpf\_ringbuf\_reserve\_dynptr}, \texttt{bpf\_dynptr\_data}, field writes
+through \texttt{bpf\_dynptr\_write}, and corresponding submit/discard helper APIs without
+requiring the author to hand-write the dynptr lifetime sequence.  Helper-visible
+map-value field reads can likewise lower through
+\texttt{bpf\_dynptr\_from\_mem} plus \texttt{bpf\_dynptr\_data}.  All of this structure lives in one source
 file that the compiler later splits into kernel C, userspace C, skeleton
 references, and build logic.  Section~\ref{sec:typesystem} gives the typing
 rules behind each relationship.
@@ -370,7 +377,14 @@ logic.  These modules encode eBPF concepts directly rather than treating the
 language as a thin preprocessor over C.  The design therefore provides places
 where domain-specific checks can be added: map type compatibility, context
 field typing, stack estimates, function signature validation, and userspace
-API generation.
+API generation.  The dynptr path is illustrative here because it bridges a
+usability gap rather than only a code-size one: the eBPF backend tracks
+dynptr-backed ring-buffer reservations so that source-level record writes can
+be emitted as \texttt{bpf\_dynptr\_write} calls and the corresponding
+\texttt{submit}/\texttt{discard} operations can target the same dynptr object.
+For helper-visible map-value field reads, the backend can emit
+\texttt{bpf\_dynptr\_from\_mem} plus \texttt{bpf\_dynptr\_data} instead of
+requiring the developer to hand-assemble that helper sequence.
 
 \section{Evaluation Methodology}
 \label{sec:eval}
@@ -1043,6 +1057,14 @@ uses ref-counted ring-buffer records, \texttt{run\_ringbuf\_workload.py}
 compiles matched XDP objects that reserve a ring-buffer record, write a marker,
 submit the record, and increment submitted/drop counters.  One libbpf runner
 executes each object through BPF\_PROG\_TEST\_RUN, consumes the ring buffer, and
+also records the presence of an expected generated
+\texttt{bpf\_ringbuf\_reserve\_dynptr},
+\texttt{bpf\_dynptr\_data}, \texttt{bpf\_dynptr\_write}, and
+\texttt{bpf\_ringbuf\_submit\_dynptr} helper pattern for the source-level
+\texttt{reserve}/field-write/\texttt{submit} operations.  This additional check
+does not prove that every map or ring-buffer path is dynptr-backed, but it does
+make the evaluated developer-facing lowering explicit instead of inferring it
+from a module name.  The runner then
 requires submitted events to equal received events with zero drops, bad
 markers, bad return values, or runner errors.  Over \KSRingbufTrials{} trials
 of \KSRingbufEvents{} events, both variants report
