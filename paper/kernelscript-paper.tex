@@ -596,11 +596,10 @@ language and its own loading path rather than stock libbpf~\cite{rex}.
 
 \textbf{Tracing and bytecode tools.}  bpftrace is concise but narrows the target
 to tracing~\cite{bpftrace}.  BCC scripts eBPF from Python but keeps Python as a
-controller around separate BPF code~\cite{bcc}; eInfer uses eBPF to \emph{observe}
-distributed LLM inference~\cite{einfer-ebpf} and bpftime moves the runtime itself
-to userspace~\cite{bpftime}.  \tool's \texttt{exec()}-to-Python path instead
-brings the glue between eBPF-resident state and a Python consumer into the
-unified source.  A separate line optimizes the eBPF bytecode after it exists:
+controller around separate BPF code~\cite{bcc}; related systems use eBPF to
+\emph{observe} distributed LLM inference~\cite{einfer-ebpf} or move the runtime
+itself to userspace~\cite{bpftime}.  A separate line optimizes the eBPF bytecode
+after it exists:
 PREVAIL~\cite{prevail}, K2~\cite{k2}, and hXDP~\cite{hxdp}; \tool{} is earlier and
 complementary, generating the bytecode and its loader.
 
