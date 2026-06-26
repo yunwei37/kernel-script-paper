@@ -264,28 +264,69 @@ present, \texttt{foo.mod.c}. The Makefile uses bpftool to dump
 skeleton, and gcc to link the userspace loader against libbpf (together with
 libelf and zlib).
 
-Two implementation choices follow directly from the model. First, the compiler
-has \emph{separate modules} for maps, userspace codegen, eBPF codegen,
-kernel-module generation, context-specific codegen, safety checking, BTF
-parsing, dynptr bridging, tail-call analysis, and struct\_ops; it encodes eBPF
-concepts directly rather than acting as a thin preprocessor over C, which is
-what gives the type checker somewhere to attach domain-specific checks. Second,
-the compiler \emph{preserves the kernel toolchain}: it does not replace the
-verifier, clang, bpftool, or libbpf, so it inherits BTF, skeleton generation,
-and existing diagnostics. Crucially, any compatibility failure remains visible
-and measurable instead of being papered over. For interfaces that move faster
-than the DSL can stabilize, \texttt{include} and \texttt{extern} declarations
-provide an escape hatch to generated header declarations.
+\textbf{From typing rules to code.} Each invariant of
+Section~\ref{sec:model} is realized at a concrete point in this pipeline, which
+is why the compiler keeps \emph{separate modules} for maps, eBPF codegen,
+userspace codegen, kernel-module generation, safety checking, BTF parsing,
+dynptr bridging, tail-call analysis, and struct\_ops rather than acting as a
+thin preprocessor over C: encoding eBPF concepts directly is what gives each
+check and each lowering somewhere to live. \emph{Domains} are carried as a
+per-function scope refined by the entry attribute; the IR records each
+function's program type, and code generation dispatches the same source function
+to the eBPF or the userspace backend on that field, so one surface syntax
+produces two ABIs without the author choosing a target. \emph{Typed maps} lower
+to a single map descriptor that records the key and value types once; both
+backends read that descriptor, so the eBPF \code{SEC(".maps")} definition and
+the userspace accessor are emitted from one source of truth
+(Listing~\ref{lst:map}). \emph{Lifecycle handles} are enforced in the front
+end: only \code{load} is typed to yield a \code{ProgramHandle}, and the
+\code{attach} and \code{detach} builtins are typed to require one, so a
+misordered call fails type checking before any code is emitted. The handle then
+lowers to an ordinary file descriptor: \code{load} resolves the program by name
+(\code{bpf_object__find_program_by_name}) and takes its descriptor
+(\code{bpf_program__fd}), \code{attach} dispatches on the program type to the
+matching libbpf entry point (\code{bpf_xdp_attach},
+\code{bpf_program__attach_tcx}, \code{bpf_program__attach_kprobe}, and so on),
+and \code{detach} releases the link through \code{bpf_link__destroy}. The typed
+discipline thus lives entirely in the compiler and disappears into stock libbpf
+calls.
 
-Two lowerings illustrate the same idea beyond the immediate
-kernel/userspace split. Source-level ring-buffer operations
-(\code{reserve}, field write, \code{submit}) lower to the appropriate dynptr
-helpers, so the author never hand-assembles that lifetime. A userspace stage
-may also \code{exec()} into Python and reuse open map descriptors: the loader
-clears \code{FD_CLOEXEC}, passes descriptor numbers through the environment,
-and the compiler emits a Python wrapper that reopens typed access from
-compile-time metadata (\code{test_exec.ks}). The map schema and descriptor
-handoff still come from one typed source rather than hand-written glue.
+\begin{lstlisting}[language=C,caption={One typed map declaration lowers to both
+a kernel \texttt{SEC(".maps")} definition and a userspace accessor, emitted from
+a single descriptor so the key and value types cannot drift apart.},label={lst:map}]
+// KernelScript source
+var counts : hash<u32, u64>(1024)
+
+// generated eBPF C
+struct {
+  __uint(type, BPF_MAP_TYPE_HASH);
+  __uint(max_entries, 1024);
+  __type(key, __u32);
+  __type(value, __u64);
+} counts SEC(".maps");
+
+// generated userspace C: same key/value types
+__u32 key = ...; __u64 val;
+bpf_map_lookup_elem(counts_fd, &key, &val);
+\end{lstlisting}
+
+\textbf{Preserving the kernel toolchain.} The compiler does not replace the
+verifier, clang, bpftool, or libbpf, so it inherits BTF, skeleton generation,
+and existing diagnostics, and any compatibility failure remains visible and
+measurable instead of being papered over. For interfaces that move faster than
+the DSL can stabilize, \code{include} and \code{extern} declarations provide an
+escape hatch to generated header declarations.
+
+\textbf{Two further lowerings} show the model reaches beyond the immediate
+kernel/userspace split, though neither is central to the typed-boundary claim.
+Source-level ring-buffer operations (\code{reserve}, field write,
+\code{submit}) lower to the appropriate dynptr helpers, so the author never
+hand-assembles that lifetime. A userspace stage may also \code{exec()} into
+Python and reuse open map descriptors: the loader clears \code{FD_CLOEXEC},
+passes descriptor numbers through the environment, and the compiler emits a
+Python wrapper that reopens typed access from compile-time metadata
+(\code{test_exec.ks}). The map schema and descriptor handoff still come from one
+typed source rather than hand-written glue.
 
 \section{Evaluation}
 \label{sec:eval}
