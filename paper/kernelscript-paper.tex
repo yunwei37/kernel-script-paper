@@ -246,12 +246,11 @@ complete load-to-attach-to-detach protocol. It guarantees that lifecycle
 builtins receive values of the right kind, but not full path-sensitive
 properties such as use-after-detach, double-attach, or leaked handles.
 
-\textbf{From invariants to diagnostics.} The payoff is that cross-boundary
-mismatches become localized compiler errors rather than naming conventions or
-late verifier/attach failures. Section~\ref{sec:eval} measures whether those
-diagnostics fire; Section~\ref{sec:limits} explains the limits of that evidence.
+\textbf{From invariants to diagnostics.} The payoff is earlier, localized
+compiler errors in place of naming conventions or late verifier/attach
+failures. Section~\ref{sec:eval} measures whether those diagnostics fire;
+Section~\ref{sec:limits} explains the limits of that evidence.
 
-\vspace{-0.45\baselineskip}
 \section{Implementation}
 \label{sec:impl}
 
@@ -303,15 +302,14 @@ bpftool 7.7, libbpf 1.3.0, OCaml 4.14, and dune 3.14, on a \KSCPUModel{} with
 \KSCPUCount{} CPUs, at commit \KSCommitShort. The harness writes raw stdout and
 stderr for every compiler and make invocation, per-example CSV rows,
 per-script JSON, and the numeric macros used in this paper, so every aggregate
-traces back to a logged row rather than a hand-edited table. SLOC counts are
-nonblank, noncomment lines; generated \texttt{vmlinux.h} and skeleton headers
-are excluded from expansion factors because they are bpftool outputs, not
-\tool{} outputs. Timing numbers below are local, unpinned samples (CPU
+traces back to a logged row rather than a hand-edited table. SLOC counts use
+nonblank, noncomment lines. We exclude generated \texttt{vmlinux.h} and
+skeleton headers from expansion factors because bpftool emits them, not
+\tool{}. Timing numbers below are local, unpinned samples (CPU
 governor \KSCPUGovernor, turbo \KSTurboState, no CPU pinning, virtualization
 \KSVirtualization) reported as sanity evidence rather than performance claims;
 we report medians with ranges.
 
-\vspace{-0.45\baselineskip}
 \subsection{Q1: The typed invariants fire}
 
 \textbf{Regression coverage.} The compiler test suite reports
@@ -539,9 +537,10 @@ finding \tool{} strictly earlier on \KSOrganicKSEarlier{} and tied on
 stronger study would mine real eBPF mistakes from revision histories and issue
 trackers, port them to \tool, and report the resulting failure stages.
 
-\textbf{Lifecycle typing is lightweight.} We enforce only the producer/consumer
-handle distinction, not full flow-sensitive typestate, so use-after-detach,
-double-attach, and leaked handles are not statically ruled out on every path.
+\textbf{Lifecycle typing remains lightweight.} It enforces the
+producer/consumer handle distinction, not full flow-sensitive typestate, so
+use-after-detach, double-attach, and leaked handles are not statically ruled
+out on every path.
 
 \textbf{The corpus is author-written.} The expansion and feature results come
 from the \tool{} repository, which reflects features the authors chose to
@@ -570,23 +569,22 @@ a machine-learning integration result.
 
 \section{Related Work}
 
-\textbf{C/libbpf and host-language bindings.} XDP established the in-kernel
-programmable packet model \tool{} targets~\cite{xdp}; broader surveys cover the
-surrounding landscape~\cite{ebpfsurvey,linux-ebpf}. C/libbpf is the reference
-workflow but leaves kernel code, loaders, skeletons, maps, and build logic as separate
-artifacts~\cite{libbpf}; scaffolding such as libbpf-bootstrap and xdp-tutorial
-cuts the boilerplate yet leaves the cross-boundary relationships
+\textbf{C/libbpf and host-language bindings.} XDP established the programmable
+in-kernel packet model \tool{} targets~\cite{xdp}; surveys cover the broader
+eBPF landscape~\cite{ebpfsurvey,linux-ebpf}. C/libbpf is the reference workflow
+but leaves kernel code, loaders, skeletons, maps, and build logic as separate
+artifacts~\cite{libbpf}. Scaffolding such as libbpf-bootstrap and xdp-tutorial
+cuts boilerplate yet leaves the boundary relationships
 untyped~\cite{libbpf-bootstrap,xdp-tutorial}. Host-language libraries go part
 of the way: Aya in particular compiles both sides from one Rust source and
 shares typed maps across the boundary~\cite{aya,cilium-ebpf}, so single-source
 authoring and typed maps are not by themselves \tool's contribution. \tool{}
-differs in being host-language-independent, with execution domains and their
-crossing rules in the language. It lowers to the standard Linux BPF
-toolchain rather than a host runtime, so BTF, CO-RE, skeletons, and verifier
-diagnostics are inherited and compatibility skew stays measurable. Rex similarly
-narrows the language-verifier gap with safe Rust
-extensions, but like Aya targets a host language and its own loading path
-rather than stock libbpf~\cite{rex}.
+instead is host-language-independent, with execution domains and crossing rules
+in the language. It lowers to the standard Linux BPF toolchain rather than a
+host runtime, so BTF, CO-RE, skeletons, and verifier diagnostics are inherited
+and compatibility skew stays measurable. Rex similarly narrows the
+language-verifier gap with safe Rust extensions, but like Aya targets a host
+language and its own loading path rather than stock libbpf~\cite{rex}.
 
 \textbf{Tracing and bytecode tools.} bpftrace is concise but narrows the target
 to tracing~\cite{bpftrace}. BCC scripts eBPF from Python but keeps Python as a
