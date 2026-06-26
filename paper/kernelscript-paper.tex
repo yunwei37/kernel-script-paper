@@ -54,7 +54,7 @@ types, and execution domains a lightweight effect annotation, so that
 cross-boundary mismatches surface as compiler diagnostics rather than runtime
 failures, while the compiler still lowers to ordinary C through the stock
 clang/bpftool/libbpf toolchain.  On the artifact at commit \KSCommitShort, a
-corpus of \KSStaticExpectedFailures{} invalid programs confirms each typed
+suite of \KSStaticExpectedFailures{} invalid programs confirms each typed
 invariant fires; \KSKSCompileOK{} of \KSTotalExamples{} examples compile and
 \KSMakeOK{} build into libbpf-compatible projects; and the generated objects
 verifier-load, attach, pass traffic, and load/attach/detach a tcp-congestion
@@ -164,7 +164,7 @@ This section specifies the parts of \tool's type system that encode the
 couplings of Section~\ref{sec:bg}.  We describe the model informally but
 precisely; we do not give a full formal semantics or a soundness proof, and we
 state below what each rule does and does not guarantee.  Every rule corresponds
-to a concrete diagnostic exercised by the rejection corpus of
+to a concrete diagnostic exercised by the rejection suite of
 Section~\ref{sec:eval} (parenthesized names are the cases in
 \texttt{experiments/static\_checks/}).
 
@@ -265,7 +265,7 @@ implemented, so we treat lifecycle typing as a direction, not a closed result.
 typed is that each cross-boundary mismatch becomes a localized compiler
 diagnostic rather than an implicit naming convention or a late verifier/attach
 failure.  Section~\ref{sec:eval} measures whether the diagnostics fire;
-Section~\ref{sec:limits} is explicit that the current corpus tests whether the
+Section~\ref{sec:limits} is explicit that the current suite tests whether the
 checks are wired and stable, not yet whether they catch the mistakes developers
 make in practice.
 
@@ -349,7 +349,7 @@ attach, detach APIs, kfunc attributes, struct\_ops, and BTF parsing.  This
 breadth matters because a DSL's claims rest on whether the implementation
 actually encodes domain concepts rather than only accepting example syntax.
 
-\textbf{Static rejection corpus.}  The central Q1 result is a corpus that
+\textbf{Static rejection suite.}  The central Q1 result is a suite that
 exercises the diagnostics of Section~\ref{sec:model} directly.  The harness
 compiles \KSStaticTotal{} targeted programs and verifies that every outcome
 matches expectation: one positive control plus \KSStaticExpectedFailures{}
@@ -366,7 +366,7 @@ rules of Section~\ref{sec:model}.  The oracle is not merely a nonzero exit code:
 each case carries an expected diagnostic substring, and the harness requires both
 rejection \emph{and} a match on that substring, so a program rejected for an
 incidental reason does not count as passing.  We are deliberately careful about what the
-corpus shows.  It is author-constructed: each invalid program was written to
+suite shows.  It is author-constructed: each invalid program was written to
 trigger one check and confirmed rejected, so it is a
 \emph{diagnostic-contract regression test}: it shows the typed invariants are
 implemented, attached to the right error classes, and stable, so a future
@@ -395,7 +395,7 @@ single-language C compiler already diagnoses, and clang does.  This is the
 honest shape of the result, \KSOrganicKSEarlier{} earlier and \KSOrganicTie{}
 tied: typing buys the earlier catch precisely on the relationship that spans the
 kernel/user and program/context boundaries, which no local C check can see, and
-buys nothing on mistakes clang already catches.  The corpus is small and
+buys nothing on mistakes clang already catches.  The set is small and
 author-injected; Section~\ref{sec:limits} describes the larger
 mined-from-history study it previews.
 
@@ -571,7 +571,7 @@ design surfaces as a concrete, measurable boundary.
 The evaluation supports a bounded reading of the contribution and clarifies what
 remains open.
 
-\textbf{The organic probe is small.}  The static corpus shows the typed
+\textbf{The organic probe is small.}  The static suite shows the typed
 invariants are wired and stable but is author-constructed; the differential
 probe of Section~\ref{sec:eval} takes a first organic-style step, injecting
 \KSOrganicTotal{} realistic mistakes into matched \tool{} and C/eBPF and finding
@@ -672,7 +672,7 @@ Linux BPF toolchain.
 \tool{} treats the cross-boundary structure of an eBPF application (program
 lifecycle, shared maps, and execution domains) as something a compiler can
 type rather than something developers hold together by convention and discover
-at verifier-load or attach time.  On the checked-in artifact, a corpus of
+at verifier-load or attach time.  On the checked-in artifact, a suite of
 \KSStaticExpectedFailures{} invalid programs confirms each typed invariant fires
 as a localized diagnostic; \KSKSCompileOK{} of \KSTotalExamples{} examples
 compile and \KSMakeOK{} build from one source into libbpf-compatible projects;
