@@ -50,7 +50,7 @@ load\,$\rightarrow$\,attach\,$\rightarrow$\,detach order) are today implicit
 naming conventions, checked only late, at verifier-load or attach time.  We
 study \tool, a typed DSL that lifts these cross-boundary relationships into the
 type system: typed maps and a typed program-lifecycle handle become first-class
-types and execution domains a lightweight effect annotation, so that
+types, and execution domains a lightweight effect annotation, so that
 cross-boundary mismatches surface as compiler diagnostics rather than runtime
 failures, while the compiler still lowers to ordinary C through the stock
 clang/bpftool/libbpf toolchain.  On the artifact at commit \KSCommitShort, a
@@ -298,7 +298,8 @@ measurable instead of being papered over.  For interfaces that move faster than
 the DSL can stabilize, \texttt{include} and \texttt{extern} declarations provide
 an escape hatch to generated header declarations.
 
-Two lowerings show that the model is about structure, not only code size.
+Two lowerings show the typed cross-boundary model reaching past the immediate
+kernel/userspace split it was designed for.
 Source-level ring-buffer operations (\texttt{reserve}, field write,
 \texttt{submit}) lower to the
 \texttt{bpf\_ringbuf\_reserve\_dynptr}/\texttt{bpf\_dynptr\_data}/%
@@ -638,9 +639,9 @@ compile and \KSMakeOK{} build from one source into libbpf-compatible projects;
 and the generated objects verifier-load, attach, pass traffic, and run a
 tcp-congestion struct\_ops object on a real kernel via a direct libbpf runner.
 The result is a concrete,
-reproducible design point: typing eBPF's cross-boundary structure is feasible
-and useful, and because the prototype lowers through the stock toolchain, both
-its benefits and the version-skew limits it cannot absorb stay visible and
+reproducible design point: typing eBPF's cross-boundary structure is feasible,
+and because the prototype lowers through the stock toolchain, both what the type
+system buys and the version-skew limits it cannot absorb stay visible and
 measurable.
 
 \bibliographystyle{plain}
