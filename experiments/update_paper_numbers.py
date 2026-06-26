@@ -135,6 +135,7 @@ def main() -> int:
     source_footprint = load_json("source_footprint_summary.json")
     external_corpus = load_json("external_corpus_summary.json")
     external_port = load_json("external_port_summary.json")
+    organic = load_json("organic_mistakes_summary.json")
 
     if unit.get("returncode") != 0 or unit.get("reported_failures") != 0:
         raise SystemExit("unit tests are not clean; refusing to generate paper numbers")
@@ -185,6 +186,8 @@ def main() -> int:
         raise SystemExit("external corpus classifier audit did not complete successfully")
     if external_port.get("status") != "ok":
         raise SystemExit("external port check did not complete successfully")
+    if organic.get("status") != "ok":
+        raise SystemExit("organic mistakes study did not complete successfully")
 
     content = ""
     content += macro("KSCommitShort", str(env["kernelscript_git_head"])[:7])
@@ -290,6 +293,32 @@ def main() -> int:
         "KSExternalPortMapRatio",
         f"{external_port_comparison['basic03_map_counter']['ks_over_external_c_ratio']:.2f}x",
     )
+    organic_rows = {row["name"]: row for row in organic["rows"]}
+    organic_stage_label = {
+        "compile_reject": "compile reject",
+        "build_fail": "build fail",
+        "verifier_reject": "verifier reject",
+        "attach_fail": "attach fail",
+        "runtime_wrong": "runtime wrong",
+        "undetected": "undetected",
+        "untested": "untested",
+    }
+    organic_case_label = {
+        "wrong_context": "WrongContext",
+        "map_undeclared": "MapUndeclared",
+        "map_value_type": "MapValueType",
+        "stack_overflow": "StackOverflow",
+    }
+    content += macro("KSOrganicTotal", organic["total"])
+    content += macro("KSOrganicKSEarlier", organic["ks_earlier"])
+    content += macro("KSOrganicTie", organic["tie"])
+    content += macro("KSOrganicKSLater", organic["ks_later"])
+    content += macro("KSOrganicInconclusive", organic["inconclusive"])
+    content += macro("KSOrganicVerifierTested", yes_no(bool(organic["verifier_tested"])))
+    for name, label in organic_case_label.items():
+        row = organic_rows[name]
+        content += macro(f"KSOrganic{label}KS", organic_stage_label[row["ks_stage"]])
+        content += macro(f"KSOrganic{label}C", organic_stage_label[row["c_stage"]])
     content += macro("KSStaticTotal", static["total_cases"])
     content += macro("KSStaticMatched", static["matched_cases"])
     content += macro("KSStaticExpectedFailures", static["expected_failures"])

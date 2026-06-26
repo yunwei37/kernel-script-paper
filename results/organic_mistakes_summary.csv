@@ -1,0 +1,5 @@
+name,coupling,ks_stage,ks_ordinal,c_stage,c_ordinal,verdict
+wrong_context,signature/domain,compile_reject,1,undetected,6,ks_earlier
+map_undeclared,representation,compile_reject,1,compile_reject,1,tie
+map_value_type,representation,compile_reject,1,compile_reject,1,tie
+stack_overflow,safety,compile_reject,1,compile_reject,1,tie

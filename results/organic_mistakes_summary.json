@@ -1,0 +1,60 @@
+{
+  "description": "differential failure-stage study of injected eBPF mistakes",
+  "inconclusive": 0,
+  "ks_earlier": 1,
+  "ks_later": 0,
+  "rows": [
+    {
+      "c_detail": "loaded; verifier accepted the program",
+      "c_ordinal": 6,
+      "c_stage": "undetected",
+      "coupling": "signature/domain",
+      "ks_detail": "Phase 4: Type Checking\n\u274c Type error in phase Type Checking at :0:-1: @xdp attributed function must have signature (ctx: *xdp_md) -> xdp_action",
+      "ks_ordinal": 1,
+      "ks_stage": "compile_reject",
+      "name": "wrong_context",
+      "note": "@xdp entry point given a *__sk_buff context instead of *xdp_md",
+      "verdict": "ks_earlier"
+    },
+    {
+      "c_detail": "        |                         ^\n/home/wangcong/projects/papers/kernelscript/experiments/organic_mistakes/map_undeclared.c:16:41: error: use of undeclared identifier 'missing_counts'\n   16 |     __u64 *value = bpf_map_lookup_elem(&missing_counts, &key);\n      |                                         ^\n/home/wangcong/projects/papers/kernelscript/experiments/organic_mistakes/map_undeclared.c:14:31: warning: unused parameter 'ctx' [-Wunused-parameter]\n   14 | int count_pass(struct xdp_md *ctx) {\n      |                               ^",
+      "c_ordinal": 1,
+      "c_stage": "compile_reject",
+      "coupling": "representation",
+      "ks_detail": "\ud83d\udd27 Kernel types handled by include system - no BTF injection needed\n\u274c Compilation failed in phase Symbol Analysis: Kernelscript.Symbol_table.Symbol_error(\"Undefined symbol: missing_counts\", _)",
+      "ks_ordinal": 1,
+      "ks_stage": "compile_reject",
+      "name": "map_undeclared",
+      "note": "entry point references a map that was never declared (tie expected)",
+      "verdict": "tie"
+    },
+    {
+      "c_detail": "        |                         ^\n/home/wangcong/projects/papers/kernelscript/experiments/organic_mistakes/map_value_type.c:21:16: error: incompatible pointer to integer conversion assigning to '__u64' (aka 'unsigned long long') from 'char[4]' [-Wint-conversion]\n   21 |         *value = \"bad\";\n      |                ^ ~~~~~\n/home/wangcong/projects/papers/kernelscript/experiments/organic_mistakes/map_value_type.c:16:31: warning: unused parameter 'ctx' [-Wunused-parameter]\n   16 | int count_pass(struct xdp_md *ctx) {\n      |                               ^",
+      "c_ordinal": 1,
+      "c_stage": "compile_reject",
+      "coupling": "representation",
+      "ks_detail": "Phase 4: Type Checking\n\u274c Type error in phase Type Checking at :0:-1: Map value type mismatch",
+      "ks_ordinal": 1,
+      "ks_stage": "compile_reject",
+      "name": "map_value_type",
+      "note": "string stored into a u64 map value",
+      "verdict": "tie"
+    },
+    {
+      "c_detail": "        |                         ^\n/home/wangcong/projects/papers/kernelscript/experiments/organic_mistakes/stack_overflow.c:16:5: error: Looks like the BPF stack limit is exceeded. Please move large on stack variables into BPF per-cpu array map. For non-kernel uses, the stack can be increased using -mllvm -bpf-stack-size.\n   16 | int count_pass(struct xdp_md *ctx) {\n      |     ^\n/home/wangcong/projects/papers/kernelscript/experiments/organic_mistakes/stack_overflow.c:16:5: note: could not determine the original source location for experiments/organic_mistakes/stack_overflow.c:0:0\n/home/wangcong/projects/papers/kernelscript/experiments/organic_mistakes/stack_overflow.c:18:10: error: Looks like the BPF stack limit is exceeded. Please move large on stack variables into BPF per-cpu array map. For non-kernel uses, the stack can be increased using -mllvm -bpf-stack-size.\n   18 |     char large_buffer[600] = {0};",
+      "c_ordinal": 1,
+      "c_stage": "compile_reject",
+      "coupling": "safety",
+      "ks_detail": "\u26a0\ufe0f  Safety Analysis Issues:\n\u274c Stack overflow detected: 608 bytes exceeds eBPF limit of 512 bytes\n   Stack usage 608 exceeds eBPF limit 512\n   Suggestion: Use BPF per-cpu array maps for large data structures\n\u274c Compilation halted due to safety violations",
+      "ks_ordinal": 1,
+      "ks_stage": "compile_reject",
+      "name": "stack_overflow",
+      "note": "600-byte stack buffer exceeds the 512-byte eBPF limit",
+      "verdict": "tie"
+    }
+  ],
+  "status": "ok",
+  "tie": 3,
+  "total": 4,
+  "verifier_tested": true
+}

@@ -373,9 +373,50 @@ implemented, attached to the right error classes, and stable, so a future
 compiler change that silently accepts one of these programs (or changes its
 diagnostic category) fails the paper-number generation path.  It does
 \emph{not} establish that the checks catch the mistakes developers actually
-make, nor quantify how often \tool{} moves a real failure earlier than
-C/libbpf; that requires an organic mistake corpus we discuss in
-Section~\ref{sec:limits}.
+make, nor on its own quantify how often \tool{} moves a real failure earlier
+than C/libbpf; the next paragraph takes a first organic-style step toward that.
+
+\textbf{Differential failure-stage probe.}  To ask whether the checks fire
+\emph{earlier} than the stock toolchain on the same mistake, we pre-register
+\KSOrganicTotal{} realistic mistakes, each injected identically into a working
+XDP map-counter written in \tool{} and in matched hand-written C/eBPF, and
+record the earliest stage each toolchain rejects it along a shared ladder
+(compile $<$ build $<$ verifier $<$ attach $<$ runtime $<$ undetected).
+Table~\ref{tab:organic} reports the outcome with the kernel verifier live
+(verifier tested: \KSOrganicVerifierTested).  \tool{} rejects all
+\KSOrganicTotal{} at compile time.  The decisive case is the cross-boundary one:
+an \texttt{@xdp} entry point handed a \texttt{*\_\_sk\_buff} context instead of
+\texttt{*xdp\_md}.  \tool{} rejects it from the program-signature rule of
+Section~\ref{sec:model}, whereas clang compiles it and the verifier
+\emph{accepts} it, so in C the mistake survives to a silently wrong load.  The
+other \KSOrganicTie{} mistakes tie: an undeclared map, a string stored into a
+\texttt{u64} value, and an oversized stack buffer are all local errors a
+single-language C compiler already diagnoses, and clang does.  This is the
+honest shape of the result, \KSOrganicKSEarlier{} earlier and \KSOrganicTie{}
+tied: typing buys the earlier catch precisely on the relationship that spans the
+kernel/user and program/context boundaries, which no local C check can see, and
+buys nothing on mistakes clang already catches.  The corpus is small and
+author-injected; Section~\ref{sec:limits} describes the larger
+mined-from-history study it previews.
+
+\begin{table}[t]
+\centering
+\caption{Differential failure-stage probe: earliest stage each toolchain
+catches the same injected mistake. \tool{} is strictly earlier only on the
+cross-boundary context-type mistake; the rest are ties clang already catches.}
+\label{tab:organic}
+\footnotesize
+\begin{tabular}{@{}llll@{}}
+\toprule
+Injected mistake & Coupling & \tool{} & C/libbpf \\
+\midrule
+Wrong context type & signature/domain & \KSOrganicWrongContextKS{} & \KSOrganicWrongContextC{} \\
+Undeclared map & representation & \KSOrganicMapUndeclaredKS{} & \KSOrganicMapUndeclaredC{} \\
+String into \texttt{u64} value & representation & \KSOrganicMapValueTypeKS{} & \KSOrganicMapValueTypeC{} \\
+Oversized stack buffer & safety & \KSOrganicStackOverflowKS{} & \KSOrganicStackOverflowC{} \\
+\bottomrule
+\end{tabular}
+\end{table}
 
 \subsection{Q2: One source generates the project}
 
@@ -530,16 +571,20 @@ design surfaces as a concrete, measurable boundary.
 The evaluation supports a bounded reading of the contribution and clarifies what
 remains open.
 
-\textbf{The static corpus is synthetic, not organic.}  It shows the typed
-invariants are wired and stable, but because every program was written to be
-rejected, it cannot show the checks catch the bugs developers actually hit, nor
-quantify how often \tool{} shifts a failure earlier than C/libbpf.  The
-experiment that would settle this is an organic study: collect real eBPF
-mistakes (from the revision history and issue trackers of \texttt{xdp-tutorial},
-\texttt{libbpf-bootstrap}, and Cilium, or by mutation), port each to \tool, and
-report the failure stage in each toolchain.  Until then, the early-checking
-claim is ``these checks exist and are stable,'' not ``these checks catch the
-bugs developers hit.''
+\textbf{The organic probe is small.}  The static corpus shows the typed
+invariants are wired and stable but is author-constructed; the differential
+probe of Section~\ref{sec:eval} takes a first organic-style step, injecting
+\KSOrganicTotal{} realistic mistakes into matched \tool{} and C/eBPF and finding
+\tool{} strictly earlier on \KSOrganicKSEarlier{} (the cross-boundary
+context-type mistake) and tied on \KSOrganicTie.  That is a probe, not a
+population estimate: \KSOrganicTotal{} hand-injected cases cannot say how often
+the earlier catch matters in practice.  The experiment that would settle it is
+larger: collect real eBPF mistakes from the revision history and issue trackers
+of \texttt{xdp-tutorial}, \texttt{libbpf-bootstrap}, and Cilium, port each to
+\tool, and report the failure-stage distribution.  Until then, the
+early-checking claim is ``these checks exist, are stable, and fire strictly
+earlier on at least the cross-boundary mistakes we tried,'' not ``these checks
+catch the bugs developers hit at a known rate.''
 
 \textbf{Lifecycle typing is lightweight.}  We enforce only the
 producer/consumer handle distinction, not full flow-sensitive typestate, so
