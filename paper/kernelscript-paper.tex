@@ -231,23 +231,19 @@ that only \texttt{load} produces a \texttt{ProgramHandle}.  The formation rule f
 eBPF entry-point function inhabits \texttt{FunctionRef}, so an \texttt{@helper},
 \texttt{@kfunc}, or userspace function is simply not a value \texttt{load} can
 accept.
-\[
-\frac{f \text{ has an eBPF entry attribute } a \in
-      \{\texttt{@xdp},\texttt{@tc},\texttt{@probe},\ldots\}}
+\begin{gather*}
+\frac{f \text{ has an eBPF entry attribute}}
      {\Gamma \vdash f : \texttt{FunctionRef}}
-\qquad
+\\[3pt]
 \frac{\Gamma \vdash f : \texttt{FunctionRef}}
      {\Gamma \vdash \texttt{load}(f) : \texttt{ProgramHandle}}
-\]
-\[
+\\[3pt]
 \frac{\Gamma \vdash h : \texttt{ProgramHandle}}
      {\Gamma \vdash \texttt{detach}(h) : \texttt{unit}}
-\]
-\[
-\frac{\Gamma \vdash h : \texttt{ProgramHandle} \quad
-      \Gamma \vdash t : \texttt{string},\; \mathit{fl} : \texttt{u32}}
+\\[3pt]
+\frac{\Gamma \vdash h : \texttt{ProgramHandle}}
      {\Gamma \vdash \texttt{attach}(h, t, \mathit{fl}) : \texttt{u32}}
-\]
+\end{gather*}
 Because \texttt{attach} and \texttt{detach} consume a \texttt{ProgramHandle} and
 only \texttt{load} produces one, ``attach before load'' is a \emph{type} error,
 not a runtime failure: passing a bare \texttt{FunctionRef}
