@@ -47,10 +47,11 @@ generated skeleton.  The relationships across them (which program a handle
 refers to, a map's key and value type on both sides of the kernel boundary, the
 load\,$\rightarrow$\,attach\,$\rightarrow$\,detach order) are today implicit
 naming conventions, checked only late, at verifier-load or attach time.  We
-study \tool, a typed DSL that makes these cross-boundary relationships
-\emph{first-class types}: execution domains, typed maps, and a lightweight
-lifecycle typestate become compiler diagnostics rather than runtime failures,
-while the compiler still lowers to ordinary C through the stock
+study \tool, a typed DSL that lifts these cross-boundary relationships into the
+type system: typed maps and a typed program-lifecycle handle become first-class
+types and execution domains a lightweight effect annotation, so that
+cross-boundary mismatches surface as compiler diagnostics rather than runtime
+failures, while the compiler still lowers to ordinary C through the stock
 clang/bpftool/libbpf toolchain.  On the artifact at commit \KSCommitShort, a
 corpus of \KSStaticExpectedFailures{} invalid programs confirms each typed
 invariant fires; \KSKSCompileOK{} of \KSTotalExamples{} examples compile and
@@ -84,11 +85,13 @@ to match the installed kernel headers.
 The reference C/libbpf workflow is powerful but verbose~\cite{libbpf}: the
 developer hand-writes kernel C, userspace C, map setup, attachment and pinning
 logic, cleanup paths, and a Makefile.  Libraries in Rust, Go, or Python improve
-the userspace half~\cite{aya,cilium-ebpf}, and tracing languages such as
+this experience, and some (notably Aya) author both sides from one host-language
+source~\cite{aya,cilium-ebpf}; tracing languages such as
 bpftrace raise the abstraction level for one
-domain~\cite{bpftrace}.  But these tools preserve the boundary between the eBPF
-program and its controller.  The relationships that span that boundary stay
-implicit.
+domain~\cite{bpftrace}.  But even when both sides are authored together, the
+relationships that span the kernel boundary, lifecycle ordering and domain
+separation, stay largely runtime or convention rather than compiler-checked
+types.
 
 \textbf{The key observation} is that each of these relationships is really one
 concept wearing several costumes.  A map declaration is simultaneously a kernel
@@ -113,7 +116,7 @@ replacement.
 This paper makes three contributions.  \emph{(1)}~We formulate \tool's central
 idea as a \emph{typed model of cross-boundary eBPF structure}: execution
 domains, typed maps shared across the kernel boundary, and a program lifecycle
-modeled as lightweight typestate, each specified as a typing rule with a
+modeled as typed producer/consumer handles, each specified as a typing rule with a
 matching compiler diagnostic (Section~\ref{sec:model}).  \emph{(2)}~We show how
 the prototype realizes that model while preserving the stock kernel toolchain,
 so compatibility failures remain visible and measurable rather than hidden
@@ -215,8 +218,8 @@ access to an undeclared map is rejected (\texttt{map\_string\_key},
 replaces the otherwise-duplicated kernel definition, skeleton field, and
 userspace lookup that must be kept in agreement by hand.
 
-\textbf{Program lifecycle as typestate (lifecycle coupling).}  The sharpest
-cross-boundary invariant is lifecycle.  \tool{} distinguishes a
+\textbf{Program lifecycle as typed handles (lifecycle coupling).}  The most
+protocol-like cross-boundary invariant is lifecycle.  \tool{} distinguishes a
 \texttt{FunctionRef} (a reference to an \texttt{@}-attributed function) from a
 \texttt{ProgramHandle} (a loaded program), and types the lifecycle builtins so
 that only \texttt{load} produces a \texttt{ProgramHandle}:
@@ -238,10 +241,12 @@ not a runtime failure: passing a bare \texttt{FunctionRef}
 (\texttt{attach\_without\_load}), an integer
 (\texttt{attach\_integer\_handle}), or a string (\texttt{load\_string},
 \texttt{detach\_string}) to a lifecycle builtin does not type-check.  This is a
-deliberately lightweight typestate discipline.  It \emph{guarantees} that
-lifecycle builtins apply only to values of the correct lifecycle type, so the
-producer/consumer relation between \texttt{FunctionRef} and
-\texttt{ProgramHandle} encodes the intended ordering.  It does \emph{not}
+producer/consumer handle discipline, not yet a full typestate automaton: because
+only \texttt{load} produces a \texttt{ProgramHandle}, it enforces the single
+ordering constraint $\textit{load} \prec \{\textit{attach},\,\textit{detach}\}$
+rather than the complete load$\rightarrow$attach$\rightarrow$detach protocol.  It
+\emph{guarantees} that lifecycle builtins apply only to values of the correct
+lifecycle type.  It does \emph{not}
 guarantee full path-sensitive soundness: the current checker does not statically
 rule out use-after-detach, double-attach, or leaked handles on every
 control-flow path.  Those properties need a flow-sensitive analysis we have not
@@ -363,10 +368,19 @@ build into generated C/eBPF projects (\KSMakePct).  The single compile-time
 rejection is \texttt{safety\_demo.ks}, where safety analysis detects 608 bytes
 of stack use, above the 512-byte eBPF limit, and halts before codegen, a
 direct instance of a verifier-relevant problem caught early.  For successful
-examples the median \tool{} source is \KSMedianKSSloc{} nonblank noncomment
-lines and the median generated project (userspace C, eBPF C, optional module C,
-and Makefile, excluding \texttt{vmlinux.h} and skeletons) is
-\KSMedianGeneratedSloc{} lines, a median expansion of \KSMedianGeneratedRatio.
+examples the compiler emits a median \KSMedianGeneratedSloc{} lines (userspace C,
+eBPF C, optional module C, and Makefile, excluding \texttt{vmlinux.h} and
+skeletons) from a median \KSMedianKSSloc{} \tool{} source lines; this
+\KSMedianGeneratedRatio{} ratio measures the boilerplate the compiler emits, not
+developer effort saved.  A closer proxy for effort is a matched comparison
+against hand-written equivalents: across \KSSourceFootprintWorkloads{} local
+workloads that have hand-written C/libbpf baselines, the maintained \tool{}
+sources total \KSSourceFootprintUniqueKSSloc{} lines versus
+\KSSourceFootprintUniqueCSloc{} for the C/libbpf versions
+(\KSSourceFootprintUniqueRatio), a median \KSSourceFootprintMedianRatio{} per
+workload.  Both numbers come from an author-written corpus, and
+Section~\ref{sec:limits} reports that even the matched advantage does not survive
+an independent port.
 These examples exercise many domains: Table~\ref{tab:features} shows attempted,
 compiler-accepted, and fully built counts across XDP, TC, probes, tracepoints,
 perf, maps, ring buffers, dynptr, kfunc, struct\_ops, tail calls, and userspace,
@@ -545,11 +559,19 @@ programmable packet model \tool{} targets~\cite{xdp}, surveyed
 broadly~\cite{ebpfsurvey,linux-ebpf}.  C/libbpf is the reference workflow and
 exposes the full API with BTF and CO-RE, but leaves kernel code, loaders,
 skeletons, maps, and build logic as separate artifacts~\cite{libbpf}.
-Host-language libraries such as Aya (Rust) and cilium/ebpf (Go) improve
-userspace integration and type safety \emph{within} the host language but
-preserve the program/controller split~\cite{aya,cilium-ebpf}.  \tool{} keeps the
-toolchain underneath but moves the multi-artifact structure into one
-type-checked source, so the relationships \emph{across} that split become types.
+Host-language libraries such as Aya (Rust) and cilium/ebpf (Go) already go part
+of this way: Aya in particular compiles both the kernel program and its userspace
+loader from one Rust source and shares typed map definitions across the boundary,
+so single-source authoring and typed maps are not by themselves what \tool{}
+adds~\cite{aya,cilium-ebpf}.  \tool{} differs on two axes.  First, it is not bound
+to a host language: the execution domains
+(\textit{user}/\textit{ebpf}/\textit{helper}/\textit{kfunc}) and their crossing
+rules are part of the language and the program, loader, and maps are checked
+together rather than across separate host-language crates.  Second, it lowers to
+ordinary C through the stock clang/bpftool/libbpf toolchain rather than a
+host-language runtime, so BTF, CO-RE, skeleton generation, and verifier
+diagnostics are inherited and compatibility skew stays measurable rather than
+hidden behind a binding.
 
 \textbf{Tracing, Python, and bytecode tools.}  bpftrace is concise but narrows
 the target to tracing, excluding XDP, TC, struct\_ops, and kfunc
