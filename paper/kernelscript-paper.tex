@@ -261,8 +261,8 @@ C. For an input \texttt{foo.ks} the generated project normally contains
 \texttt{foo.ebpf.c}, \texttt{foo.c}, a \texttt{Makefile}, and, when kfuncs are
 present, \texttt{foo.mod.c}. The Makefile uses bpftool to dump
 \texttt{vmlinux.h}, clang to produce a BPF object, bpftool to generate a
-skeleton, and gcc to link the userspace loader against libbpf, libelf, and
-zlib.
+skeleton, and gcc to link the userspace loader against libbpf (together with
+libelf and zlib).
 
 Two implementation choices follow directly from the model. First, the compiler
 has \emph{separate modules} for maps, userspace codegen, eBPF codegen,
