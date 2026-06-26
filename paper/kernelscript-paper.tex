@@ -41,33 +41,24 @@
 \begin{minipage}{0.92\textwidth}
 \small
 \noindent\textbf{Abstract.}
-A realistic eBPF application is not one program but several coupled artifacts:
-a verifier-constrained kernel program, a userspace loader, shared maps, and a
-generated skeleton that ties them together.  The relationships between these
-artifacts (which program a handle refers to, what key and value type a map
-carries on both sides of the kernel boundary, and the
-load\,$\rightarrow$\,attach\,$\rightarrow$\,detach order a program must follow) are
-today expressed as naming conventions and generated-header dependencies.  They
-are checked, if at all, late: at verifier-load or attach time.  This paper
-studies \tool, a typed domain-specific language that makes these cross-boundary
-relationships \emph{first-class types}.  Execution domains, typed maps shared
-across the kernel boundary, and a program lifecycle modeled as lightweight
-typestate become compiler diagnostics rather than runtime failures, while the
-compiler still lowers each program to ordinary C that flows through the stock
-clang/bpftool/libbpf toolchain.  We evaluate the prototype as a compiler
-artifact at commit \KSCommitShort.  A static corpus of
-\KSStaticExpectedFailures{} invalid programs confirms that each typed invariant
-is wired to a localized rejection; \KSKSCompileOK{} of \KSTotalExamples{}
-repository examples compile and \KSMakeOK{} build to libbpf-compatible projects,
-expanding a median \KSMedianKSSloc{} source lines into \KSMedianGeneratedSloc{}
-generated lines; and the generated objects are not merely syntactic: they
-verifier-load, attach, pass traffic, and load/attach/detach a tcp-congestion
-struct\_ops map on a real kernel.  We are explicit about what the prototype does
-not yet show: a flow-sensitive lifetime guarantee, an organic study of the bugs
-the checks catch in practice, or broad runtime equivalence with hand-written
-C/libbpf.  The contribution is a concrete design point, typed cross-boundary
-eBPF structure that preserves the kernel toolchain, together with a reproducible
-artifact that exposes both what the type system buys and where the underlying
+A realistic eBPF application is several coupled artifacts: a
+verifier-constrained kernel program, a userspace loader, shared maps, and a
+generated skeleton.  The relationships across them (which program a handle
+refers to, a map's key and value type on both sides of the kernel boundary, the
+load\,$\rightarrow$\,attach\,$\rightarrow$\,detach order) are today implicit
+naming conventions, checked only late, at verifier-load or attach time.  We
+study \tool, a typed DSL that makes these cross-boundary relationships
+\emph{first-class types}: execution domains, typed maps, and a lightweight
+lifecycle typestate become compiler diagnostics rather than runtime failures,
+while the compiler still lowers to ordinary C through the stock
+clang/bpftool/libbpf toolchain.  On the artifact at commit \KSCommitShort, a
+corpus of \KSStaticExpectedFailures{} invalid programs confirms each typed
+invariant fires; \KSKSCompileOK{} of \KSTotalExamples{} examples compile and
+\KSMakeOK{} build into libbpf-compatible projects; and the generated objects
+verifier-load, attach, pass traffic, and exercise a tcp-congestion struct\_ops
+path on a real kernel.  The contribution is a concrete design point, typed
+cross-boundary eBPF structure that preserves the kernel toolchain, with a
+reproducible artifact that exposes both what the type system buys and where the
 BPF stack still leaks through.
 \end{minipage}
 \vspace{1.0em}
