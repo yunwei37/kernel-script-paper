@@ -144,6 +144,7 @@ def bpftool_load(obj: Path, tag: str, sudo: bool):
     pin = Path("/sys/fs/bpf") / f"organic_{tag}"
     prog_pin, map_pin = str(pin / "progs"), str(pin / "maps")
     run(["rm", "-rf", str(pin)], sudo=True)
+    run(["mkdir", "-p", str(pin)], sudo=True)  # bpftool needs the parent pin dir
     res = run(["bpftool", "prog", "loadall", str(obj), prog_pin, "pinmaps", map_pin],
               sudo=True, timeout=60)
     pinned = run(["find", prog_pin, "-type", "f"], sudo=True)
