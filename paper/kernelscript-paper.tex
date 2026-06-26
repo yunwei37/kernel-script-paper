@@ -55,8 +55,10 @@ clang/bpftool/libbpf toolchain.  On the artifact at commit \KSCommitShort, a
 corpus of \KSStaticExpectedFailures{} invalid programs confirms each typed
 invariant fires; \KSKSCompileOK{} of \KSTotalExamples{} examples compile and
 \KSMakeOK{} build into libbpf-compatible projects; and the generated objects
-verifier-load, attach, pass traffic, and exercise a tcp-congestion struct\_ops
-path on a real kernel.  The contribution is a concrete design point, typed
+verifier-load, attach, pass traffic, and load/attach/detach a tcp-congestion
+struct\_ops object on a real kernel through a direct libbpf runner (its generated
+skeleton build hits a bpftool/libbpf version mismatch we analyze).  The
+contribution is a concrete design point, typed
 cross-boundary eBPF structure that preserves the kernel toolchain, with a
 reproducible artifact that exposes both what the type system buys and where the
 BPF stack still leaks through.
@@ -280,15 +282,17 @@ an escape hatch to generated header declarations.
 
 Two lowerings show that the model is about structure, not only code size.
 Source-level ring-buffer operations (\texttt{reserve}, field write,
-\texttt{submit}) lower to the \texttt{bpf\_dynptr\_reserve}/\texttt{data}/%
-\texttt{write}/\texttt{submit} helper sequence, and helper-visible map-value
-field reads lower through \texttt{bpf\_dynptr\_from\_mem} plus
-\texttt{bpf\_dynptr\_data}, so the author never hand-assembles the dynptr
-lifetime.  More strikingly, a userspace stage may \texttt{exec()} into Python
-while inheriting the relevant open map descriptors: the compiler emits a Python
-wrapper that reconstructs typed access to those maps from the same compile-time
-metadata (repository example \texttt{test\_exec.ks}).  This carries the
-cross-boundary claim across a
+\texttt{submit}) lower to the
+\texttt{bpf\_ringbuf\_reserve\_dynptr}/\texttt{bpf\_dynptr\_data}/%
+\texttt{bpf\_dynptr\_write}/\texttt{bpf\_ringbuf\_submit\_dynptr} helper sequence,
+and helper-visible map-value field reads lower through
+\texttt{bpf\_dynptr\_from\_mem} plus \texttt{bpf\_dynptr\_data}, so the author
+never hand-assembles the dynptr lifetime.  More strikingly, a userspace stage may
+\texttt{exec()} into Python and reuse the program's open map descriptors: the
+generated loader clears \texttt{FD\_CLOEXEC} on those descriptors and passes their
+numbers through an environment variable, and the compiler emits a Python wrapper
+that reopens typed access to the same maps from compile-time metadata (repository
+example \texttt{test\_exec.ks}).  This carries the cross-boundary claim across a
 kernel$\leftrightarrow$userspace$\leftrightarrow$script boundary rather than
 stopping at a C loader, with the map schema and descriptor handoff derived from
 one typed source instead of hand-written glue.
@@ -445,9 +449,16 @@ Isolated XDP attach/detach & \KSAttachEligible{} & \KSAttachOK{} \\
 
 \textbf{Runtime sanity.}  Beyond load and attach, matched workloads confirm the
 generated objects \emph{run}.  Under \texttt{BPF\_PROG\_TEST\_RUN} a minimal
-generated XDP pass program has the same instruction count and a comparable
-median latency as its hand-written baseline (\KSMicroKsPassNs{} vs.\
-\KSMicroCPassNs{} for \tool{} and C).  Over \KSTrafficTrials{} veth/iperf3
+generated XDP pass program matches its hand-written baseline in both instruction
+count and median latency (\KSMicroKsPassInstr{} instructions, \KSMicroKsPassNs{}
+vs.\ \KSMicroCPassNs{}).  A map-counter program does not: the generated object
+emits \KSMicroKsCountInstr{} instructions versus \KSMicroCCountInstr{} for C
+(\KSMicroKsCountNs{} vs.\ \KSMicroCCountNs{}), and the comparison is not matched
+because the C baseline uses an atomic add while the generated path lowers to a
+separate lookup and update.  We report this gap rather than the favorable case
+alone, and note that codegen efficiency of the lowered C is orthogonal to the
+typing contribution: it is a backend lowering choice, not a property of the typed
+model, and improving it is future work.  Over \KSTrafficTrials{} veth/iperf3
 trials, generated and hand-written XDP pass programs deliver comparable local
 medians (\KSTrafficKsPassGbps{} vs.\ \KSTrafficCPassGbps{} Gb/s), and matched TC
 programs pass traffic as well.  These are local, unpinned veth/TCP samples, not
@@ -458,10 +469,14 @@ generated object does not collapse the data path.
 means \tool{} also inherits its compatibility coupling, and the artifact makes
 this visible rather than hiding it.  The two generated build failures
 (\texttt{sched\_ext\_simple.ks}, \texttt{struct\_ops\_simple.ks}) are not parser
-or type errors: both compile to eBPF objects and generate skeletons, but the
-generated userspace skeleton references a \texttt{struct bpf\_map\_skeleton.link}
-field absent from the installed libbpf 1.3.0 headers
-(\KSStructOpsMismatchPct{} of examples).  To separate this skeleton-header skew
+or type errors: both compile to eBPF objects and generate skeletons, but
+bpftool \KSStructOpsBpftoolVersion{} emits a generated skeleton that assigns
+\texttt{struct bpf\_map\_skeleton.link}, a field the older installed libbpf
+\KSStructOpsLibbpfVersion{} headers on our host do not provide
+(\KSStructOpsMismatchPct{} of examples).  This is a mismatched-toolchain pairing
+(a newer bpftool against an older libbpf), not an inherent property of either
+version: a matched bpftool/libbpf pair would not exhibit it.  To separate this
+skeleton-header skew
 from object compatibility, a shared libbpf runner loads both the generated and a
 matched hand-written tcp-congestion struct\_ops object \emph{without} generated
 skeletons: on this host (bpftool \KSStructOpsBpftoolVersion, libbpf
@@ -508,8 +523,9 @@ deployment study would run each example in a VM with a known kernel
 configuration, representative workloads, and explicit post-detach cleanup
 checks.
 
-\textbf{Version skew is fundamental, not incidental.}  The struct\_ops result
-shows that results depend on alignment between kernel headers, bpftool,
+\textbf{Toolchain version alignment matters.}  The struct\_ops result is a
+mismatched bpftool/libbpf pairing rather than a deep limitation, but it shows
+that a generated build depends on alignment between kernel headers, bpftool,
 generated skeletons, and libbpf.  A production \tool{} should record the target
 kernel ABI, check libbpf feature support before generation, and fail early with
 a dependency diagnostic.
@@ -575,8 +591,9 @@ at verifier-load or attach time.  On the checked-in artifact, a corpus of
 \KSStaticExpectedFailures{} invalid programs confirms each typed invariant fires
 as a localized diagnostic; \KSKSCompileOK{} of \KSTotalExamples{} examples
 compile and \KSMakeOK{} build from one source into libbpf-compatible projects;
-and the generated objects verifier-load, attach, pass traffic, and exercise a
-tcp-congestion struct\_ops path on a real kernel.  The result is a concrete,
+and the generated objects verifier-load, attach, pass traffic, and run a
+tcp-congestion struct\_ops object on a real kernel via a direct libbpf runner.
+The result is a concrete,
 reproducible design point: typing eBPF's cross-boundary structure is feasible
 and useful, and because the prototype lowers through the stock toolchain, both
 its benefits and the version-skew limits it cannot absorb stay visible and
