@@ -269,8 +269,7 @@ Section~\ref{sec:model} is realized at a concrete point in this pipeline, which
 is why the compiler keeps \emph{separate modules} for maps, eBPF codegen,
 userspace codegen, kernel-module generation, safety checking, BTF parsing,
 dynptr bridging, tail-call analysis, and struct\_ops rather than acting as a
-thin preprocessor over C: encoding eBPF concepts directly is what gives each
-check and each lowering somewhere to live. \emph{Domains} are carried as a
+thin preprocessor over C. \emph{Domains} are carried as a
 per-function scope refined by the entry attribute; the IR records each
 function's program type, and code generation dispatches the same source function
 to the eBPF or the userspace backend on that field, so one surface syntax
@@ -287,13 +286,11 @@ lowers to an ordinary file descriptor: \code{load} resolves the program by name
 (\code{bpf_program__fd}), \code{attach} dispatches on the program type to the
 matching libbpf entry point (\code{bpf_xdp_attach},
 \code{bpf_program__attach_tcx}, \code{bpf_program__attach_kprobe}, and so on),
-and \code{detach} releases the link through \code{bpf_link__destroy}. The typed
-discipline thus lives entirely in the compiler and disappears into stock libbpf
-calls.
+and \code{detach} releases the link through \code{bpf_link__destroy}.
 
 \begin{lstlisting}[language=C,caption={One typed map declaration lowers to both
-a kernel \texttt{SEC(".maps")} definition and a userspace accessor, emitted from
-a single descriptor so the key and value types cannot drift apart.},label={lst:map}]
+a kernel \texttt{SEC(".maps")} definition and a userspace accessor from a single
+descriptor.},label={lst:map}]
 // KernelScript source
 var counts : hash<u32, u64>(1024)
 
