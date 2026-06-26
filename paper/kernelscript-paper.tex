@@ -301,10 +301,10 @@ an escape hatch to generated header declarations.
 Two lowerings show the typed cross-boundary model reaching past the immediate
 kernel/userspace split it was designed for.
 Source-level ring-buffer operations (\texttt{reserve}, field write,
-\texttt{submit}) lower to the
-\texttt{bpf\_ringbuf\_reserve\_dynptr}/\texttt{bpf\_dynptr\_data}/%
-\texttt{bpf\_dynptr\_write}/\texttt{bpf\_ringbuf\_submit\_dynptr} helper sequence,
-and helper-visible map-value field reads lower through
+\texttt{submit}) lower to the helper sequence
+\texttt{bpf\_ringbuf\_reserve\_dynptr}, \texttt{bpf\_dynptr\_data},
+\texttt{bpf\_dynptr\_write}, and \texttt{bpf\_ringbuf\_submit\_dynptr};
+helper-visible map-value field reads lower through
 \texttt{bpf\_dynptr\_from\_mem} plus \texttt{bpf\_dynptr\_data}, so the author
 never hand-assembles the dynptr lifetime.  More strikingly, a userspace stage may
 \texttt{exec()} into Python and reuse the program's open map descriptors: the
