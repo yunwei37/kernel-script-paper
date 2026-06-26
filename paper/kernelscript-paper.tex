@@ -388,7 +388,12 @@ Oversized stack buffer & safety & \KSOrganicStackOverflowKS{} & \KSOrganicStackO
 build into generated C/eBPF projects (\KSMakePct). The single compile-time
 rejection is \texttt{safety\_demo.ks}, where safety analysis detects 608 bytes
 of stack use, above the 512-byte eBPF limit, and halts before codegen, a
-direct instance of a verifier-relevant problem caught early. For successful
+direct instance of a verifier-relevant problem caught early. The two examples
+that compile but do not build are both struct\_ops programs, and neither is a
+compiler defect: each produces a valid eBPF object and fails only because the
+bpftool-generated skeleton references a libbpf field absent from the host's
+older installed headers, a toolchain version skew we isolate later in this
+section (\emph{Where the toolchain leaks through}). For successful
 examples the compiler emits a median \KSMedianGeneratedSloc{} lines from a
 median \KSMedianKSSloc{} \tool{} source lines (excluding \texttt{vmlinux.h} and
 skeletons); this \KSMedianGeneratedRatio{} ratio measures emitted boilerplate,
