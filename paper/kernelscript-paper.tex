@@ -388,19 +388,16 @@ build into generated C/eBPF projects (\KSMakePct).  The single compile-time
 rejection is \texttt{safety\_demo.ks}, where safety analysis detects 608 bytes
 of stack use, above the 512-byte eBPF limit, and halts before codegen, a
 direct instance of a verifier-relevant problem caught early.  For successful
-examples the compiler emits a median \KSMedianGeneratedSloc{} lines (userspace C,
-eBPF C, optional module C, and Makefile, excluding \texttt{vmlinux.h} and
-skeletons) from a median \KSMedianKSSloc{} \tool{} source lines; this
-\KSMedianGeneratedRatio{} ratio measures the boilerplate the compiler emits, not
-developer effort saved.  A closer proxy for effort is a matched comparison
-against hand-written equivalents: across \KSSourceFootprintWorkloads{} local
-workloads that have hand-written C/libbpf baselines, the maintained \tool{}
-sources total \KSSourceFootprintUniqueKSSloc{} lines versus
-\KSSourceFootprintUniqueCSloc{} for the C/libbpf versions
-(\KSSourceFootprintUniqueRatio), a median \KSSourceFootprintMedianRatio{} per
-workload.  Both numbers come from an author-written corpus, and
-Section~\ref{sec:limits} reports that even the matched advantage does not survive
-an independent port.
+examples the compiler emits a median \KSMedianGeneratedSloc{} lines from a median
+\KSMedianKSSloc{} \tool{} source lines (excluding \texttt{vmlinux.h} and
+skeletons); this \KSMedianGeneratedRatio{} ratio measures emitted boilerplate,
+not effort saved.  A closer proxy is a matched comparison: across
+\KSSourceFootprintWorkloads{} workloads with hand-written C/libbpf baselines, the
+\tool{} sources total \KSSourceFootprintUniqueKSSloc{} lines versus
+\KSSourceFootprintUniqueCSloc{} (\KSSourceFootprintUniqueRatio; median
+\KSSourceFootprintMedianRatio{} per workload).  Both are author-written corpora,
+and Section~\ref{sec:limits} reports the advantage does not survive an
+independent port.
 These examples exercise many domains: Table~\ref{tab:features} shows attempted,
 compiler-accepted, and fully built counts across XDP, TC, probes, tracepoints,
 perf, maps, ring buffers, dynptr, kfunc, struct\_ops, tail calls, and userspace,
@@ -572,57 +569,39 @@ kernel ABI, check libbpf feature support before generation, and fail early with
 a dependency diagnostic.
 
 \textbf{The Python bridge is a mechanism, not yet a result.}  The
-\texttt{exec()}-to-Python path carries typed map declarations across a process
-replacement by preserving descriptors and generating a wrapper from source
-metadata, so the compiler rather than the developer does the bookkeeping to
-reopen shared state on the Python side.  The checked-in example stops at direct
-map reads and writes, so we claim a usable path from eBPF-collected state into
-the Python analysis ecosystem, not a machine-learning integration result.
+\texttt{exec()}-to-Python path lets the compiler, not the developer, carry typed
+maps across the process boundary, but the checked-in example stops at direct map
+reads and writes: it is a usable path into the Python ecosystem, not a
+machine-learning integration result.
 
 \section{Related Work}
 
 \textbf{C/libbpf and host-language bindings.}  XDP established the in-kernel
 programmable packet model \tool{} targets~\cite{xdp}, surveyed
-broadly~\cite{ebpfsurvey,linux-ebpf}.  C/libbpf is the reference workflow and
-exposes the full API with BTF and CO-RE~\cite{corebtf}, but leaves kernel code,
-loaders, skeletons, maps, and build logic as separate artifacts~\cite{libbpf};
-skeleton-based scaffolding such as libbpf-bootstrap and xdp-tutorial reduces the
-boilerplate but leaves the cross-boundary relationships
-untyped~\cite{libbpf-bootstrap,xdp-tutorial}.
-Host-language libraries such as Aya (Rust) and cilium/ebpf (Go) already go part
-of this way: Aya in particular compiles both the kernel program and its userspace
-loader from one Rust source and shares typed map definitions across the boundary,
-so single-source authoring and typed maps are not by themselves what \tool{}
-adds~\cite{aya,cilium-ebpf}.  \tool{} differs on two axes.  First, it is not bound
-to a host language: the execution domains
-(\textit{user}/\textit{ebpf}/\textit{helper}/\textit{kfunc}) and their crossing
-rules are part of the language and the program, loader, and maps are checked
-together rather than across separate host-language crates.  Second, it lowers to
-ordinary C through the stock clang/bpftool/libbpf toolchain rather than a
-host-language runtime, so BTF, CO-RE, skeleton generation, and verifier
-diagnostics are inherited and compatibility skew stays measurable rather than
-hidden behind a binding.  Rex closes the language-verifier gap with safe Rust
-kernel extensions and a lightweight runtime, but like Aya it targets a host
-language and its own loading path rather than lowering to the stock libbpf
-toolchain~\cite{rex}.
+broadly~\cite{ebpfsurvey,linux-ebpf}.  C/libbpf is the reference workflow but
+leaves kernel code, loaders, skeletons, maps, and build logic as separate
+artifacts~\cite{libbpf}; scaffolding such as libbpf-bootstrap and xdp-tutorial
+cuts the boilerplate yet leaves the cross-boundary relationships
+untyped~\cite{libbpf-bootstrap,xdp-tutorial}.  Host-language libraries go part of
+the way: Aya in particular compiles both sides from one Rust source and shares
+typed maps across the boundary~\cite{aya,cilium-ebpf}, so single-source authoring
+and typed maps are not by themselves \tool's contribution.  \tool{} differs in
+being host-language-independent, with execution domains and their crossing rules
+in the language, and in lowering to the stock clang/bpftool/libbpf toolchain
+rather than a host runtime, so BTF, CO-RE, skeletons, and verifier diagnostics are
+inherited and compatibility skew stays measurable.  Rex similarly narrows the
+language-verifier gap with safe Rust extensions, but like Aya targets a host
+language and its own loading path rather than stock libbpf~\cite{rex}.
 
-\textbf{Tracing, Python, and bytecode tools.}  bpftrace is concise but narrows
-the target to tracing, excluding XDP, TC, struct\_ops, and kfunc
-workflows~\cite{bpftrace}; ply offers a similar lightweight tracer aimed at
-minimal runtime dependencies~\cite{ply}.  BCC makes eBPF easy to script from
-Python but keeps Python as the userspace controller around separate BPF code
-rather than one typed source~\cite{bcc}, and eInfer uses eBPF to \emph{observe}
-distributed LLM inference~\cite{einfer-ebpf}; bpftime takes a different tack on
-the runtime axis, executing eBPF in userspace rather than the
-kernel~\cite{bpftime}.  \tool's \texttt{exec()}-to-Python path instead
+\textbf{Tracing and bytecode tools.}  bpftrace is concise but narrows the target
+to tracing~\cite{bpftrace}.  BCC scripts eBPF from Python but keeps Python as a
+controller around separate BPF code~\cite{bcc}; eInfer uses eBPF to \emph{observe}
+distributed LLM inference~\cite{einfer-ebpf} and bpftime moves the runtime itself
+to userspace~\cite{bpftime}.  \tool's \texttt{exec()}-to-Python path instead
 brings the glue between eBPF-resident state and a Python consumer into the
-unified source, deriving map schemas, descriptor handoff, and wrappers from one
-typed source rather than separate integration code.  A separate line hardens or
-optimizes the eBPF bytecode itself: PREVAIL replaces verifier passes with
-abstract interpretation~\cite{prevail}, K2 synthesizes smaller safe
-objects~\cite{k2}, and hXDP compiles eBPF for FPGA NICs~\cite{hxdp}.  These
-operate on bytecode \emph{after} it exists; \tool{} is earlier in the pipeline,
-generating the bytecode and its loader and build, and is complementary.
+unified source.  A separate line optimizes the eBPF bytecode after it exists:
+PREVAIL~\cite{prevail}, K2~\cite{k2}, and hXDP~\cite{hxdp}; \tool{} is earlier and
+complementary, generating the bytecode and its loader.
 
 \textbf{Dataplane DSLs and typestate.}  Compiling one typed description into a
 split low-level implementation has precedent: P4 compiles a
@@ -634,14 +613,13 @@ and fast-moving libbpf/bpftool ABIs, the source of the compatibility limits we
 measure.  \tool's lifecycle discipline is a lightweight instance of
 typestate~\cite{typestate}: we enforce only the producer/consumer handle
 distinction, so the connection is a design influence rather than a claim of
-equivalent guarantees.  The unrealized guarantees are squarely substructural: an
-affine \texttt{ProgramHandle} consumed by \texttt{detach} (or a typed
-\texttt{Link} returned by \texttt{attach}) would rule out use-after-detach,
-double-attach, and leaks~\cite{lineartypes,substructural}, Vault showed how to
-enforce such resource protocols in low-level software~\cite{vault}, and session
-types formalize the ordering discipline more fully~\cite{sessiontypes}.  Our
-domain separation is in the spirit of address-space type qualifiers such as the
-kernel's own Sparse \texttt{\_\_user}/\texttt{\_\_kernel}
+equivalent guarantees.  The unrealized guarantees are substructural: an affine
+\texttt{ProgramHandle} consumed by \texttt{detach} (or a typed \texttt{Link}
+returned by \texttt{attach}) would rule out use-after-detach, double-attach, and
+leaks~\cite{lineartypes}, Vault enforces such resource protocols in low-level
+software~\cite{vault}, and session types formalize the ordering more
+fully~\cite{sessiontypes}.  Our domain separation echoes address-space type
+qualifiers such as the kernel's Sparse \texttt{\_\_user}/\texttt{\_\_kernel}
 annotations~\cite{sparse}.  \tool{} thus occupies a point not
 covered above: a compiled, multi-domain, single-source language whose question
 is whether eBPF application structure can be made explicit enough for a compiler
