@@ -244,23 +244,22 @@ present, \texttt{foo.mod.c}. The Makefile uses bpftool to dump
 skeleton, and gcc to link the userspace loader against libbpf (together with
 libelf and zlib).
 
-\textbf{From typing rules to code.} Each invariant of
-Section~\ref{sec:model} is realized at a concrete point in this pipeline, which
-is why the compiler keeps \emph{separate modules} for maps, eBPF codegen,
-userspace codegen, kernel-module generation, safety checking, BTF parsing,
-dynptr bridging, tail-call analysis, and struct\_ops rather than acting as a
-thin preprocessor over C. \emph{Domains} are carried as a
-per-function scope refined by the entry attribute; the IR records each
-function's program type, and code generation dispatches the same source function
-to the eBPF or the userspace backend on that field, so one surface syntax
-produces two ABIs without the author choosing a target. \emph{Typed maps} lower
-to a single map descriptor that records the key and value types once; both
-backends read that descriptor, so the eBPF \code{SEC(".maps")} definition and
-the userspace accessor are emitted from one source of truth
-(Listing~\ref{lst:map}). \emph{Lifecycle handles} are enforced in the front
-end: only \code{load} is typed to yield a \code{ProgramHandle}, and the
-\code{attach} and \code{detach} builtins are typed to require one, so a
-misordered call fails type checking before any code is emitted. The handle then
+\textbf{From typing rules to code.} The compiler realizes each invariant of
+Section~\ref{sec:model} at a concrete point in this pipeline, which is why it
+keeps \emph{separate modules} for maps, eBPF codegen, userspace codegen,
+kernel-module generation, safety checking, BTF parsing, dynptr bridging,
+tail-call analysis, and struct\_ops rather than acting as a thin preprocessor
+over C. \emph{Domains} attach to each function as a scope refined by the entry
+attribute; the IR records each function's program type, and code generation
+dispatches the same source function to the eBPF or the userspace backend on
+that field, so one surface syntax produces two ABIs without the author choosing
+a target. \emph{Typed maps} lower to a single map descriptor that records the
+key and value types once; both backends read that descriptor, so they emit the
+eBPF \code{SEC(".maps")} definition and the userspace accessor from one source
+of truth (Listing~\ref{lst:map}). The front end \emph{enforces lifecycle
+handles}: only \code{load} yields a \code{ProgramHandle}, and \code{attach} and
+\code{detach} require one, so a misordered call fails type checking before any
+code generation. The handle then
 lowers to an ordinary file descriptor: \code{load} resolves the program by name
 (\code{bpf_object__find_program_by_name}) and takes its descriptor
 (\code{bpf_program__fd}), \code{attach} dispatches on the program type to the
@@ -385,31 +384,27 @@ Oversized stack buffer & safety & \KSOrganicStackOverflowKS{} & \KSOrganicStackO
 
 \subsection{Q2: One source generates the project}
 
-\textbf{Buildability and centralization.} Of \KSTotalExamples{} examples,
-\KSKSCompileOK{} compile from \tool{} source (\KSKSCompilePct) and \KSMakeOK{}
-build into generated C/eBPF projects (\KSMakePct). The single compile-time
-rejection is \texttt{safety\_demo.ks}, where safety analysis detects 608 bytes
-of stack use, above the 512-byte eBPF limit, and halts before codegen, a
-direct instance of a verifier-relevant problem caught early. The two examples
+\textbf{Buildability and centralization.} Nearly all examples compile and
+build: \KSKSCompileOK{} of \KSTotalExamples{} compile, and \KSMakeOK{} produce
+working libbpf projects. The single compile-time rejection is
+\texttt{safety\_demo.ks}, where safety analysis detects 608 bytes of stack use
+(above the 512-byte eBPF limit) and halts before codegen, a verifier-relevant
+problem caught early. The two examples
 that compile but do not build are both struct\_ops programs, and neither is a
 compiler defect: each produces a valid eBPF object and fails only because the
 bpftool-generated skeleton references a libbpf field absent from the host's
 older installed headers, a toolchain version skew we isolate later in this
-section (\emph{Where the toolchain leaks through}). For successful
-examples the compiler emits a median \KSMedianGeneratedSloc{} lines from a
-median \KSMedianKSSloc{} \tool{} source lines (excluding \texttt{vmlinux.h} and
-skeletons); this \KSMedianGeneratedRatio{} ratio measures emitted boilerplate,
-not effort saved. A closer proxy is a matched comparison: across
-\KSSourceFootprintWorkloads{} workloads with hand-written C/libbpf baselines,
-the \tool{} sources total \KSSourceFootprintUniqueKSSloc{} lines versus
-\KSSourceFootprintUniqueCSloc{} (\KSSourceFootprintUniqueRatio; median
-\KSSourceFootprintMedianRatio{} per workload). Both are author-written corpora,
-and Section~\ref{sec:limits} reports the advantage does not survive an
-independent port. These examples exercise many domains:
-Table~\ref{tab:features} shows attempted, compiler-accepted, and fully built
-counts across XDP, TC, probes, tracepoints, perf, maps, ring buffers, dynptr,
-kfunc, struct\_ops, tail calls, and userspace, showing that the artifact spans
-more than tracing while making the struct\_ops gap explicit.
+section (\emph{Where the toolchain leaks through}). For successful examples, the compiler emits a median of \KSMedianGeneratedSloc{}
+lines from \KSMedianKSSloc{} source lines, a \KSMedianGeneratedRatio{} expansion
+that measures emitted boilerplate rather than effort saved. A closer proxy is a
+matched comparison: across \KSSourceFootprintWorkloads{} workloads with
+hand-written C/libbpf baselines, \tool{} sources total
+\KSSourceFootprintUniqueKSSloc{} lines versus \KSSourceFootprintUniqueCSloc{}.
+Both corpora are author-written, and Section~\ref{sec:limits} reports the
+advantage does not survive an independent port. Table~\ref{tab:features} shows
+that the examples span XDP, TC, probes, tracepoints, perf, maps, ring buffers,
+dynptr, kfunc, struct\_ops, tail calls, and userspace, covering more than
+tracing while making the struct\_ops gap explicit.
 
 \begin{table}[!tb]
 \centering
@@ -475,13 +470,12 @@ Isolated XDP attach/detach & \KSAttachEligible{} & \KSAttachOK{} \\
 \end{tabular}
 \end{table}
 
-Of the \KSVerifierBuildObjects{} objects from fully built projects,
-\KSVerifierBuildLoadOK{} verifier-load (\KSVerifierBuildLoadOKPct). The
+Most generated objects pass the verifier: \KSVerifierBuildLoadOK{} of
+\KSVerifierBuildObjects{} from fully built projects load successfully. The
 \KSVerifierBuildLoadFailed{} failures are a reference-ownership leak, a
 map-creation failure, a missing kfunc symbol, and an object with no program
-section. For XDP objects, \KSAttachOK{} of \KSAttachEligible{} attach and
-detach cleanly (\KSAttachOKPct); TC and struct\_ops are exercised by the
-workloads below.
+section. For XDP, \KSAttachOK{} of \KSAttachEligible{} objects attach and
+detach cleanly; TC and struct\_ops are exercised by the workloads below.
 
 \textbf{Runtime sanity.} Beyond load and attach, matched workloads confirm the
 generated objects \emph{run}. Under \code{BPF_PROG_TEST_RUN}, a minimal
@@ -531,8 +525,9 @@ eBPF landscape~\cite{ebpfsurvey,linux-ebpf}. C/libbpf is the reference workflow
 but leaves kernel code, loaders, skeletons, maps, and build logic as separate
 artifacts~\cite{libbpf}. Scaffolding such as libbpf-bootstrap and xdp-tutorial
 cuts boilerplate yet leaves the boundary relationships
-untyped~\cite{libbpf-bootstrap,xdp-tutorial}. Host-language libraries go part of the way: Aya compiles both sides from one
-Rust source and shares typed maps across the boundary~\cite{aya,cilium-ebpf}.
+untyped~\cite{libbpf-bootstrap,xdp-tutorial}. Host-language libraries go part
+of the way. Aya compiles both sides from one Rust source and shares typed maps
+across the boundary~\cite{aya,cilium-ebpf}.
 \tool{} differs in being host-language-independent: execution domains and
 crossing rules live in the DSL itself, and it lowers to the standard Linux BPF
 toolchain rather than a host runtime, so BTF, CO-RE, skeletons, and verifier
@@ -562,7 +557,7 @@ distinction, so the connection is a design influence rather than a claim of
 equivalent guarantees. The unrealized guarantees are substructural: an affine
 \texttt{ProgramHandle} consumed by \texttt{detach} (or a typed \texttt{Link}
 returned by \texttt{attach}) would rule out use-after-detach, double-attach,
-and leaks~\cite{lineartypes}, Vault enforces such resource protocols in
+and leaks~\cite{lineartypes}. Vault enforces such resource protocols in
 low-level software~\cite{vault}, and session types formalize the ordering more
 fully~\cite{sessiontypes}. Our domain separation echoes address-space type
 qualifiers such as the kernel's Sparse \texttt{\_\_user}/\texttt{\_\_kernel}
@@ -577,16 +572,13 @@ toolchain.
 \tool{} treats the cross-boundary structure of an eBPF application (program
 lifecycle, shared maps, and execution domains) as something a compiler can type
 rather than something developers hold together by convention and discover at
-verifier-load or attach time. On the checked-in artifact, a suite of
-\KSStaticExpectedFailures{} invalid programs confirms each typed invariant fires
-as a localized diagnostic; \KSKSCompileOK{} of \KSTotalExamples{} examples
-compile and \KSMakeOK{} build from one source into libbpf-compatible projects;
-and the generated objects verifier-load, attach, pass traffic, and run a
-tcp-congestion struct\_ops object on a real kernel via a direct libbpf runner.
-The result is a concrete, reproducible design point: typing eBPF's
-cross-boundary structure is feasible, and because the prototype lowers through
-the stock toolchain, both what the type system buys and the version-skew limits
-it cannot absorb stay visible and measurable.
+verifier-load or attach time. The evaluation confirms that each typed invariant
+fires as a compile-time diagnostic, that one source generates buildable libbpf
+projects, and that generated objects load, attach, and pass traffic on a real
+kernel. The result is a concrete design point: typing eBPF's cross-boundary
+structure is feasible, and because the compiler lowers through the stock
+toolchain, both what the type system buys and the version-skew limits it cannot
+absorb stay visible and measurable.
 
 \bibliographystyle{ACM-Reference-Format}
 \bibliography{references}
