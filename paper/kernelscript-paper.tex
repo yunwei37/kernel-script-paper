@@ -481,15 +481,12 @@ but they show that generated builds depend on toolchain alignment.
 
 \section{Related Work}
 
-\textbf{Dataplane DSLs.} Compiling one typed description into a split low-level
+\textbf{DSLs.} Compiling one typed description into a split low-level
 implementation has precedent: P4 compiles a protocol-independent program into
 target parser and match-action pipelines~\cite{p4}, and Click composes packet
 processing from typed elements~\cite{click}. Unlike a P4 pipeline, an eBPF
 application must also generate its userspace coordinator and survive a late
-general-purpose verifier. XDP established the programmable in-kernel packet
-model~\cite{xdp}; surveys cover the broader eBPF landscape~\cite{ebpfsurvey,linux-ebpf}.
-PREVAIL, K2, and hXDP optimize eBPF bytecode after it exists~\cite{prevail,k2,hxdp};
-\tool{} is earlier and complementary, generating the bytecode and its loader.
+general-purpose verifier~\cite{xdp,ebpfsurvey,linux-ebpf}.
 
 \textbf{Typestate and resource typing.} \tool's lifecycle discipline is a
 lightweight instance of typestate~\cite{typestate}: we enforce the
