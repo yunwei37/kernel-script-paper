@@ -236,8 +236,8 @@ Section~\ref{sec:limits} explains the limits of that evidence.
 
 The compiler has three design goals. First, it must detect cross-boundary
 errors at compile time, before the verifier or runtime sees them. Second, it
-must preserve the existing Linux BPF toolchain so that BTF, CO-RE, skeleton
-generation, and verifier diagnostics remain available. Third, it must generate
+must preserve the existing Linux BPF toolchain so that type information,
+portability, and verifier diagnostics remain available. Third, it must generate
 idiomatic C that developers can inspect and debug.
 
 The type system draws on established ideas: typestate tracks object state in
@@ -289,11 +289,11 @@ __u32 key = ...; __u64 val;
 bpf_map_lookup_elem(counts_fd, &key, &val);
 \end{lstlisting}
 
-The compiler does not replace the verifier, clang, bpftool, or libbpf, so it inherits BTF, skeleton generation,
-and existing diagnostics, and any compatibility failure remains visible and
-measurable instead of being papered over. For interfaces that move faster than
-the DSL can stabilize, \code{include} and \code{extern} declarations provide an
-fallback to generated header declarations.
+The compiler does not replace the verifier, clang, bpftool, or libbpf, so
+existing diagnostics remain available and any compatibility failure stays
+visible. For interfaces that move faster than the DSL can stabilize,
+\code{include} and \code{extern} declarations provide a fallback to raw header
+declarations.
 
 \section{Evaluation}
 \label{sec:eval}
@@ -310,8 +310,7 @@ We include timing numbers as sanity checks rather than performance claims.
 
 The compiler test suite contains \KSTotalUnitSuites{} suites and
 \KSTotalUnitTests{} tests with no failures, covering all major subsystems from
-lexer to BTF parsing and indicating that the implementation addresses the
-domain concepts it claims to encode.
+lexer to code generation.
 
 The central Q1 result is a static rejection suite of \KSStaticTotal{} targeted
 programs that exercises the diagnostics of Section~\ref{sec:model} directly.
