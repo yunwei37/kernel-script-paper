@@ -80,13 +80,13 @@ attach, and detach, are checked only at load time or not at all. Errors surface
 late as cryptic verifier rejections or silent mismatches.
 
 % P3: Gap
-Existing tools reduce boilerplate but leave cross-boundary relationships
+Existing tools reduce boilerplate yet leave cross-boundary relationships
 implicit. The standard eBPF development workflow requires hand-written kernel C,
 userspace C, and a Makefile~\cite{libbpf}. Aya compiles both sides from Rust
-and shares typed maps~\cite{aya,cilium-ebpf}, but lifecycle ordering remains a
-runtime property. bpftrace provides higher-level abstractions for tracing~\cite{bpftrace}
-but does not target general eBPF applications. No existing tool types the full
-cross-boundary structure at compile time.
+and shares typed maps~\cite{aya,cilium-ebpf}, though lifecycle ordering remains
+a runtime property. bpftrace targets tracing with higher-level
+abstractions~\cite{bpftrace}, not general eBPF applications. No existing tool
+types the full cross-boundary structure at compile time.
 
 % P4: Insight
 The key observation is that these relationships are single concepts duplicated
@@ -137,12 +137,12 @@ The kernel/userspace split introduces three kinds of coupling that current
 tools do not fully address. \emph{Lifecycle coupling} requires operations to
 occur in a valid order (load before attach, detach before close), but C/libbpf
 checks this only at runtime. \emph{Representation coupling} requires a map's
-key and value types to agree across kernel code, skeleton headers, and
-userspace lookups, but a mismatch is silent until something fails.
-\emph{Compatibility coupling} arises because generated skeletons depend on the
-exact kernel and libbpf versions. The verifier detects many errors, but only
-at load time. A DSL can help by moving lifecycle and representation checks
-into compile-time type errors.
+key and value types to agree across kernel code, generated headers, and
+userspace lookups, and a mismatch is silent until something fails.
+\emph{Compatibility coupling} arises because generated bindings depend on the
+exact kernel and libbpf versions. The verifier detects many errors, though
+only at load time. A DSL can move lifecycle and representation checks to
+compile time.
 
 \section{A Typed Model of Cross-Boundary Structure}
 \label{sec:model}
@@ -193,7 +193,7 @@ separate userspace lookup code. The compiler checks element types at every
 access site on both sides of the kernel boundary: an index \code{m[k]} requires
 \code{k:K} and yields \code{V}, in eBPF and userspace alike. A wrong key type,
 wrong value type, or access to an undeclared map is a compile-time error. One
-declaration thus replaces kernel definitions, skeleton fields, and userspace
+declaration thus replaces kernel definitions, generated fields, and userspace
 lookups that otherwise must agree by hand.
 
 To address lifecycle coupling, the type system distinguishes a
@@ -459,13 +459,13 @@ that source unification does not eliminate.
 
 The differential probe injects only \KSOrganicTotal{} hand-chosen mistakes.
 A stronger study would mine real eBPF bugs from revision histories.
-Lifecycle typing enforces a producer/consumer handle distinction but not
-full typestate, so use-after-detach and leaked handles are not statically
-ruled out. The corpus is author-written, and the external port shows that the line-count
-advantage does not transfer unchanged. Traffic numbers are local
-sanity checks, not performance claims. Finally, the struct\_ops build
-failures reflect bpftool/libbpf version skew rather than a deep limitation,
-but they show that generated builds depend on toolchain alignment.
+Lifecycle typing enforces a producer/consumer handle distinction, not full
+typestate, so use-after-detach and leaked handles are not statically ruled
+out. The corpus is author-written, and the external port shows that the
+line-count advantage does not transfer unchanged. Traffic numbers are local
+sanity checks, not performance claims. Finally, the struct\_ops build failures
+reflect bpftool/libbpf version skew, not a deep limitation, though they show
+that generated builds depend on toolchain alignment.
 
 \section{Related Work}
 
