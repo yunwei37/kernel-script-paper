@@ -226,7 +226,7 @@ producer/consumer handle discipline: because only \code{load} produces a
 \code{ProgramHandle}, the system enforces the single ordering constraint
 $\textit{load} \prec \{\textit{attach},\,\textit{detach}\}$ rather than the
 complete load-to-attach-to-detach protocol. It guarantees that lifecycle
-builtins receive values of the right kind, but not full path-sensitive
+builtins receive values of the right kind without enforcing full path-sensitive
 properties such as use-after-detach, double-attach, or leaked handles.
 
 The benefit is earlier, localized compiler errors in place of naming conventions or late verifier/attach
@@ -246,7 +246,7 @@ The type system draws on established ideas: typestate tracks object state in
 types~\cite{typestate}, and linear types enforce single-use resource
 protocols~\cite{lineartypes,vault,sessiontypes}. \tool{} applies a lightweight
 form of these ideas, distinguishing producer and consumer handles and
-annotating execution domains, but does not attempt full substructural typing.
+annotating execution domains without full substructural typing.
 
 To meet these goals, the compiler (written in OCaml with dune) parses
 \tool{} source, resolves imports and includes, builds symbol tables, runs
@@ -335,8 +335,8 @@ Section~\ref{sec:model}. In C the program compiles, and because its body never
 dereferences the context the verifier has no invalid access to flag, so the
 mistake survives to a silently wrong load. The matched bodies deliberately touch
 only a map, not a context field. A body that did read a context field could
-trip the verifier on an out-of-range access, though still not as the
-context-type confusion it is.
+trip the verifier on an out-of-range access, though the verifier would report
+the access violation, not the underlying context-type confusion.
 
 \begin{table}[H]
 \centering
@@ -576,8 +576,8 @@ that source unification does not eliminate.
 
 The differential probe injects only \KSOrganicTotal{} hand-chosen mistakes. A
 stronger study would mine real eBPF bugs from revision histories. Lifecycle
-typing enforces a producer/consumer handle distinction, not full typestate, so
-use-after-detach and leaked handles are not statically ruled out. The corpus
+typing enforces a producer/consumer handle distinction without full typestate,
+so use-after-detach and leaked handles remain possible. The corpus
 is author-written, and the external port shows that line-count savings vary
 when porting existing code rather than writing from scratch. The change-amplification
 study uses small checked-in micro-edits rather than real revision histories,
