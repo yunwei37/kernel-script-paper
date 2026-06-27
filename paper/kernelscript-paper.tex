@@ -302,11 +302,11 @@ declarations.
 The evaluation answers three questions: \emph{(Q1)} does each typed
 cross-boundary invariant trigger a compile-time diagnostic? \emph{(Q2)} does
 one source generate a complete, buildable libbpf project, and does unifying it
-reduce code footprint and change amplification? \emph{(Q3)} does
-generated code load, attach, and run on a real kernel? All experiments run on
-Linux \KSKernelVersion{} with clang 18, bpftool 7.7, and libbpf 1.3.0. We
-report SLOC counts as nonblank, noncomment lines, excluding generated headers.
-We include timing numbers as sanity checks rather than performance claims.
+reduce maintenance surface (footprint, change amplification, cross-boundary
+synchronization)? \emph{(Q3)} does generated code load, attach, and run on a
+real kernel? All experiments run on Linux \KSKernelVersion{} with clang 18,
+bpftool 7.7, and libbpf 1.3.0. We report SLOC counts as nonblank, noncomment
+lines, excluding generated headers.
 
 \subsection{Q1: Compile-Time Diagnostic Coverage}
 
@@ -346,9 +346,9 @@ this small, author-injected set.
 
 \begin{table}[t]
 \centering
-\caption{Differential failure-stage probe: earliest stage each toolchain
-catches the same injected mistake. \tool{} is strictly earlier only on the
-cross-boundary context-type mistake; the rest are ties clang already catches.}
+\caption{Earliest detection stage per injected mistake. \tool{} is strictly
+earlier only on the cross-boundary context-type mistake; the rest are ties
+clang already catches.}
 \label{tab:organic}
 \footnotesize
 \begin{tabular}{@{}>{\raggedright\arraybackslash}p{0.24\columnwidth}>{\raggedright\arraybackslash}p{0.24\columnwidth}>{\centering\arraybackslash}p{0.14\columnwidth}>{\centering\arraybackslash}p{0.18\columnwidth}@{}}
@@ -365,7 +365,7 @@ Oversized stack buffer & safety & \KSOrganicStackOverflowKS{} & \KSOrganicStackO
 
 \subsection{Q2: Project Generation}
 
-To test whether \tool{} generates complete projects, we compiled
+\textbf{Buildability and source footprint.} To test whether \tool{} generates complete projects, we compiled
 \KSTotalExamples{} example programs. Of these, \KSKSCompileOK{} compile
 successfully and \KSMakeOK{} produce working libbpf projects. The single
 compile-time rejection is \texttt{safety\_demo.ks}, where safety analysis
@@ -374,7 +374,7 @@ before codegen, catching a verifier-relevant problem early. The two examples
 that compile but do not build are both struct\_ops programs: each produces a
 valid eBPF object but fails because the bpftool-generated skeleton references
 a libbpf field absent from the host's older installed headers, a toolchain
-version skew we isolate later in this section. For successful examples, the compiler emits a median of
+version skew we isolate later in this section. For examples that build successfully, the compiler emits a median of
 \KSMedianGeneratedSloc{} lines from \KSMedianKSSloc{} source lines. Across
 \KSSourceFootprintWorkloads{} workloads with hand-written C/libbpf baselines,
 \tool{} sources total \KSSourceFootprintUniqueKSSloc{} lines versus
@@ -411,8 +411,9 @@ to \tool{}. The ports total
 \KSExternalPortKSSloc{} lines while the original C/eBPF bodies total
 \KSExternalPortCSloc{} lines, showing that \tool{} handles external code at
 comparable line counts. A source-only scan of \KSExternalCorpusRepos{} public
-eBPF repositories confirms that the program classes we target appear in real
-code.
+eBPF repositories confirms that the program types and map patterns we generate
+(XDP, TC, kprobe, ring buffers, struct\_ops) appear together in real projects,
+supporting ecological validity.
 
 \textbf{Change amplification.} Source-footprint totals show how much code a
 finished workload occupies; they do not show how many places a small
@@ -481,20 +482,22 @@ the sync surfaces expose, not as a statistical estimate.
 \textbf{Staged cross-boundary growth.} Table~\ref{tab:evolution} compares four
 stages that add progressively richer cross-boundary structure: pass-only XDP,
 then a counter map, then ring-buffer reporting, and finally a separate
-struct\_ops callback workload included as a higher-complexity cross-domain
-reference point rather than as the next step of the same program. The external
-\texttt{xdp-tutorial} ports provide supporting evidence for the early XDP
-stages only: the \KSExternalPortWorkloads{} pinned programs
+struct\_ops callback workload. The struct\_ops stage serves as a
+higher-complexity cross-domain reference point rather than the next step of the
+same program.
+
+The external \texttt{xdp-tutorial} ports provide supporting evidence for the
+early XDP stages: the \KSExternalPortWorkloads{} pinned programs
 \texttt{basic01-xdp-pass} through \texttt{basic03-map-counter} total
 \KSExternalPortKSSloc{} BPFScript lines and \KSExternalPortCSloc{} original
-kernel-C lines. Table~\ref{tab:evolution}
-itself reports a local matched comparison. Within the XDP progression,
-\tool{} grows by \KSEvolutionPassToCountKSDelta{} and
-\KSEvolutionCountToRingbufKSDelta{} lines, while the matched C/libbpf baseline
-grows by \KSEvolutionPassToCountCDelta{} and
-\KSEvolutionCountToRingbufCDelta{}. The separate struct\_ops reference point
-adds \KSEvolutionRingbufToStructOpsKSDelta{} lines on the \tool{} side and
-\KSEvolutionRingbufToStructOpsCDelta{} in the matched C/libbpf baseline. By
+kernel-C lines. Table~\ref{tab:evolution} itself reports a local matched
+comparison. At each XDP stage, \tool{} grows modestly
+(\KSEvolutionPassToCountKSDelta{} lines for the counter map,
+\KSEvolutionCountToRingbufKSDelta{} for ring-buffer reporting), while the
+matched C/libbpf baseline grows faster (\KSEvolutionPassToCountCDelta{} and
+\KSEvolutionCountToRingbufCDelta{} respectively). The separate struct\_ops
+reference point adds \KSEvolutionRingbufToStructOpsKSDelta{} lines on the
+\tool{} side versus \KSEvolutionRingbufToStructOpsCDelta{} in C/libbpf. By
 the reporting stage the maintained baseline is \KSEvolutionRingbufRatio{} the
 \tool{} source size, and the struct\_ops reference point reaches
 \KSEvolutionStructOpsRatio{}. The abstraction-fit result is therefore limited
@@ -555,7 +558,8 @@ Beyond load and attach, matched workloads confirm the generated objects
 generated XDP pass program matches its hand-written baseline in instruction
 count and latency. Over \KSTrafficTrials{} veth/iperf3 trials, generated and
 hand-written XDP pass programs deliver comparable throughput, and matched TC
-programs pass traffic as well.
+programs pass traffic as well. These numbers are sanity checks confirming
+functional equivalence, not performance claims.
 
 Preserving the kernel toolchain means \tool{} also inherits its compatibility
 coupling. The two struct\_ops
