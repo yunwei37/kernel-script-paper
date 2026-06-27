@@ -363,7 +363,7 @@ an undeclared map, a string stored into a \texttt{u64} value, and an oversized
 stack buffer. The result is therefore \KSOrganicKSEarlier{} earlier and
 \KSOrganicTie{} tied: typing helps precisely on the cross-boundary relation that
 local C checking cannot see. Section~\ref{sec:limits} explains the limits of
-this small, author-injected set.
+this author-constructed set.
 
 \FloatBarrier
 \subsection{Q2: Project Generation}
@@ -509,19 +509,18 @@ The external \texttt{xdp-tutorial} ports provide supporting evidence for the
 early XDP stages (the \KSExternalPortWorkloads{} pinned programs span
 \texttt{basic01-xdp-pass} through \texttt{basic03-map-counter}).
 Table~\ref{tab:evolution} itself reports a local matched
-comparison. At each XDP stage, \tool{} grows modestly
-(\KSEvolutionPassToCountKSDelta{} lines for the counter map,
-\KSEvolutionCountToRingbufKSDelta{} for ring-buffer reporting), while the
+comparison. At each XDP stage, \tool{} grows by
+\KSEvolutionPassToCountKSDelta{} lines for the counter map and
+\KSEvolutionCountToRingbufKSDelta{} for ring-buffer reporting, while the
 matched C/libbpf baseline grows faster (\KSEvolutionPassToCountCDelta{} and
 \KSEvolutionCountToRingbufCDelta{} respectively). The separate struct\_ops
 reference point adds \KSEvolutionRingbufToStructOpsKSDelta{} lines on the
 \tool{} side versus \KSEvolutionRingbufToStructOpsCDelta{} in C/libbpf. By
 the reporting stage the maintained baseline is \KSEvolutionRingbufRatio{} the
 \tool{} source size, and the struct\_ops reference point reaches
-\KSEvolutionStructOpsRatio{}. The abstraction-fit result is therefore limited
-but direct: within one XDP family and again at a more complex cross-domain
-reference point, the DSL mostly extends one file, while C/libbpf accumulates
-more coordination code and userspace surface.
+\KSEvolutionStructOpsRatio{}. The comparison is direct: within one XDP family
+and again at a more complex cross-domain reference point, the DSL extends one
+file, while C/libbpf accumulates more coordination code and userspace surface.
 
 \subsection{Q3: Runtime Validation}
 \label{sec:eval:q3}
@@ -616,9 +615,9 @@ verifier-load or attach time. The evaluation confirms that each typed invariant
 triggers a compile-time diagnostic, that one source generates buildable libbpf
 projects, and that generated objects load, attach, and pass traffic on a real
 kernel. The result is a concrete design point: typing eBPF's cross-boundary
-structure is feasible, and because the compiler lowers through the stock
-toolchain, both what the type system provides and the version-skew limits that
-source unification cannot absorb stay visible and measurable.
+structure is feasible. Because the compiler lowers through the stock toolchain,
+the type system's guarantees and the version-skew limits it cannot absorb both
+remain visible and measurable.
 
 \newpage
 \bibliographystyle{ACM-Reference-Format}
