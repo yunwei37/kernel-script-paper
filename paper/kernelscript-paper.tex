@@ -337,15 +337,9 @@ dereferences the context the verifier has no invalid access to flag, so the
 mistake survives to a silently wrong load. The matched bodies deliberately touch
 only a map, not a context field; one that did read a context field could instead
 trip the verifier on an out-of-range access, but still would not be reported as
-the context-type confusion it is. The
-other \KSOrganicTie{} mistakes tie because clang already catches them locally:
-an undeclared map, a string stored into a \texttt{u64} value, and an oversized
-stack buffer. The result is therefore \KSOrganicKSEarlier{} earlier and
-\KSOrganicTie{} tied: typing helps precisely on the cross-boundary relation that
-local C checking cannot see. Section~\ref{sec:limits} explains the limits of
-this small, author-injected set.
+the context-type confusion it is.
 
-\begin{table}[t]
+\begin{table}[H]
 \centering
 \caption{Earliest detection stage per injected mistake. \tool{} is strictly
 earlier only on the cross-boundary context-type mistake; the rest are ties
@@ -364,6 +358,15 @@ Oversized stack buffer & safety & \KSOrganicStackOverflowKS{} & \KSOrganicStackO
 \end{tabular}
 \end{table}
 
+The
+other \KSOrganicTie{} mistakes tie because clang already catches them locally:
+an undeclared map, a string stored into a \texttt{u64} value, and an oversized
+stack buffer. The result is therefore \KSOrganicKSEarlier{} earlier and
+\KSOrganicTie{} tied: typing helps precisely on the cross-boundary relation that
+local C checking cannot see. Section~\ref{sec:limits} explains the limits of
+this small, author-injected set.
+
+\FloatBarrier
 \subsection{Q2: Project Generation}
 
 \textbf{Buildability and source footprint.} To test whether \tool{} generates complete projects, we compiled
@@ -487,25 +490,7 @@ struct\_ops callback workload. The struct\_ops stage serves as a
 higher-complexity cross-domain reference point rather than the next step of the
 same program.
 
-The external \texttt{xdp-tutorial} ports provide supporting evidence for the
-early XDP stages (the \KSExternalPortWorkloads{} pinned programs span
-\texttt{basic01-xdp-pass} through \texttt{basic03-map-counter}).
-Table~\ref{tab:evolution} itself reports a local matched
-comparison. At each XDP stage, \tool{} grows modestly
-(\KSEvolutionPassToCountKSDelta{} lines for the counter map,
-\KSEvolutionCountToRingbufKSDelta{} for ring-buffer reporting), while the
-matched C/libbpf baseline grows faster (\KSEvolutionPassToCountCDelta{} and
-\KSEvolutionCountToRingbufCDelta{} respectively). The separate struct\_ops
-reference point adds \KSEvolutionRingbufToStructOpsKSDelta{} lines on the
-\tool{} side versus \KSEvolutionRingbufToStructOpsCDelta{} in C/libbpf. By
-the reporting stage the maintained baseline is \KSEvolutionRingbufRatio{} the
-\tool{} source size, and the struct\_ops reference point reaches
-\KSEvolutionStructOpsRatio{}. The abstraction-fit result is therefore limited
-but direct: within one XDP family and again at a more complex cross-domain
-reference point, the DSL mostly extends one file, while C/libbpf accumulates
-more coordination code and userspace surface.
-
-\begin{table}[!tb]
+\begin{table}[H]
 \centering
 \caption{Staged cross-boundary growth: maintained source footprint for a local
 matched XDP progression plus a separate struct\_ops reference point. C totals
@@ -523,6 +508,24 @@ Shift to struct\_ops callbacks & \KSEvolutionStructOpsKSSloc{} & \KSEvolutionStr
 \bottomrule
 \end{tabular}
 \end{table}
+
+The external \texttt{xdp-tutorial} ports provide supporting evidence for the
+early XDP stages (the \KSExternalPortWorkloads{} pinned programs span
+\texttt{basic01-xdp-pass} through \texttt{basic03-map-counter}).
+Table~\ref{tab:evolution} itself reports a local matched
+comparison. At each XDP stage, \tool{} grows modestly
+(\KSEvolutionPassToCountKSDelta{} lines for the counter map,
+\KSEvolutionCountToRingbufKSDelta{} for ring-buffer reporting), while the
+matched C/libbpf baseline grows faster (\KSEvolutionPassToCountCDelta{} and
+\KSEvolutionCountToRingbufCDelta{} respectively). The separate struct\_ops
+reference point adds \KSEvolutionRingbufToStructOpsKSDelta{} lines on the
+\tool{} side versus \KSEvolutionRingbufToStructOpsCDelta{} in C/libbpf. By
+the reporting stage the maintained baseline is \KSEvolutionRingbufRatio{} the
+\tool{} source size, and the struct\_ops reference point reaches
+\KSEvolutionStructOpsRatio{}. The abstraction-fit result is therefore limited
+but direct: within one XDP family and again at a more complex cross-domain
+reference point, the DSL mostly extends one file, while C/libbpf accumulates
+more coordination code and userspace surface.
 
 \subsection{Q3: Runtime Validation}
 \label{sec:eval:q3}
