@@ -40,8 +40,8 @@
 eBPF has become the standard mechanism for extending Linux with custom packet
 processing, tracing, and security policies, but its programming model is
 fragmented. A single application spans kernel code, a userspace loader, and
-shared maps; the relationships among them (types, lifecycle ordering, shared
-state) are checked only at load time or not at all, leading to late,
+shared maps, yet the relationships among them (types, lifecycle ordering,
+shared state) are checked only at load time or not at all, leading to late,
 hard-to-diagnose failures. We observe that these cross-boundary relationships 
 are duplicated concepts a type system can unify. We present \tool{}, a 
 DSL that types maps, program handles, and
@@ -85,16 +85,16 @@ implicit. The reference C/libbpf workflow requires hand-written kernel C,
 userspace C, and a Makefile~\cite{libbpf}. Aya compiles both sides from Rust
 and shares typed maps~\cite{aya,cilium-ebpf}, but lifecycle ordering remains a
 runtime property. bpftrace raises the abstraction for tracing~\cite{bpftrace}
-but does not target general eBPF applications. None of these tools type the
-full cross-boundary structure at compile time.
+but does not target general eBPF applications. No existing tool types the full
+cross-boundary structure at compile time.
 
 % P4: Insight
-The key observation is that these relationships are single concepts
-duplicated across components. A map declaration is at once a kernel data
-structure, a userspace lookup target, and a type contract; a program handle is
-at once a function name, a BPF section, and a file descriptor. In C/libbpf,
-naming conventions tie those copies together, so mismatches surface late. In
-one typed source, the compiler can see and check them directly.
+The key observation is that these relationships are single concepts duplicated
+across components. A map declaration is at once a kernel data structure, a
+userspace lookup target, and a type contract. A program handle is at once a
+function name, a BPF section, and a file descriptor. In C/libbpf, naming
+conventions tie those copies together, so mismatches surface late. In one
+typed source, the compiler can see and check them directly.
 
 % P5: Solution
 \tool{} realizes this idea as a compiled, multi-domain DSL. A developer writes
@@ -119,42 +119,42 @@ This paper contributes:
 \section{Background and Motivation}
 \label{sec:bg}
 
-eBPF runs verified bytecode inside the Linux
-kernel~\cite{linux-ebpf,ebpfsurvey}. Applications include
-tracing~\cite{bpftrace,bcc}, networking~\cite{xdp}, security~\cite{lsm-bpf},
-scheduling~\cite{ghost}, caching~\cite{cacheext}, GPU~\cite{gpuext}, and
-userspace runtimes~\cite{bpftime}. Each application has a kernel program and a
-userspace loader that communicate through maps or ring buffers. The C/libbpf
-workflow requires separate kernel C, userspace C, and a Makefile~\cite{libbpf};
-Aya unifies both sides in Rust~\cite{aya}; Rex adds safe kernel
-extensions~\cite{rex}. These tools reduce boilerplate but leave cross-boundary
-relationships implicit.
+eBPF allows user-supplied bytecode to run inside the Linux kernel after a
+verifier proves memory safety and bounded execution~\cite{linux-ebpf,ebpfsurvey}.
+The mechanism now underpins a wide range of applications: tracing and
+profiling~\cite{bpftrace,bcc}, high-performance networking~\cite{xdp}, security
+policy enforcement~\cite{lsm-bpf}, CPU scheduling~\cite{ghost}, page-cache
+customization~\cite{cacheext}, GPU resource control~\cite{gpuext}, and
+userspace extension runtimes~\cite{bpftime}. Every eBPF application has a
+kernel program and a userspace loader that communicate through maps or ring
+buffers. The reference C/libbpf workflow requires developers to maintain
+separate kernel C, userspace C, and a Makefile~\cite{libbpf}. Aya unifies both
+sides in Rust~\cite{aya}, and Rex provides safe Rust kernel
+extensions~\cite{rex}, but these tools still leave cross-boundary relationships
+implicit.
 
-The kernel/userspace split creates three kinds of coupling.
-\emph{Lifecycle}: operations must occur in a valid order, but C/libbpf checks
-this only at runtime. \emph{Representation}: a map's types must agree across
-kernel code, skeleton headers, and userspace lookups, but a mismatch is silent
-until something fails. \emph{Compatibility}: generated skeletons depend on the
+The kernel/userspace split introduces three kinds of coupling that current
+tools do not fully address. \emph{Lifecycle coupling} requires operations to
+occur in a valid order (load before attach, detach before close), but C/libbpf
+checks this only at runtime. \emph{Representation coupling} requires a map's
+key and value types to agree across kernel code, skeleton headers, and
+userspace lookups, but a mismatch is silent until something fails.
+\emph{Compatibility coupling} arises because generated skeletons depend on the
 exact kernel and libbpf versions. The verifier catches many errors, but only
-at load time. A DSL helps if it moves lifecycle and representation checks into
-compile-time type errors.
-
-Typestate tracks object state in the type system~\cite{typestate}; linear and
-affine types enforce single-use resources~\cite{lineartypes,vault,sessiontypes}.
-\tool{} applies a lightweight form: producer/consumer handle distinction and
-domain annotations, not full substructural typing.
+at load time. A DSL can help by moving lifecycle and representation checks
+into compile-time type errors.
 
 \section{A Typed Model of Cross-Boundary Structure}
 \label{sec:model}
 
 This section sketches the parts of \tool's type system that encode the
 couplings of Section~\ref{sec:bg}. We describe the model informally rather than
-giving a full semantics or soundness proof; every rule corresponds to a
+giving a full semantics or soundness proof, but every rule corresponds to a
 diagnostic exercised by the rejection suite of Section~\ref{sec:eval}.
 
 A \tool{} program is a flat sequence of declarations. Listing~\ref{lst:min}
-shows the minimal shape of an application; the rest of this section makes its
-three relationships precise.
+shows the minimal shape of an application, and the rest of this section makes
+its three relationships precise.
 
 \begin{lstlisting}[language=C,caption={A unified-source eBPF application.},label={lst:min}]
 include "xdp.kh"
@@ -171,39 +171,39 @@ fn main() -> i32 {
 }
 \end{lstlisting}
 
-A function attribute assigns each function to an execution domain
+To address representation coupling, each function carries an attribute that
+assigns it to an execution domain
 $d \in \{\textit{user}, \textit{ebpf}, \textit{helper}, \textit{kfunc}\}$.
-\code{@xdp}, \code{@tc}, and \code{@probe} mark eBPF entry points. So do
-\code{@tracepoint} and \code{@perf_event}. \code{@helper} marks kernel-shared
-eBPF code; \code{@kfunc} and \code{@private} mark kernel-module code; an
+The attributes \code{@xdp}, \code{@tc}, \code{@probe}, \code{@tracepoint}, and
+\code{@perf_event} mark eBPF entry points, while \code{@helper} marks
+kernel-shared eBPF code and \code{@kfunc} marks kernel-module code. An
 unattributed \code{fn} is userspace. The checker tags each function with its
-domain and rejects illegal crossings, for example a userspace function calling
-an \code{@helper} or requesting kernel-context allocation from userspace.
-Each eBPF attribute also fixes a context and return type: \code{@xdp} requires
-\code{ctx:*xdp_md} returning \code{xdp_action}; \code{@tc} requires
-\code{*__sk_buff} returning \code{i32}. The compiler rejects any signature that
-disagrees with its attribute before code generation. The same surface syntax therefore remains
-domain-aware: userspace can allocate and print freely, while eBPF code must
-obey stack and helper restrictions. struct\_ops callbacks fit the same scheme,
-with context and return types determined by the registered slot.
+domain and rejects illegal crossings, such as a userspace function calling an
+\code{@helper}. Each eBPF attribute also fixes a context and return type: for
+example, \code{@xdp} requires \code{ctx:*xdp_md} returning \code{xdp_action},
+and \code{@tc} requires \code{*__sk_buff} returning \code{i32}. The compiler
+rejects any signature that disagrees with its attribute before code generation,
+so the same surface syntax remains domain-aware: userspace can allocate and
+print freely, while eBPF code must obey stack and helper restrictions.
+struct\_ops callbacks fit the same scheme, with context and return types
+determined by the registered slot.
 
-A map is a typed global, \code{var m : hash<K,V>(N)} or \code{array<K,V>(N)}, rather than a C
-section plus separate userspace lookup code. The compiler checks element types
-at every access site on \emph{both} sides of the kernel boundary: an index
-\code{m[k]} requires \code{k:K} and yields \code{V}, in eBPF and userspace
-alike. A wrong key type, wrong value type, or access to an
-undeclared map is a compile-time error. One declaration thus replaces
-kernel definitions, skeleton fields, and userspace lookups that otherwise must
-agree by hand.
+To address representation coupling for shared state, a map is declared as a
+typed global (\code{var m : hash<K,V>(N)}) rather than a C section plus
+separate userspace lookup code. The compiler checks element types at every
+access site on both sides of the kernel boundary: an index \code{m[k]} requires
+\code{k:K} and yields \code{V}, in eBPF and userspace alike. A wrong key type,
+wrong value type, or access to an undeclared map is a compile-time error. One
+declaration thus replaces kernel definitions, skeleton fields, and userspace
+lookups that otherwise must agree by hand.
 
-The most protocol-like cross-boundary invariant is lifecycle. \tool{} distinguishes a
+To address lifecycle coupling, the type system distinguishes a
 \code{FunctionRef} (a reference to an \code{@}-attributed function) from a
-\code{ProgramHandle} (a loaded program), and types the lifecycle builtins so
-that only \code{load} produces a \code{ProgramHandle}. The formation rule for
-\code{FunctionRef} is also the rule that ties lifecycle to domains: only an
-eBPF entry-point function inhabits \code{FunctionRef}, so an \code{@helper},
-\code{@kfunc}, or userspace function is simply not a value \code{load} can
-accept.
+\code{ProgramHandle} (a loaded program). The lifecycle builtins are typed so
+that only \code{load} produces a \code{ProgramHandle}, and the formation rule
+for \code{FunctionRef} ties lifecycle to domains: only an eBPF entry-point
+function inhabits \code{FunctionRef}, so an \code{@helper}, \code{@kfunc}, or
+userspace function cannot be passed to \code{load}.
 \begin{gather*}
 \frac{f \text{ has an eBPF entry attribute}}
      {\Gamma \vdash f : \texttt{FunctionRef}}
@@ -232,35 +232,44 @@ The payoff is earlier, localized compiler errors in place of naming conventions 
 failures. Section~\ref{sec:eval} measures whether those diagnostics fire;
 Section~\ref{sec:limits} explains the limits of that evidence.
 
-\section{Implementation}
+\section{Design and Implementation}
 \label{sec:impl}
 
-The evaluated compiler is written in OCaml with dune. It parses \tool{} source,
-resolves imports and includes, builds symbol tables, runs multi-program
-analysis and type checking, performs safety analysis, builds an IR, and emits
-C. For an input \texttt{foo.ks} the generated project normally contains
-\texttt{foo.ebpf.c}, \texttt{foo.c}, a \texttt{Makefile}, and, when kfuncs are
-present, \texttt{foo.mod.c}. The Makefile uses bpftool to dump
-\texttt{vmlinux.h}, clang to produce a BPF object, bpftool to generate a
-skeleton, and gcc to link the userspace loader against libbpf (together with
-libelf and zlib).
+The compiler has three design goals. First, it must catch cross-boundary
+errors at compile time, before the verifier or runtime sees them. Second, it
+must preserve the existing Linux BPF toolchain so that BTF, CO-RE, skeleton
+generation, and verifier diagnostics remain available. Third, it must generate
+idiomatic C that developers can inspect and debug.
 
-The compiler realizes each invariant of Section~\ref{sec:model} at a concrete point in this pipeline, which is why it
-keeps \emph{separate modules} for maps, eBPF codegen, userspace codegen,
-kernel-module generation, safety checking, BTF parsing, dynptr bridging,
-tail-call analysis, and struct\_ops rather than acting as a thin preprocessor
-over C. \emph{Domains} attach to each function as a scope refined by the entry
-attribute; the IR records each function's program type, and code generation
-dispatches the same source function to the eBPF or the userspace backend on
-that field, so one surface syntax produces two ABIs without the author choosing
-a target. \emph{Typed maps} lower to a single map descriptor that records the
-key and value types once; both backends read that descriptor, so they emit the
-eBPF \code{SEC(".maps")} definition and the userspace accessor from one source
-of truth (Listing~\ref{lst:map}). The front end \emph{enforces lifecycle
-handles}: only \code{load} yields a \code{ProgramHandle}, and \code{attach} and
-\code{detach} require one, so a misordered call fails type checking before any
-code generation. The handle then lowers to an ordinary file descriptor using standard libbpf
-APIs.
+The type system draws on established ideas: typestate tracks object state in
+types~\cite{typestate}, and linear types enforce single-use resource
+protocols~\cite{lineartypes,vault,sessiontypes}. \tool{} applies a lightweight
+form of these ideas, distinguishing producer and consumer handles and
+annotating execution domains, but does not attempt full substructural typing.
+
+To meet these goals, the compiler (written in OCaml with dune) parses
+\tool{} source, resolves imports and includes, builds symbol tables, runs
+multi-program analysis and type checking, performs safety analysis, builds an
+IR, and emits C. It keeps separate modules for maps, eBPF codegen, userspace
+codegen, kernel-module generation, safety checking, BTF parsing, dynptr
+bridging, tail-call analysis, and struct\_ops. For an input \texttt{foo.ks},
+the generated project contains \texttt{foo.ebpf.c}, \texttt{foo.c}, a
+\texttt{Makefile}, and, when kfuncs are present, \texttt{foo.mod.c}. The
+Makefile invokes bpftool to dump \texttt{vmlinux.h}, clang to produce a BPF
+object, bpftool to generate a skeleton, and gcc to link the userspace loader
+against libbpf (together with libelf and zlib).
+
+Each typing rule of Section~\ref{sec:model} maps to a concrete compiler pass.
+Domains attach to each function as a scope refined by the entry attribute, and
+the IR records each function's program type so that code generation can
+dispatch the same source function to the eBPF or userspace backend. Typed maps
+lower to a single descriptor that records key and value types once, and both
+backends read that descriptor to emit the eBPF \code{SEC(".maps")} definition
+and the userspace accessor from one source of truth (Listing~\ref{lst:map}).
+Lifecycle handles are enforced in the front end: only \code{load} yields a
+\code{ProgramHandle}, and \code{attach} and \code{detach} require one, so a
+misordered call fails type checking before code generation. The handle then
+lowers to an ordinary file descriptor via standard libbpf APIs.
 
 \begin{lstlisting}[language=C,caption={One typed map declaration lowers to both
 a kernel \texttt{SEC(".maps")} definition and a userspace accessor from a single
@@ -290,31 +299,31 @@ escape hatch to generated header declarations.
 \section{Evaluation}
 \label{sec:eval}
 
-We evaluate \tool{} along three axes: \emph{(Q1)} does each typed
+The evaluation answers three questions: \emph{(Q1)} does each typed
 cross-boundary invariant fire as a compile-time diagnostic? \emph{(Q2)} does
 one source generate a complete, buildable libbpf project? \emph{(Q3)} does
-generated code load, attach, and run on a real kernel?
-
-The evaluation runs on Linux \KSKernelVersion{} with clang 18,
-bpftool 7.7, and libbpf 1.3.0. SLOC counts use nonblank, noncomment lines,
-excluding generated \texttt{vmlinux.h} and skeleton headers. Timing numbers
-are local samples reported as sanity checks rather than performance claims.
+generated code load, attach, and run on a real kernel? All experiments run on
+Linux \KSKernelVersion{} with clang 18, bpftool 7.7, and libbpf 1.3.0. We
+report SLOC counts as nonblank, noncomment lines, excluding generated headers.
+Timing numbers are local sanity checks rather than performance claims.
 
 \subsection{Q1: The typed invariants fire}
 
-The compiler test suite reports \KSTotalUnitSuites{} successful suites and \KSTotalUnitTests{} passing tests
-with no failures, covering lexer/parser, type checking, maps and map
-assignment, userspace codegen, context-field typing, safety, ring buffers,
-perf-event attach, detach APIs, kfunc attributes, struct\_ops, and BTF
-parsing, indicating that the implementation covers the domain concepts it
-claims to encode rather than only a small example set.
+The compiler test suite contains \KSTotalUnitSuites{} suites and
+\KSTotalUnitTests{} tests with no failures, covering lexer/parser, type
+checking, maps and map assignment, userspace codegen, context-field typing,
+safety, ring buffers, perf-event attach, detach APIs, kfunc attributes,
+struct\_ops, and BTF parsing. This coverage indicates that the implementation
+covers the domain concepts it claims to encode rather than only a small
+example set.
 
-The central Q1 result is a suite of \KSStaticTotal{} targeted programs that exercises the diagnostics of
-Section~\ref{sec:model} directly: one positive control plus
-\KSStaticExpectedFailures{} expected rejections covering lifecycle misuses,
-program-signature violations, map type errors, domain crossings, and safety
-violations. Each case carries an expected diagnostic substring, so incidental
-rejections do not count as passing. The suite shows that the invariants are implemented and stable.
+The central Q1 result is a static rejection suite of \KSStaticTotal{} targeted
+programs that exercises the diagnostics of Section~\ref{sec:model} directly.
+The suite includes one positive control plus \KSStaticExpectedFailures{}
+expected rejections covering lifecycle misuses, program-signature violations,
+map type errors, domain crossings, and safety violations. Each case carries an
+expected diagnostic substring, so incidental rejections do not count as
+passing. The suite shows that the invariants are implemented and stable.
 
 To ask whether the checks fire \emph{earlier} than the stock toolchain on the same mistake, we construct
 \KSOrganicTotal{} hand-chosen worked cases, each a realistic mistake injected
@@ -360,25 +369,26 @@ Oversized stack buffer & safety & \KSOrganicStackOverflowKS{} & \KSOrganicStackO
 
 \subsection{Q2: One source generates the project}
 
-Nearly all examples compile and build: \KSKSCompileOK{} of \KSTotalExamples{} compile, and \KSMakeOK{} produce
-working libbpf projects. The single compile-time rejection is
-\texttt{safety\_demo.ks}, where safety analysis detects 608 bytes of stack use
-(above the 512-byte eBPF limit) and halts before codegen, a verifier-relevant
-problem caught early. The two examples
-that compile but do not build are both struct\_ops programs, and neither is a
-compiler defect: each produces a valid eBPF object and fails only because the
-bpftool-generated skeleton references a libbpf field absent from the host's
-older installed headers, a toolchain version skew we isolate later in this
-section (\emph{Where the toolchain leaks through}). For successful examples, the compiler emits a median of \KSMedianGeneratedSloc{}
-lines from \KSMedianKSSloc{} source lines, a \KSMedianGeneratedRatio{} expansion
-that measures emitted boilerplate rather than effort saved. A closer proxy is a
-matched comparison: across \KSSourceFootprintWorkloads{} workloads with
-hand-written C/libbpf baselines, \tool{} sources total
-\KSSourceFootprintUniqueKSSloc{} lines versus \KSSourceFootprintUniqueCSloc{}.
-Both corpora are author-written. Table~\ref{tab:features} shows
-that the examples span XDP, TC, probes, tracepoints, perf, maps, ring buffers,
-dynptr, kfunc, struct\_ops, tail calls, and userspace, covering more than
-tracing while making the struct\_ops gap explicit.
+To test whether \tool{} generates complete projects, we compiled
+\KSTotalExamples{} example programs. Of these, \KSKSCompileOK{} compile
+successfully and \KSMakeOK{} produce working libbpf projects. The single
+compile-time rejection is \texttt{safety\_demo.ks}, where safety analysis
+detects 608 bytes of stack use (above the 512-byte eBPF limit) and halts
+before codegen, catching a verifier-relevant problem early. The two examples
+that compile but do not build are both struct\_ops programs: each produces a
+valid eBPF object but fails because the bpftool-generated skeleton references
+a libbpf field absent from the host's older installed headers. This is a
+toolchain version skew we isolate later in this section. For successful
+examples, the compiler emits a median of \KSMedianGeneratedSloc{} lines from
+\KSMedianKSSloc{} source lines, a \KSMedianGeneratedRatio{} expansion that
+measures emitted boilerplate rather than effort saved. A closer proxy for
+effort saved is a matched
+comparison: across \KSSourceFootprintWorkloads{} workloads with hand-written
+C/libbpf baselines, \tool{} sources total \KSSourceFootprintUniqueKSSloc{}
+lines versus \KSSourceFootprintUniqueCSloc{}. Both corpora are author-written.
+Table~\ref{tab:features} shows the feature coverage, spanning XDP, TC, probes,
+tracepoints, perf, maps, ring buffers, dynptr, kfunc, struct\_ops, tail calls,
+and userspace.
 
 \begin{table}[!tb]
 \centering
@@ -475,18 +485,22 @@ but they show that generated builds depend on toolchain alignment.
 
 \section{Related Work}
 
-Domain-specific DSLs compile high-level descriptions to eBPF: bpftrace for
-tracing~\cite{bpftrace}, BPFBox and ActPlane for security
-policies~\cite{bpfbox,actplane}, BMC for caching~\cite{bmc}, P4c-eBPF for
-networking~\cite{p4c-ebpf}, and Yaksha-Prashna for bytecode
-analysis~\cite{yaksha}. These focus on a single domain and generate only
-kernel code. General eBPF tools include C/libbpf~\cite{libbpf}, Aya and Rex
-for Rust~\cite{aya,rex}, Wasm-bpf for WebAssembly deployment~\cite{wasmbpf},
-and eunomia-bpf for dynamic loading~\cite{eunomia-bpf}. BeePL generates
-verified bytecode~\cite{beepl}; Jitk and Serval verify JIT
-correctness~\cite{jitk,serval}. \tool{} differs by generating both kernel and
-userspace code from one source, being language-independent, and lowering to
-stock libbpf rather than requiring formal verification.
+Prior work on eBPF development falls into three categories. Domain-specific
+DSLs target particular use cases: bpftrace for tracing~\cite{bpftrace}, BPFBox
+and ActPlane for security policies~\cite{bpfbox,actplane}, BMC for
+caching~\cite{bmc}, P4c-eBPF for networking~\cite{p4c-ebpf}, and Yaksha-Prashna
+for bytecode analysis~\cite{yaksha}. These DSLs generate only kernel code and
+do not address the cross-boundary structure that \tool{} targets. General eBPF
+development tools include the reference C/libbpf workflow~\cite{libbpf}, Aya
+and Rex for Rust~\cite{aya,rex}, Wasm-bpf for WebAssembly
+deployment~\cite{wasmbpf}, and eunomia-bpf for dynamic
+loading~\cite{eunomia-bpf}. These reduce boilerplate but leave lifecycle and
+representation relationships implicit. Verified approaches take a different
+direction: BeePL generates formally verified bytecode~\cite{beepl}, and Jitk
+and Serval verify JIT correctness~\cite{jitk,serval}. \tool{} occupies a
+middle ground: it generates both kernel and userspace code from one source and
+types cross-boundary relationships, but targets practical integration with the
+existing toolchain rather than formal verification.
 
 \section{Conclusion}
 
