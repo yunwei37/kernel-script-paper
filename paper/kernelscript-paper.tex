@@ -230,8 +230,8 @@ builtins receive values of the right kind, but not full path-sensitive
 properties such as use-after-detach, double-attach, or leaked handles.
 
 The benefit is earlier, localized compiler errors in place of naming conventions or late verifier/attach
-failures. Section~\ref{sec:eval} measures whether those diagnostics trigger;
-Section~\ref{sec:limits} explains the limits of that evidence.
+failures. Section~\ref{sec:eval} measures whether those diagnostics trigger,
+and Section~\ref{sec:limits} explains the limits of that evidence.
 
 \section{Design and Implementation}
 \label{sec:impl}
@@ -334,9 +334,9 @@ an \texttt{@xdp} entry point handed a \texttt{*\_\_sk\_buff} context instead of
 Section~\ref{sec:model}. In C the program compiles, and because its body never
 dereferences the context the verifier has no invalid access to flag, so the
 mistake survives to a silently wrong load. The matched bodies deliberately touch
-only a map, not a context field; one that did read a context field could instead
-trip the verifier on an out-of-range access, but still would not be reported as
-the context-type confusion it is.
+only a map, not a context field. A body that did read a context field could
+trip the verifier on an out-of-range access, though still not as the
+context-type confusion it is.
 
 \begin{table}[H]
 \centering
@@ -368,7 +368,7 @@ this small, author-injected set.
 \FloatBarrier
 \subsection{Q2: Project Generation}
 
-\textbf{Buildability and source footprint.} To test whether \tool{} generates complete projects, we compiled
+We test whether \tool{} generates complete projects by compiling
 \KSTotalExamples{} example programs. Of these, \KSKSCompileOK{} compile
 successfully and \KSMakeOK{} produce working libbpf projects. The single
 compile-time rejection is \texttt{safety\_demo.ks}, where safety analysis
@@ -418,11 +418,10 @@ eBPF repositories confirms that the program types and map patterns we generate
 (XDP, TC, kprobe, ring buffers, struct\_ops) appear together in real projects,
 supporting ecological validity.
 
-\textbf{Change amplification.} Source-footprint totals show how much code a
-finished workload occupies; they do not show how many places a small
-requirement change touches. To measure that coupling directly, we construct
-\KSChangeAmpCases{} matched micro-edits and compare the diff size of one
-\tool{} source against a hand-written C/libbpf split. The edits are the ones
+Source-footprint totals show how much code a finished workload occupies, not
+how many places a small requirement change touches. We measure this coupling
+by constructing \KSChangeAmpCases{} matched micro-edits and comparing the diff
+size of one \tool{} source against a hand-written C/libbpf split. The edits are the ones
 the typed unified source is meant to centralize: changing a map from
 \code{array} to \code{percpu_array}, changing a program from \code{@xdp} to
 \code{@tc}, moving a \code{perf_event} attach from standalone to grouped,
@@ -465,29 +464,27 @@ Edit & Impl. & Files & Sites & LOC & Sync \\
 \end{table}
 }
 
-The structural result is the decisive one: none of the \tool{} edits
-require manual cross-boundary synchronization, whereas hand-written
-C/libbpf requires userspace synchronization in
-\KSChangeAmpUserspaceSyncCasesC{}/\KSChangeAmpCases{} cases, kernel-side
-synchronization in \KSChangeAmpKernelSyncCasesC{}/\KSChangeAmpCases{}, and
-skeleton or section-convention synchronization in
-\KSChangeAmpSkeletonSyncCasesC{}/\KSChangeAmpCases{}. This is the direct
-evidence that ``one typed source'' reduces change amplification rather than
-only total lines. The diff-size counts point the same way: across the
-\KSChangeAmpCases{} edits, \tool{} has medians of
-\KSChangeAmpMedianFilesKS{} modified file, \KSChangeAmpMedianSitesKS{} edit
-sites, and \KSChangeAmpMedianLocKS{} changed lines, against
-\KSChangeAmpMedianFilesC{}, \KSChangeAmpMedianSitesC{}, and
-\KSChangeAmpMedianLocC{} for the matched C/libbpf versions; with only
-\KSChangeAmpCases{} edits we read these as illustrative of the same coupling
-the sync surfaces expose, not as a statistical estimate.
+The structural result is decisive. None of the \tool{} edits require manual
+cross-boundary synchronization, whereas hand-written C/libbpf requires
+userspace synchronization in \KSChangeAmpUserspaceSyncCasesC{}/\KSChangeAmpCases{}
+cases, kernel-side synchronization in
+\KSChangeAmpKernelSyncCasesC{}/\KSChangeAmpCases{}, and skeleton or
+section-convention synchronization in
+\KSChangeAmpSkeletonSyncCasesC{}/\KSChangeAmpCases{}. This directly shows that
+a unified typed source reduces change amplification, not only total lines. The
+diff-size counts point the same way. Across the \KSChangeAmpCases{} edits,
+\tool{} has medians of \KSChangeAmpMedianFilesKS{} modified file,
+\KSChangeAmpMedianSitesKS{} edit sites, and \KSChangeAmpMedianLocKS{} changed
+lines, against \KSChangeAmpMedianFilesC{}, \KSChangeAmpMedianSitesC{}, and
+\KSChangeAmpMedianLocC{} for the matched C/libbpf versions. With only
+\KSChangeAmpCases{} edits we treat these as illustrative, not as a statistical
+estimate.
 
-\textbf{Staged cross-boundary growth.} Table~\ref{tab:evolution} compares four
-stages that add progressively richer cross-boundary structure: pass-only XDP,
-then a counter map, then ring-buffer reporting, and finally a separate
-struct\_ops callback workload. The struct\_ops stage serves as a
-higher-complexity cross-domain reference point rather than the next step of the
-same program.
+Table~\ref{tab:evolution} compares four stages that add progressively richer
+cross-boundary structure: pass-only XDP, then a counter map, then ring-buffer
+reporting, and finally a separate struct\_ops callback workload. The
+struct\_ops stage serves as a higher-complexity reference point, not the next
+step of the same program.
 
 \begin{table}[H]
 \centering
@@ -554,7 +551,7 @@ Most generated objects pass the verifier: \KSVerifierBuildLoadOK{} of
 \KSVerifierBuildLoadFailed{} failures are a reference-ownership leak, a
 map-creation failure, a missing kfunc symbol, and an object with no program
 section. For XDP, \KSAttachOK{} of \KSAttachEligible{} objects attach and
-detach successfully; the workloads below exercise TC and struct\_ops.
+detach successfully. The workloads below exercise TC and struct\_ops.
 
 Beyond load and attach, matched workloads confirm the generated objects
 \emph{run}. Under \code{BPF_PROG_TEST_RUN}, a minimal
@@ -578,13 +575,12 @@ that source unification does not eliminate.
 \section{Limitations}
 \label{sec:limits}
 
-The differential probe injects only \KSOrganicTotal{} hand-chosen mistakes;
-a stronger study would mine real eBPF bugs from revision histories.
-Lifecycle typing enforces a producer/consumer handle distinction but not
-full typestate, so use-after-detach and leaked handles are not statically
-ruled out. The corpus is author-written; the external port shows that
-line-count savings vary when porting existing code rather than writing from
-scratch. The change-amplification
+The differential probe injects only \KSOrganicTotal{} hand-chosen mistakes. A
+stronger study would mine real eBPF bugs from revision histories. Lifecycle
+typing enforces a producer/consumer handle distinction, not full typestate, so
+use-after-detach and leaked handles are not statically ruled out. The corpus
+is author-written, and the external port shows that line-count savings vary
+when porting existing code rather than writing from scratch. The change-amplification
 study uses small checked-in micro-edits rather than real revision histories,
 so it measures maintenance-surface coupling rather than true developer time or
 debugging effort. Traffic numbers are local
