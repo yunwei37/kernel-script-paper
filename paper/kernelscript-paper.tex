@@ -518,35 +518,15 @@ that source unification does not eliminate.
 \section{Limitations}
 \label{sec:limits}
 
-\textbf{The organic probe is small.} Section~\ref{sec:eval} injects only
-\KSOrganicTotal{} hand-chosen mistakes into matched \tool{} and C/eBPF examples,
-finding \tool{} strictly earlier on \KSOrganicKSEarlier{} and tied on
-\KSOrganicTie. These are illustrative worked cases, not a sample from which a
-catch frequency can be read. A
-stronger study would mine real eBPF mistakes from revision histories and issue
-trackers, port them to \tool, and report the resulting failure stages.
-
-\textbf{Lifecycle typing remains lightweight.} It enforces the
-producer/consumer handle distinction, not full flow-sensitive typestate, so
-use-after-detach, double-attach, and leaked handles are not statically ruled
-out on every path.
-
-\textbf{The corpus is author-written.} The expansion and feature results come
-from the \tool{} repository, which reflects features the authors chose to
-demonstrate; the external port shows the line-count advantage does not transfer
-unchanged. A stronger study would reimplement programs from Cilium,
-libbpf-tools, and production filters in both \tool{} and C/libbpf.
-
-\textbf{No runtime-equivalence claim.} Traffic and microbenchmark numbers are
-local, unpinned veth/TCP samples that establish sanity, not performance. A
-deployment study would run each example in a VM with a known kernel
-configuration, representative workloads, and explicit post-detach cleanup
-checks.
-
-\textbf{Toolchain version alignment matters.} The struct\_ops result is a
-mismatched bpftool/libbpf pairing rather than a deep limitation, but it shows
-that a generated build depends on alignment between kernel headers, bpftool,
-generated skeletons, and libbpf.
+The differential probe injects only \KSOrganicTotal{} hand-chosen mistakes;
+a stronger study would mine real eBPF bugs from revision histories.
+Lifecycle typing enforces a producer/consumer handle distinction but not
+full typestate, so use-after-detach and leaked handles are not statically
+ruled out. The corpus is author-written; the external port shows the
+line-count advantage does not transfer unchanged. Traffic numbers are local
+sanity checks, not performance claims. Finally, the struct\_ops build
+failures reflect bpftool/libbpf version skew rather than a deep limitation,
+but they show that generated builds depend on toolchain alignment.
 
 \section{Related Work}
 
