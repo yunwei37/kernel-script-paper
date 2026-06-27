@@ -63,41 +63,47 @@ cross-boundary structure can be typed while preserving the existing toolchain.
 
 \section{Introduction}
 
-eBPF lets Linux developers run application-specific logic inside the kernel
+% P1: Context/Importance
+eBPF lets developers run application-specific logic inside the Linux kernel
 under a verifier that proves memory safety and bounded
-execution~\cite{linux-ebpf}. It now underpins packet processing, traffic
-control, tracing, security policy, and scheduler experimentation. Yet the
-programming model is awkward for a structural reason: a single eBPF
-\emph{application} is split across artifacts that must agree with one another.
-The kernel program is written under verifier constraints; a userspace
-coordinator opens objects, finds maps, installs links, and tears resources
-down; maps and ring buffers carry shared state; BTF describes kernel types; and
-newer interfaces such as kfuncs and struct\_ops require generated skeleton code
-to match the installed kernel headers.
+execution~\cite{linux-ebpf}. It now underpins packet processing in major cloud
+providers, powers observability platforms, enforces security policies, and
+enables scheduler experimentation. The ecosystem is large and growing.
 
-The reference C/libbpf workflow is powerful but verbose~\cite{libbpf}. The
-developer hand-writes kernel C, userspace C, map setup, attachment and pinning
-logic, cleanup paths, and a Makefile. Libraries in Rust, Go, or Python improve
-this experience, and some (notably Aya) author both sides from one host-language
-source~\cite{aya,cilium-ebpf}; tracing languages such as bpftrace raise the
-abstraction level for one domain~\cite{bpftrace}. But even when both sides are
-authored together, lifecycle ordering and domain separation remain runtime
-checks or naming conventions rather than compiler-enforced types.
+% P2: Problem
+Yet the programming model is fragmented. A single eBPF application spans kernel
+code constrained by the verifier, a userspace loader that opens objects and
+manages lifecycle, shared maps and ring buffers, and (for newer features)
+generated skeleton headers that must match the running kernel. The relationships
+among these pieces, such as a map's key and value types or the order of load,
+attach, and detach, are checked only at load time or not at all. Errors surface
+late as cryptic verifier rejections or silent mismatches.
 
+% P3: Gap
+Existing tools reduce boilerplate but leave cross-boundary relationships
+implicit. The reference C/libbpf workflow requires hand-written kernel C,
+userspace C, and a Makefile~\cite{libbpf}. Aya compiles both sides from Rust
+and shares typed maps~\cite{aya,cilium-ebpf}, but lifecycle ordering remains a
+runtime property. bpftrace raises the abstraction for tracing~\cite{bpftrace}
+but does not target general eBPF applications. None of these tools type the
+full cross-boundary structure at compile time.
+
+% P4: Insight
 \textbf{The key observation} is that these relationships are single concepts
-duplicated across artifacts. A map declaration is at once a kernel data
-structure, a userspace lookup target, and a type contract; a program reference
-is at once a function name, BPF section, skeleton field, and file descriptor.
-In C/libbpf, naming conventions and generated headers tie those copies together,
-so mismatches surface late. In one typed source, the compiler can see
-and check them directly.
+duplicated across components. A map declaration is at once a kernel data
+structure, a userspace lookup target, and a type contract; a program handle is
+at once a function name, a BPF section, and a file descriptor. In C/libbpf,
+naming conventions tie those copies together, so mismatches surface late. In
+one typed source, the compiler can see and check them directly.
 
-\tool{} realizes this idea as a compiled, multi-domain DSL in which a developer
-writes eBPF entry points, helpers, userspace control flow, maps, ring buffers,
-and perf events in one source file. The compiler lowers this source to eBPF C,
-userspace C, and a Makefile; the ordinary libbpf and bpftool path then produces
-objects, skeletons, and binaries.
+% P5: Solution
+\tool{} realizes this idea as a compiled, multi-domain DSL. A developer writes
+eBPF entry points, userspace control flow, maps, and ring buffers in one source
+file. The compiler types maps, program handles, and execution domains, then
+lowers to eBPF C, userspace C, and a Makefile. The ordinary libbpf and bpftool
+path produces the final binaries, so the existing toolchain is preserved.
 
+% P6: Contributions
 This paper contributes:
 \begin{itemize}
 \item A \emph{typed model of cross-boundary eBPF structure}: execution domains,
