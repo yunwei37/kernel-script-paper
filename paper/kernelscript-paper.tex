@@ -4,6 +4,7 @@
 \usepackage{array}
 \usepackage{booktabs}
 \usepackage{enumitem}
+\usepackage{float}
 \usepackage{listings}
 \usepackage{needspace}
 \usepackage{placeins}
@@ -343,7 +344,7 @@ stack buffer. The result is therefore \KSOrganicKSEarlier{} earlier and
 local C checking cannot see. Section~\ref{sec:limits} explains the limits of
 this small, author-injected set.
 
-\begin{table}[!tb]
+\begin{table}[t]
 \centering
 \caption{Differential failure-stage probe: earliest stage each toolchain
 catches the same injected mistake. \tool{} is strictly earlier only on the
@@ -380,7 +381,7 @@ version skew we isolate later in this section. For successful examples, the comp
 \KSSourceFootprintUniqueCSloc{}. Table~\ref{tab:features} shows the feature
 coverage.
 
-\begin{table}[!tb]
+\begin{table}[H]
 \centering
 \caption{Example marker coverage. A = attempted, KS = \tool{} compiler success,
 B = generated project build success.}
@@ -424,22 +425,10 @@ the typed unified source is meant to centralize: changing a map from
 attach target symbol, and adding ringbuf reporting plus userspace handling.
 Table~\ref{tab:change-amp} reports modified file count, edit-site count,
 changed LOC, and whether the author must manually keep kernel code,
-userspace code, or skeleton/section conventions in sync. Across the
-\KSChangeAmpCases{} edits, \tool{} has medians of
-\KSChangeAmpMedianFilesKS{} modified file, \KSChangeAmpMedianSitesKS{} edit
-sites, and \KSChangeAmpMedianLocKS{} changed lines; the matched C/libbpf
-versions have medians of \KSChangeAmpMedianFilesC{},
-\KSChangeAmpMedianSitesC{}, and \KSChangeAmpMedianLocC{}. More importantly,
-none of the \tool{} edits require manual cross-boundary synchronization,
-whereas hand-written C/libbpf requires userspace synchronization in
-\KSChangeAmpUserspaceSyncCasesC{}/\KSChangeAmpCases{} cases, kernel-side
-synchronization in \KSChangeAmpKernelSyncCasesC{}/\KSChangeAmpCases{}, and
-skeleton or section-convention synchronization in
-\KSChangeAmpSkeletonSyncCasesC{}/\KSChangeAmpCases{}. This is the direct evidence
-that ``one typed source'' reduces change amplification rather than only total
-lines.
+userspace code, or skeleton/section conventions in sync.
 
-\begin{table}[!tb]
+{\setlength{\intextsep}{4pt}
+\begin{table}[H]
 \centering
 \caption{Change amplification for four matched micro-edits. ``Sync'' reports
 which manually synchronized surfaces change: kernel (K), userspace (U), or
@@ -466,6 +455,24 @@ Edit & Impl. & Files & Sites & LOC & Sync \\
 \bottomrule
 \end{tabular}
 \end{table}
+}
+
+The structural result is the decisive one: none of the \tool{} edits
+require manual cross-boundary synchronization, whereas hand-written
+C/libbpf requires userspace synchronization in
+\KSChangeAmpUserspaceSyncCasesC{}/\KSChangeAmpCases{} cases, kernel-side
+synchronization in \KSChangeAmpKernelSyncCasesC{}/\KSChangeAmpCases{}, and
+skeleton or section-convention synchronization in
+\KSChangeAmpSkeletonSyncCasesC{}/\KSChangeAmpCases{}. This is the direct
+evidence that ``one typed source'' reduces change amplification rather than
+only total lines. The diff-size counts point the same way: across the
+\KSChangeAmpCases{} edits, \tool{} has medians of
+\KSChangeAmpMedianFilesKS{} modified file, \KSChangeAmpMedianSitesKS{} edit
+sites, and \KSChangeAmpMedianLocKS{} changed lines, against
+\KSChangeAmpMedianFilesC{}, \KSChangeAmpMedianSitesC{}, and
+\KSChangeAmpMedianLocC{} for the matched C/libbpf versions; with only
+\KSChangeAmpCases{} edits we read these as illustrative of the same coupling
+the sync surfaces expose, not as a statistical estimate.
 
 \textbf{Staged cross-boundary growth.} Table~\ref{tab:evolution} compares four
 stages that add progressively richer cross-boundary structure: pass-only XDP,
