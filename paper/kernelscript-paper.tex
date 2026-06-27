@@ -42,7 +42,7 @@ verifier-constrained kernel program, a userspace loader, shared maps, and
 generated skeletons. The relationships across them (which program a handle
 refers to, a map's key and value type on both sides of the kernel boundary, and
 the load-to-attach-to-detach order) are usually implicit naming conventions
-checked only at verifier-load or attach time. We study \tool, a typed DSL that
+checked only at verifier-load or attach time. \tool{} is a typed DSL that
 lifts these relationships into the type system: typed maps, typed
 program-lifecycle handles, and execution domains turn cross-boundary
 mismatches into compiler diagnostics while still lowering to ordinary C through
@@ -81,12 +81,10 @@ The reference C/libbpf workflow is powerful but verbose \cite{libbpf}: the
 developer hand-writes kernel C, userspace C, map setup, attachment and pinning
 logic, cleanup paths, and a Makefile. Libraries in Rust, Go, or Python improve
 this experience, and some (notably Aya) author both sides from one host-language
-source~\cite{aya,cilium-ebpf}; tracing languages such as
-bpftrace raise the abstraction level for one
-domain~\cite{bpftrace}. But even when both sides are authored together, the
-relationships that span the kernel boundary, lifecycle ordering and domain
-separation, stay largely runtime or convention rather than compiler-checked
-types.
+source~\cite{aya,cilium-ebpf}; tracing languages such as bpftrace raise the
+abstraction level for one domain~\cite{bpftrace}. But even when both sides are
+authored together, lifecycle ordering and domain separation remain runtime
+checks or naming conventions rather than compiler-enforced types.
 
 \textbf{The key observation} is that these relationships are single concepts
 duplicated across artifacts. A map declaration is at once a kernel data
@@ -96,24 +94,23 @@ In C/libbpf, those copies are tied together by naming conventions and generated
 headers, so mismatches surface late. In one typed source, the compiler can see
 and check them directly.
 
-This paper studies that idea through \tool, a compiled, multi-domain DSL in
-which a developer writes eBPF entry points, helpers, userspace control flow,
-maps, ring buffers, perf events, and optional kernel-module code in one source
-language. The compiler lowers this source to eBPF C, userspace C, an optional
-module, and a Makefile, after which the ordinary libbpf and bpftool path
-produces objects, skeletons, and binaries.
+\tool{} realizes this idea as a compiled, multi-domain DSL: a developer writes
+eBPF entry points, helpers, userspace control flow, maps, ring buffers, and
+perf events in one source file. The compiler lowers this source to eBPF C,
+userspace C, and a Makefile; the ordinary libbpf and bpftool path then produces
+objects, skeletons, and binaries.
 
-This paper makes three contributions. \emph{(1)}~We formulate \tool's central
-idea as a \emph{typed model of cross-boundary eBPF structure}: execution
-domains, typed maps shared across the kernel boundary, and a program lifecycle
-modeled as typed producer/consumer handles, each specified as a typing rule
-with a matching compiler diagnostic (Section~\ref{sec:model}). \emph{(2)}~We
-show how the prototype realizes that model while preserving the stock kernel
-toolchain, so compatibility failures remain visible and measurable rather than
-hidden (Section~\ref{sec:impl}). \emph{(3)}~We give a reproducible artifact
-evaluation (Section~\ref{sec:eval}) that confirms each typed invariant fires,
-that one source generates buildable libbpf projects, and that the generated
-objects load, attach, and run on a real kernel.
+This paper contributes:
+\begin{itemize}
+\item A \emph{typed model of cross-boundary eBPF structure}: execution domains,
+  typed maps, and program-lifecycle handles, each with a typing rule and
+  matching compiler diagnostic (Section~\ref{sec:model}).
+\item A compiler that realizes this model while preserving the stock kernel
+  toolchain, so compatibility failures remain visible (Section~\ref{sec:impl}).
+\item An evaluation showing that each invariant fires, that one source generates
+  buildable libbpf projects, and that generated objects load, attach, and run
+  on a real kernel (Section~\ref{sec:eval}).
+\end{itemize}
 
 \section{Background: Three Couplings}
 \label{sec:bg}
