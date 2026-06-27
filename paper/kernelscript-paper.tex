@@ -119,23 +119,26 @@ This paper contributes:
 \section{Background and Motivation}
 \label{sec:bg}
 
-\textbf{eBPF application structure.} An eBPF application has at least two
-components: a kernel program constrained by the verifier, and a userspace
-loader that opens objects, attaches programs, and manages lifecycle. The two
-sides communicate through maps, ring buffers, or perf events. For newer
-features such as struct\_ops and kfuncs, bpftool generates skeleton headers
-that the userspace code includes.
+\textbf{eBPF.} An eBPF application has
+a kernel program constrained by the verifier and a userspace loader that opens
+objects, attaches programs, and manages lifecycle. The two sides communicate
+through maps, ring buffers, or perf events. The reference C/libbpf workflow
+requires hand-written kernel C, userspace C, and a Makefile~\cite{libbpf};
+scaffolds such as libbpf-bootstrap reduce boilerplate~\cite{libbpf-bootstrap,xdp-tutorial}.
+Aya compiles both sides from Rust~\cite{aya,cilium-ebpf}; Rex provides safe
+Rust kernel extensions~\cite{rex}; bpftrace and BCC target tracing and
+scripting~\cite{bpftrace,bcc}; bpftime moves the runtime to
+userspace~\cite{bpftime}. These tools reduce boilerplate but leave
+cross-boundary relationships implicit.
 
-\textbf{Cross-boundary couplings.} This split creates three kinds of coupling.
-\emph{Lifecycle coupling}: operations must occur in a valid order (load before
-attach, detach before close), but C/libbpf checks this only at runtime.
-\emph{Representation coupling}: a map's key and value types must agree across
-kernel code, skeleton headers, and userspace lookups, but a mismatch is silent
-until something fails. \emph{Compatibility coupling}: generated skeletons
-depend on the exact kernel, bpftool, and libbpf versions, so they can disagree
-with installed headers. The verifier catches many errors, but only at load
-time. A DSL helps if it moves lifecycle and representation checks earlier,
-into compile-time type errors.
+\textbf{Cross-boundary couplings.} The kernel/userspace split creates three
+kinds of coupling. \emph{Lifecycle}: operations must occur in a valid order,
+but C/libbpf checks this only at runtime. \emph{Representation}: a map's types
+must agree across kernel code, skeleton headers, and userspace lookups, but a
+mismatch is silent until something fails. \emph{Compatibility}: generated
+skeletons depend on the exact kernel and libbpf versions. The verifier catches
+many errors, but only at load time. A DSL helps if it moves lifecycle and
+representation checks into compile-time type errors.
 
 \section{A Typed Model of Cross-Boundary Structure}
 \label{sec:model}
@@ -478,53 +481,25 @@ but they show that generated builds depend on toolchain alignment.
 
 \section{Related Work}
 
-\textbf{C/libbpf and host-language bindings.} XDP established the programmable
-in-kernel packet model \tool{} targets~\cite{xdp}; surveys cover the broader
-eBPF landscape~\cite{ebpfsurvey,linux-ebpf}. C/libbpf is the reference workflow
-but leaves kernel code, loaders, skeletons, maps, and build logic in separate
-files~\cite{libbpf}. Scaffolding such as libbpf-bootstrap and xdp-tutorial
-cuts boilerplate yet leaves the boundary relationships
-untyped~\cite{libbpf-bootstrap,xdp-tutorial}. Host-language libraries go part
-of the way. Aya compiles both sides from one Rust source and shares typed maps
-across the boundary~\cite{aya,cilium-ebpf}.
-\tool{} differs in being host-language-independent: execution domains and
-crossing rules live in the DSL itself, and it lowers to the standard Linux BPF
-toolchain rather than a host runtime, so BTF, CO-RE, skeletons, and verifier
-diagnostics are inherited and compatibility skew stays measurable. Rex similarly narrows the
-language-verifier gap with safe Rust extensions, but like Aya targets a host
-language and its own loading path rather than stock libbpf~\cite{rex}.
+\textbf{Dataplane DSLs.} Compiling one typed description into a split low-level
+implementation has precedent: P4 compiles a protocol-independent program into
+target parser and match-action pipelines~\cite{p4}, and Click composes packet
+processing from typed elements~\cite{click}. Unlike a P4 pipeline, an eBPF
+application must also generate its userspace coordinator and survive a late
+general-purpose verifier. XDP established the programmable in-kernel packet
+model~\cite{xdp}; surveys cover the broader eBPF landscape~\cite{ebpfsurvey,linux-ebpf}.
+PREVAIL, K2, and hXDP optimize eBPF bytecode after it exists~\cite{prevail,k2,hxdp};
+\tool{} is earlier and complementary, generating the bytecode and its loader.
 
-\textbf{Tracing and bytecode tools.} bpftrace is concise but narrows the target
-to tracing~\cite{bpftrace}. BCC scripts eBPF from Python but keeps Python as a
-controller around separate BPF code~\cite{bcc}; related systems use eBPF to
-\emph{observe} distributed LLM inference~\cite{einfer-ebpf} or move the runtime
-itself to userspace~\cite{bpftime}. A separate line optimizes the eBPF bytecode
-after it exists: PREVAIL~\cite{prevail}, K2~\cite{k2}, and
-hXDP~\cite{hxdp}; \tool{} is earlier and complementary, generating the
-bytecode and its loader.
-
-\textbf{Dataplane DSLs and typestate.} Compiling one typed description into a
-split low-level implementation has precedent: P4 compiles a
-protocol-independent program into target parser and match-action
-pipelines~\cite{p4}, and Click composes packet processing from typed
-elements~\cite{click}. Unlike a P4 pipeline, an eBPF application must also
-generate its userspace coordinator and survive a late general-purpose verifier
-and fast-moving libbpf/bpftool ABIs, the source of the compatibility limits we
-measure. \tool's lifecycle discipline is a lightweight instance of
-typestate~\cite{typestate}: we enforce only the producer/consumer handle
-distinction, so the connection is a design influence rather than a claim of
-equivalent guarantees. The unrealized guarantees are substructural: an affine
-\texttt{ProgramHandle} consumed by \texttt{detach} (or a typed \texttt{Link}
-returned by \texttt{attach}) would rule out use-after-detach, double-attach,
-and leaks~\cite{lineartypes}. Vault enforces such resource protocols in
-low-level software~\cite{vault}, and session types formalize the ordering more
-fully~\cite{sessiontypes}. Our domain separation echoes address-space type
-qualifiers such as the kernel's Sparse \texttt{\_\_user}/\texttt{\_\_kernel}
-annotations~\cite{sparse}. \tool{} thus occupies a point not covered above: a
-compiled, multi-domain, single-source language whose question is whether eBPF
-application structure can be made explicit enough for a compiler to type and
-generate the low-level project \emph{while preserving} the existing Linux BPF
-toolchain.
+\textbf{Typestate and resource typing.} \tool's lifecycle discipline is a
+lightweight instance of typestate~\cite{typestate}: we enforce the
+producer/consumer handle distinction, so the connection is a design influence
+rather than a claim of equivalent guarantees. Stronger substructural types
+would rule out use-after-detach and leaks~\cite{lineartypes}; Vault enforces
+such resource protocols in low-level software~\cite{vault}, and session types
+formalize the ordering more fully~\cite{sessiontypes}. Our domain separation
+echoes address-space type qualifiers such as the kernel's Sparse
+\texttt{\_\_user}/\texttt{\_\_kernel} annotations~\cite{sparse}.
 
 \section{Conclusion}
 
