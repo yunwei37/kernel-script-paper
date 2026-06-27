@@ -22,13 +22,13 @@ nonblank noncomment lines, the matching hand-written C/eBPF object sources
 total 254 lines, and the C/libbpf baseline source footprint totals 1105 lines
 when runner or loader files are included. This is matched source-footprint evidence,
 not a developer-time study. A separate checked-in change-amplification study
-applies 4 matched micro-edits to BPFScript and hand-written C/libbpf fixtures:
-the medians are 1 changed file, 3 edit sites, and 7 changed lines for
-KernelScript versus 2 changed files, 4 edit sites, and 22 changed lines for
-the hand-written split. None of the 4 KernelScript edits require manual
+applies 5 matched micro-edits to BPFScript and hand-written C/libbpf fixtures:
+the medians are 1 changed file, 2 edit sites, and 6 changed lines for
+KernelScript versus 2 changed files, 7 edit sites, and 30 changed lines for
+the hand-written split. None of the 5 KernelScript edits require manual
 kernel/userspace/skeleton synchronization, while the C/libbpf versions require
-userspace synchronization in 4/4 cases, kernel synchronization in 4/4 cases,
-and skeleton or section-convention synchronization in 3/4 cases. The external source-corpus scan covers 3 pinned
+userspace synchronization in 5/5 cases, kernel synchronization in 4/5 cases,
+and skeleton or section-convention synchronization in 3/5 cases. The external source-corpus scan covers 3 pinned
 public eBPF repositories, 166 selected C/header files, 34843 nonblank noncomment
 lines, and 14 tracked feature families; a 7-file manual spot-check matches the
 expected classifier markers with zero false-positive or false-negative feature
@@ -103,7 +103,7 @@ pass, with XDP count medians of 17.3 versus 15.3 Gb/s and TC count medians of
 | R013 | `results/sched_ext_verifier_summary.json` | ok | Five-callback C/eBPF scheduler-extension control object verifier-loads and pins 5 programs; generated `sched_ext_simple` verifier-loads and pins 12 programs; no scheduler attach is attempted and sched_ext state remains disabled. |
 | R014 | `results/sched_ext_attach_summary.json` | ok | Opt-in scheduler-extension attach harness registers the C/eBPF and generated toy FIFO schedulers, keeps sched_ext enabled during five bounded 0.75s CPU progress trials, records per-worker iteration counts, unregisters both, and returns sched_ext to disabled with zero rejected tasks. |
 | R015 | `results/source_footprint_summary.json` | ok | Matched source-footprint proxy covers 11 local workload rows; unique maintained KernelScript sources total 203 SLOC, C/eBPF objects alone total 254 SLOC, and C/libbpf sources total 1105 SLOC with runner/loader files included. |
-| R016 | `results/change_amplification_summary.json` | ok | Change-amplification study covers 4 matched micro-edits; medians are 1 changed file, 3 edit sites, and 7 changed lines for KernelScript versus 2 changed files, 4 edit sites, and 22 changed lines for hand-written C/libbpf, with manual userspace synchronization required in 4/4 C/libbpf edits and 0/4 KernelScript edits. |
+| R016 | `results/change_amplification_summary.json` | ok | Change-amplification study covers 5 matched micro-edits; medians are 1 changed file, 2 edit sites, and 6 changed lines for KernelScript versus 2 changed files, 7 edit sites, and 30 changed lines for hand-written C/libbpf, with manual userspace synchronization required in 5/5 C/libbpf edits and 0/5 KernelScript edits. |
 | R017 | `results/external_corpus_summary.json` | ok | External source-corpus scan covers 3 pinned public eBPF repositories, 166 selected C/header files, 34843 SLOC, and 14 tracked feature families; the 7-file classifier spot-check has zero false-positive or false-negative feature labels; no external application is translated, built, verifier-loaded, attached, or run. |
 | R018 | `results/external_port_summary.json` | ok | Manual KernelScript ports of three pinned `xdp-tutorial` XDP workloads build through generated Makefiles; the original external C/eBPF sources compile directly with clang; all 6 objects attach and pass 5 x 1s iperf3 trials, and the `basic03-map-counter` pair increments the same XDP_PASS map key. |
 

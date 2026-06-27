@@ -421,8 +421,9 @@ requirement change touches. To measure that coupling directly, we construct
 \tool{} source against a hand-written C/libbpf split. The edits are the ones
 the typed unified source is meant to centralize: changing a map from
 \code{array} to \code{percpu_array}, changing a program from \code{@xdp} to
-\code{@tc}, changing the
-attach target symbol, and adding ringbuf reporting plus userspace handling.
+\code{@tc}, moving a \code{perf_event} attach from standalone to grouped,
+extending a shared ringbuf event schema, and adding ringbuf reporting plus
+userspace handling.
 Table~\ref{tab:change-amp} reports modified file count, edit-site count,
 changed LOC, and whether the author must manually keep kernel code,
 userspace code, or skeleton/section conventions in sync.
@@ -430,7 +431,7 @@ userspace code, or skeleton/section conventions in sync.
 {\setlength{\intextsep}{4pt}
 \begin{table}[H]
 \centering
-\caption{Change amplification for four matched micro-edits. ``Sync'' reports
+\caption{Change amplification for \KSChangeAmpCases{} matched micro-edits. ``Sync'' reports
 which manually synchronized surfaces change: kernel (K), userspace (U), or
 skeleton/section conventions (S).}
 \label{tab:change-amp}
@@ -447,8 +448,11 @@ Edit & Impl. & Files & Sites & LOC & Sync \\
 \shortstack[l]{Program \\ \code{@xdp}$\rightarrow$\code{@tc}} & BS & \KSChangeAmpProgTypeFilesKS{} & \KSChangeAmpProgTypeSitesKS{} & \KSChangeAmpProgTypeLocKS{} & \KSChangeAmpProgTypeSyncKS{} \\
  & C & \KSChangeAmpProgTypeFilesC{} & \KSChangeAmpProgTypeSitesC{} & \KSChangeAmpProgTypeLocC{} & \KSChangeAmpProgTypeSyncC{} \\
 \addlinespace[2pt]
-\shortstack[l]{Attach target \\ symbol} & BS & \KSChangeAmpAttachTargetFilesKS{} & \KSChangeAmpAttachTargetSitesKS{} & \KSChangeAmpAttachTargetLocKS{} & \KSChangeAmpAttachTargetSyncKS{} \\
- & C & \KSChangeAmpAttachTargetFilesC{} & \KSChangeAmpAttachTargetSitesC{} & \KSChangeAmpAttachTargetLocC{} & \KSChangeAmpAttachTargetSyncC{} \\
+\shortstack[l]{Perf event \\ standalone$\rightarrow$grouped} & BS & \KSChangeAmpPerfGroupFilesKS{} & \KSChangeAmpPerfGroupSitesKS{} & \KSChangeAmpPerfGroupLocKS{} & \KSChangeAmpPerfGroupSyncKS{} \\
+ & C & \KSChangeAmpPerfGroupFilesC{} & \KSChangeAmpPerfGroupSitesC{} & \KSChangeAmpPerfGroupLocC{} & \KSChangeAmpPerfGroupSyncC{} \\
+\addlinespace[2pt]
+\shortstack[l]{Shared event \\ schema} & BS & \KSChangeAmpEventSchemaFilesKS{} & \KSChangeAmpEventSchemaSitesKS{} & \KSChangeAmpEventSchemaLocKS{} & \KSChangeAmpEventSchemaSyncKS{} \\
+ & C & \KSChangeAmpEventSchemaFilesC{} & \KSChangeAmpEventSchemaSitesC{} & \KSChangeAmpEventSchemaLocC{} & \KSChangeAmpEventSchemaSyncC{} \\
 \addlinespace[2pt]
 \shortstack[l]{Add ringbuf \\ reporting/handling} & BS & \KSChangeAmpUserspaceFilesKS{} & \KSChangeAmpUserspaceSitesKS{} & \KSChangeAmpUserspaceLocKS{} & \KSChangeAmpUserspaceSyncKS{} \\
  & C & \KSChangeAmpUserspaceFilesC{} & \KSChangeAmpUserspaceSitesC{} & \KSChangeAmpUserspaceLocC{} & \KSChangeAmpUserspaceSyncC{} \\
