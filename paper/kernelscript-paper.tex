@@ -39,19 +39,17 @@
 \begin{abstract}
 A realistic eBPF application spans several coupled artifacts: a
 verifier-constrained kernel program, a userspace loader, shared maps, and
-generated skeletons. The relationships across them (which program a handle
-refers to, a map's key and value type on both sides of the kernel boundary, and
-the load-to-attach-to-detach order) are usually implicit naming conventions
-checked only at verifier-load or attach time. \tool{} is a typed DSL that
-lifts these relationships into the type system: typed maps, typed
-program-lifecycle handles, and execution domains turn cross-boundary
-mismatches into compiler diagnostics while still lowering to ordinary C through
-the stock clang/bpftool/libbpf toolchain. A suite of
-\KSStaticExpectedFailures{} intentionally invalid programs confirms that each
-invariant fires as a compile-time diagnostic; generated projects verifier-load,
-attach, and pass traffic on a real kernel. The result is a concrete design point for typed cross-boundary eBPF
-structure that preserves the kernel toolchain while exposing its remaining
-compatibility boundaries.
+generated skeletons. The relationships among them (which program a handle
+refers to, a map's key and value types, the load-to-attach-to-detach order)
+today rely on naming conventions that surface errors only at verifier-load or
+attach time. \tool{} lifts these relationships into the type
+system. Typed maps, program-lifecycle handles, and execution domains turn
+cross-boundary mismatches into compile-time diagnostics while the compiler
+still lowers to ordinary C through the stock clang/bpftool/libbpf toolchain.
+\KSStaticExpectedFailures{} intentionally invalid programs confirm that each
+invariant fires; generated projects load, attach, and pass traffic on a real
+kernel. The result is a concrete design point showing that eBPF's
+cross-boundary structure can be typed while preserving the kernel toolchain.
 \end{abstract}
 
 \ccsdesc[500]{Software and its engineering~Domain specific languages}
@@ -77,7 +75,7 @@ down; maps and ring buffers carry shared state; BTF describes kernel types; and
 newer interfaces such as kfuncs and struct\_ops require generated skeleton code
 to match the installed kernel headers.
 
-The reference C/libbpf workflow is powerful but verbose \cite{libbpf}: the
+The reference C/libbpf workflow is powerful but verbose~\cite{libbpf}. The
 developer hand-writes kernel C, userspace C, map setup, attachment and pinning
 logic, cleanup paths, and a Makefile. Libraries in Rust, Go, or Python improve
 this experience, and some (notably Aya) author both sides from one host-language
@@ -90,13 +88,13 @@ checks or naming conventions rather than compiler-enforced types.
 duplicated across artifacts. A map declaration is at once a kernel data
 structure, a userspace lookup target, and a type contract; a program reference
 is at once a function name, BPF section, skeleton field, and file descriptor.
-In C/libbpf, those copies are tied together by naming conventions and generated
-headers, so mismatches surface late. In one typed source, the compiler can see
+In C/libbpf, naming conventions and generated headers tie those copies together,
+so mismatches surface late. In one typed source, the compiler can see
 and check them directly.
 
-\tool{} realizes this idea as a compiled, multi-domain DSL: a developer writes
-eBPF entry points, helpers, userspace control flow, maps, ring buffers, and
-perf events in one source file. The compiler lowers this source to eBPF C,
+\tool{} realizes this idea as a compiled, multi-domain DSL in which a developer
+writes eBPF entry points, helpers, userspace control flow, maps, ring buffers,
+and perf events in one source file. The compiler lowers this source to eBPF C,
 userspace C, and a Makefile; the ordinary libbpf and bpftool path then produces
 objects, skeletons, and binaries.
 
@@ -179,18 +177,18 @@ domain and rejects illegal crossings, for example a userspace function calling
 an \code{@helper} or requesting kernel-context allocation from userspace.
 Each eBPF attribute also fixes a context and return type: \code{@xdp} requires
 \code{ctx:*xdp_md} returning \code{xdp_action}; \code{@tc} requires
-\code{*__sk_buff} returning \code{i32}. A signature that disagrees with its
-attribute is rejected before code generation. The same surface syntax therefore remains
+\code{*__sk_buff} returning \code{i32}. The compiler rejects any signature that
+disagrees with its attribute before code generation. The same surface syntax therefore remains
 domain-aware: userspace can allocate and print freely, while eBPF code must
 obey stack and helper restrictions. struct\_ops callbacks fit the same scheme,
 with context and return types determined by the registered slot.
 
 \textbf{Maps as typed globals (representation coupling).} A map is a typed
 global, \code{var m : hash<K,V>(N)} or \code{array<K,V>(N)}, rather than a C
-section plus separate userspace lookup code. Its element types form one
-contract checked at every access site on \emph{both} sides of the kernel
-boundary: an index \code{m[k]} requires \code{k:K} and yields \code{V}, in eBPF
-and userspace alike. A wrong key type, wrong value type, or access to an
+section plus separate userspace lookup code. The compiler checks element types
+at every access site on \emph{both} sides of the kernel boundary: an index
+\code{m[k]} requires \code{k:K} and yields \code{V}, in eBPF and userspace
+alike. A wrong key type, wrong value type, or access to an
 undeclared map is a compile-time error. One declaration thus replaces
 kernel definitions, skeleton fields, and userspace lookups that otherwise must
 agree by hand.
