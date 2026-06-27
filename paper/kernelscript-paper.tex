@@ -329,20 +329,13 @@ along a shared ladder
 (compile $<$ build $<$ verifier $<$ attach $<$ runtime $<$ undetected).
 Table~\ref{tab:organic} reports the outcome. \tool{} rejects all
 \KSOrganicTotal{} at compile time. The decisive case is the cross-boundary one:
-an \texttt{@xdp} entry point handed a \texttt{*\_\_sk\_buff} context instead of
-\texttt{*xdp\_md}. \tool{} rejects it from the program-signature rule of
-Section~\ref{sec:model}. In C the program compiles, and because its body never
-dereferences the context the verifier has no invalid access to flag, so the
-mistake survives to a silently wrong load. The matched bodies deliberately touch
-only a map, not a context field; one that did read a context field could instead
-trip the verifier on an out-of-range access, but still would not be reported as
-the context-type confusion it is. The
-other \KSOrganicTie{} mistakes tie because clang already catches them locally:
-an undeclared map, a string stored into a \texttt{u64} value, and an oversized
-stack buffer. The result is therefore \KSOrganicKSEarlier{} earlier and
-\KSOrganicTie{} tied: typing helps precisely on the cross-boundary relation that
-local C checking cannot see. Section~\ref{sec:limits} explains the limits of
-this small, author-injected set.
+an \texttt{@xdp} entry point given a \texttt{*\_\_sk\_buff} context instead of
+\texttt{*xdp\_md}. In C the program compiles and the verifier passes it, so the
+mistake survives to a silently wrong load. The other \KSOrganicTie{} mistakes
+tie because clang already catches them locally. The result is
+\KSOrganicKSEarlier{} earlier and \KSOrganicTie{} tied: typing helps on the
+cross-boundary relation that local C checking cannot see.
+Section~\ref{sec:limits} explains the limits of this small, author-injected set.
 
 \begin{table}[!tb]
 \centering
@@ -374,15 +367,12 @@ before codegen, catching a verifier-relevant problem early. The two examples
 that compile but do not build are both struct\_ops programs: each produces a
 valid eBPF object but fails because the bpftool-generated skeleton references
 a libbpf field absent from the host's older installed headers. This is a
-toolchain version skew we isolate later in this section. For successful
-examples, the compiler emits a median of \KSMedianGeneratedSloc{} lines from
-\KSMedianKSSloc{} source lines, a \KSMedianGeneratedRatio{} expansion that
-measures emitted boilerplate rather than effort saved. A closer proxy for
-effort saved is a matched
-comparison: across \KSSourceFootprintWorkloads{} workloads with hand-written
-C/libbpf baselines, \tool{} sources total \KSSourceFootprintUniqueKSSloc{}
-lines versus \KSSourceFootprintUniqueCSloc{}. Both corpora are author-written.
-Table~\ref{tab:features} shows the feature coverage.
+toolchain version skew we isolate later in this section. For successful examples, the compiler emits a median of
+\KSMedianGeneratedSloc{} lines from \KSMedianKSSloc{} source lines. Across
+\KSSourceFootprintWorkloads{} workloads with hand-written C/libbpf baselines,
+\tool{} sources total \KSSourceFootprintUniqueKSSloc{} lines versus
+\KSSourceFootprintUniqueCSloc{}. Table~\ref{tab:features} shows the feature
+coverage.
 
 \begin{table}[!tb]
 \centering
