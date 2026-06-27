@@ -291,7 +291,7 @@ and \code{detach} releases the link through \code{bpf_link__destroy}.
 \begin{lstlisting}[language=C,caption={One typed map declaration lowers to both
 a kernel \texttt{SEC(".maps")} definition and a userspace accessor from a single
 descriptor.},label={lst:map}]
-// KernelScript source
+// BPFScript source
 var counts : hash<u32, u64>(1024)
 
 // generated eBPF C
@@ -381,18 +381,23 @@ changes. It does not by itself show how often those checks catch real mistakes;
 the next paragraph probes that question.
 
 \textbf{Differential failure-stage probe.} To ask whether the checks fire
-\emph{earlier} than the stock toolchain on the same mistake, we pre-register
-\KSOrganicTotal{} realistic mistakes, each injected identically into a working
-XDP map-counter written in \tool{} and in matched hand-written C/eBPF, and
-record the earliest stage each toolchain rejects it along a shared ladder
+\emph{earlier} than the stock toolchain on the same mistake, we construct
+\KSOrganicTotal{} hand-chosen worked cases, each a realistic mistake injected
+identically into a working XDP map-counter written in \tool{} and in matched
+hand-written C/eBPF, and record the earliest stage each toolchain rejects it
+along a shared ladder
 (compile $<$ build $<$ verifier $<$ attach $<$ runtime $<$ undetected).
 Table~\ref{tab:organic} reports the outcome with the kernel verifier live
 (verifier tested: \KSOrganicVerifierTested). \tool{} rejects all
 \KSOrganicTotal{} at compile time. The decisive case is the cross-boundary one:
 an \texttt{@xdp} entry point handed a \texttt{*\_\_sk\_buff} context instead of
 \texttt{*xdp\_md}. \tool{} rejects it from the program-signature rule of
-Section~\ref{sec:model}, whereas clang compiles it and the verifier
-\emph{accepts} it, so in C the mistake survives to a silently wrong load. The
+Section~\ref{sec:model}. In C the program compiles, and because its body never
+dereferences the context the verifier has no invalid access to flag, so the
+mistake survives to a silently wrong load. The matched bodies deliberately touch
+only a map, not a context field; one that did read a context field could instead
+trip the verifier on an out-of-range access, but still would not be reported as
+the context-type confusion it is. The
 other \KSOrganicTie{} mistakes tie because clang already catches them locally:
 an undeclared map, a string stored into a \texttt{u64} value, and an oversized
 stack buffer. The result is therefore \KSOrganicKSEarlier{} earlier and
@@ -573,9 +578,10 @@ The evaluation supports a bounded reading of the contribution and clarifies
 what remains open.
 
 \textbf{The organic probe is small.} Section~\ref{sec:eval} injects only
-\KSOrganicTotal{} realistic mistakes into matched \tool{} and C/eBPF examples,
+\KSOrganicTotal{} hand-chosen mistakes into matched \tool{} and C/eBPF examples,
 finding \tool{} strictly earlier on \KSOrganicKSEarlier{} and tied on
-\KSOrganicTie. That establishes a preview, not a population estimate. A
+\KSOrganicTie. These are illustrative worked cases, not a sample from which a
+catch frequency can be read. A
 stronger study would mine real eBPF mistakes from revision histories and issue
 trackers, port them to \tool, and report the resulting failure stages.
 
@@ -620,7 +626,10 @@ cuts boilerplate yet leaves the boundary relationships
 untyped~\cite{libbpf-bootstrap,xdp-tutorial}. Host-language libraries go part
 of the way: Aya in particular compiles both sides from one Rust source and
 shares typed maps across the boundary~\cite{aya,cilium-ebpf}, so single-source
-authoring and typed maps are not by themselves \tool's contribution. \tool{}
+authoring and typed maps are not by themselves \tool's contribution. Aya's typed
+program definitions would likewise reject the wrong-context mistake of
+Section~\ref{sec:eval}, so \tool's distinction is not the class of mistake caught
+but \emph{where} the checks live. \tool{}
 instead is host-language-independent, with execution domains and crossing rules
 in the language. It lowers to the standard Linux BPF toolchain rather than a
 host runtime, so BTF, CO-RE, skeletons, and verifier diagnostics are inherited
