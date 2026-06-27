@@ -100,7 +100,7 @@ typed source, the compiler can see and check them directly.
 \tool{} realizes this idea as a compiled, multi-domain DSL. A developer writes
 eBPF entry points, userspace control flow, maps, and ring buffers in one source
 file. The compiler types maps, program handles, and execution domains, then
-lowers to eBPF C, userspace C, and a Makefile. The ordinary libbpf and bpftool
+lowers to eBPF C, userspace C, and a Makefile. The libbpf and bpftool
 path produces the final binaries, so the existing toolchain is preserved.
 
 % P6: Contributions
@@ -269,7 +269,7 @@ and the userspace accessor from one source of truth (Listing~\ref{lst:map}).
 Lifecycle handles are enforced in the front end: only \code{load} yields a
 \code{ProgramHandle}, and \code{attach} and \code{detach} require one, so a
 misordered call fails type checking before code generation. The handle then
-lowers to an ordinary file descriptor via standard libbpf APIs.
+lowers to a file descriptor via libbpf APIs.
 
 \begin{lstlisting}[language=C,caption={One typed map declaration lowers to both
 a kernel \texttt{SEC(".maps")} definition and a userspace accessor from a single
