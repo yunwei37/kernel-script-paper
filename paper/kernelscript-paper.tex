@@ -322,11 +322,10 @@ program-signature violations, map type errors, domain crossings, and safety
 violations. Each case carries an expected diagnostic substring, so incidental
 rejections do not count as passing. The suite shows that the invariants are implemented and stable.
 
-To ask whether the checks trigger \emph{earlier} than the stock toolchain on
-the same mistake, we construct \KSOrganicTotal{} hand-chosen test cases. Each
-injects a realistic mistake identically into a working XDP map-counter written
-in \tool{} and in matched hand-written C/eBPF. We record the earliest stage
-each toolchain rejects it along a shared ladder
+We test whether \tool{} detects mistakes \emph{earlier} than the stock
+toolchain. We inject \KSOrganicTotal{} realistic mistakes into a working XDP
+map-counter, once in \tool{} and once in matched hand-written C/eBPF, and
+record the earliest rejection stage along a shared ladder
 (compile $<$ build $<$ verifier $<$ attach $<$ runtime $<$ undetected).
 Table~\ref{tab:organic} reports the outcome. \tool{} rejects all
 \KSOrganicTotal{} at compile time. The decisive case is the cross-boundary one:
