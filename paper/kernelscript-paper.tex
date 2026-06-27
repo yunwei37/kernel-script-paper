@@ -475,15 +475,22 @@ but they show that generated builds depend on toolchain alignment.
 
 \section{Related Work}
 
-Compiling a typed source into low-level code has precedent in dataplane DSLs:
-P4 targets hardware pipelines~\cite{p4} and Click composes packet-processing
-elements~\cite{click}, but both operate in a single execution domain.
-Verified eBPF projects take a different direction: BeePL generates formally
-verified bytecode via CompCert~\cite{beepl}, while Jitk and Serval prove JIT
-correctness~\cite{jitk,serval}. \tool{} occupies a middle ground. It generates
-code for two domains (kernel and userspace) and types the cross-boundary
-relationships between them, but targets practical integration with the
-existing clang/bpftool/libbpf toolchain rather than formal verification.
+Domain-specific DSLs compile high-level descriptions to eBPF for particular
+use cases. bpftrace provides a concise tracing DSL~\cite{bpftrace}; BPFBox
+expresses security confinement policies~\cite{bpfbox}; BMC accelerates
+memcached via XDP~\cite{bmc}. P4 and Click target dataplane pipelines but
+predate eBPF~\cite{p4,click}. These DSLs focus on a single domain and generate
+only kernel code; \tool{} handles general eBPF applications and generates both
+kernel and userspace code from one source.
+
+General eBPF development spans multiple approaches. The C/libbpf workflow is
+the reference but leaves boundaries implicit~\cite{libbpf}. Aya and Rex unify
+kernel and userspace in Rust~\cite{aya,rex}; eunomia-bpf supports dynamic
+loading~\cite{eunomia-bpf}. BeePL generates verified bytecode via
+CompCert~\cite{beepl}; Jitk and Serval verify JIT correctness~\cite{jitk,serval}.
+\tool{} differs from host-language bindings by being language-independent and
+lowering to stock libbpf, and differs from verified approaches by trading
+formal guarantees for practical toolchain integration.
 
 \section{Conclusion}
 
