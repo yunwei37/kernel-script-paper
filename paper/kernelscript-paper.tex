@@ -89,7 +89,7 @@ but does not target general eBPF applications. None of these tools type the
 full cross-boundary structure at compile time.
 
 % P4: Insight
-\textbf{The key observation} is that these relationships are single concepts
+The key observation is that these relationships are single concepts
 duplicated across components. A map declaration is at once a kernel data
 structure, a userspace lookup target, and a type contract; a program handle is
 at once a function name, a BPF section, and a file descriptor. In C/libbpf,
@@ -119,30 +119,30 @@ This paper contributes:
 \section{Background and Motivation}
 \label{sec:bg}
 
-\textbf{eBPF.} eBPF runs verified bytecode inside the Linux
-kernel~\cite{linux-ebpf,ebpfsurvey}. Applications include tracing~\cite{bpftrace,bcc},
-networking~\cite{xdp}, security~\cite{lsm-bpf}, scheduling~\cite{ghost},
-caching~\cite{cacheext}, GPU~\cite{gpuext}, and userspace runtimes~\cite{bpftime}. Each application has a kernel
-program and a userspace loader; they communicate through maps or ring buffers.
-The C/libbpf workflow requires separate kernel C, userspace C, and a
-Makefile~\cite{libbpf}; Aya unifies both sides in Rust~\cite{aya}; Rex adds
-safe kernel extensions~\cite{rex}. These tools reduce boilerplate but leave
-cross-boundary relationships implicit.
+eBPF runs verified bytecode inside the Linux
+kernel~\cite{linux-ebpf,ebpfsurvey}. Applications include
+tracing~\cite{bpftrace,bcc}, networking~\cite{xdp}, security~\cite{lsm-bpf},
+scheduling~\cite{ghost}, caching~\cite{cacheext}, GPU~\cite{gpuext}, and
+userspace runtimes~\cite{bpftime}. Each application has a kernel program and a
+userspace loader that communicate through maps or ring buffers. The C/libbpf
+workflow requires separate kernel C, userspace C, and a Makefile~\cite{libbpf};
+Aya unifies both sides in Rust~\cite{aya}; Rex adds safe kernel
+extensions~\cite{rex}. These tools reduce boilerplate but leave cross-boundary
+relationships implicit.
 
-\textbf{Cross-boundary couplings.} The kernel/userspace split creates three
-kinds of coupling. \emph{Lifecycle}: operations must occur in a valid order,
-but C/libbpf checks this only at runtime. \emph{Representation}: a map's types
-must agree across kernel code, skeleton headers, and userspace lookups, but a
-mismatch is silent until something fails. \emph{Compatibility}: generated
-skeletons depend on the exact kernel and libbpf versions. The verifier catches
-many errors, but only at load time. A DSL helps if it moves lifecycle and
-representation checks into compile-time type errors.
+The kernel/userspace split creates three kinds of coupling.
+\emph{Lifecycle}: operations must occur in a valid order, but C/libbpf checks
+this only at runtime. \emph{Representation}: a map's types must agree across
+kernel code, skeleton headers, and userspace lookups, but a mismatch is silent
+until something fails. \emph{Compatibility}: generated skeletons depend on the
+exact kernel and libbpf versions. The verifier catches many errors, but only
+at load time. A DSL helps if it moves lifecycle and representation checks into
+compile-time type errors.
 
-\textbf{Typestate.} Typestate tracks object state in the type
-system~\cite{typestate}; linear and affine types enforce single-use
-resources~\cite{lineartypes,vault,sessiontypes}. \tool{} applies a lightweight
-form: producer/consumer handle distinction and domain annotations, not full
-substructural typing.
+Typestate tracks object state in the type system~\cite{typestate}; linear and
+affine types enforce single-use resources~\cite{lineartypes,vault,sessiontypes}.
+\tool{} applies a lightweight form: producer/consumer handle distinction and
+domain annotations, not full substructural typing.
 
 \section{A Typed Model of Cross-Boundary Structure}
 \label{sec:model}
@@ -171,8 +171,7 @@ fn main() -> i32 {
 }
 \end{lstlisting}
 
-\textbf{Domains as attributes (representation coupling).} A function attribute
-assigns each function to an execution domain
+A function attribute assigns each function to an execution domain
 $d \in \{\textit{user}, \textit{ebpf}, \textit{helper}, \textit{kfunc}\}$.
 \code{@xdp}, \code{@tc}, and \code{@probe} mark eBPF entry points. So do
 \code{@tracepoint} and \code{@perf_event}. \code{@helper} marks kernel-shared
@@ -188,8 +187,7 @@ domain-aware: userspace can allocate and print freely, while eBPF code must
 obey stack and helper restrictions. struct\_ops callbacks fit the same scheme,
 with context and return types determined by the registered slot.
 
-\textbf{Maps as typed globals (representation coupling).} A map is a typed
-global, \code{var m : hash<K,V>(N)} or \code{array<K,V>(N)}, rather than a C
+A map is a typed global, \code{var m : hash<K,V>(N)} or \code{array<K,V>(N)}, rather than a C
 section plus separate userspace lookup code. The compiler checks element types
 at every access site on \emph{both} sides of the kernel boundary: an index
 \code{m[k]} requires \code{k:K} and yields \code{V}, in eBPF and userspace
@@ -198,8 +196,7 @@ undeclared map is a compile-time error. One declaration thus replaces
 kernel definitions, skeleton fields, and userspace lookups that otherwise must
 agree by hand.
 
-\textbf{Program lifecycle as typed handles (lifecycle coupling).} The most
-protocol-like cross-boundary invariant is lifecycle. \tool{} distinguishes a
+The most protocol-like cross-boundary invariant is lifecycle. \tool{} distinguishes a
 \code{FunctionRef} (a reference to an \code{@}-attributed function) from a
 \code{ProgramHandle} (a loaded program), and types the lifecycle builtins so
 that only \code{load} produces a \code{ProgramHandle}. The formation rule for
@@ -231,8 +228,7 @@ complete load-to-attach-to-detach protocol. It guarantees that lifecycle
 builtins receive values of the right kind, but not full path-sensitive
 properties such as use-after-detach, double-attach, or leaked handles.
 
-\textbf{From invariants to diagnostics.} The payoff is earlier, localized
-compiler errors in place of naming conventions or late verifier/attach
+The payoff is earlier, localized compiler errors in place of naming conventions or late verifier/attach
 failures. Section~\ref{sec:eval} measures whether those diagnostics fire;
 Section~\ref{sec:limits} explains the limits of that evidence.
 
@@ -249,8 +245,7 @@ present, \texttt{foo.mod.c}. The Makefile uses bpftool to dump
 skeleton, and gcc to link the userspace loader against libbpf (together with
 libelf and zlib).
 
-\textbf{From typing rules to code.} The compiler realizes each invariant of
-Section~\ref{sec:model} at a concrete point in this pipeline, which is why it
+The compiler realizes each invariant of Section~\ref{sec:model} at a concrete point in this pipeline, which is why it
 keeps \emph{separate modules} for maps, eBPF codegen, userspace codegen,
 kernel-module generation, safety checking, BTF parsing, dynptr bridging,
 tail-call analysis, and struct\_ops rather than acting as a thin preprocessor
@@ -286,8 +281,7 @@ __u32 key = ...; __u64 val;
 bpf_map_lookup_elem(counts_fd, &key, &val);
 \end{lstlisting}
 
-\textbf{Preserving the kernel toolchain.} The compiler does not replace the
-verifier, clang, bpftool, or libbpf, so it inherits BTF, skeleton generation,
+The compiler does not replace the verifier, clang, bpftool, or libbpf, so it inherits BTF, skeleton generation,
 and existing diagnostics, and any compatibility failure remains visible and
 measurable instead of being papered over. For interfaces that move faster than
 the DSL can stabilize, \code{include} and \code{extern} declarations provide an
@@ -301,31 +295,28 @@ cross-boundary invariant fire as a compile-time diagnostic? \emph{(Q2)} does
 one source generate a complete, buildable libbpf project? \emph{(Q3)} does
 generated code load, attach, and run on a real kernel?
 
-\textbf{Setup.} The evaluation runs on Linux \KSKernelVersion{} with clang 18,
+The evaluation runs on Linux \KSKernelVersion{} with clang 18,
 bpftool 7.7, and libbpf 1.3.0. SLOC counts use nonblank, noncomment lines,
 excluding generated \texttt{vmlinux.h} and skeleton headers. Timing numbers
 are local samples reported as sanity checks rather than performance claims.
 
 \subsection{Q1: The typed invariants fire}
 
-\textbf{Regression coverage.} The compiler test suite reports
-\KSTotalUnitSuites{} successful suites and \KSTotalUnitTests{} passing tests
+The compiler test suite reports \KSTotalUnitSuites{} successful suites and \KSTotalUnitTests{} passing tests
 with no failures, covering lexer/parser, type checking, maps and map
 assignment, userspace codegen, context-field typing, safety, ring buffers,
 perf-event attach, detach APIs, kfunc attributes, struct\_ops, and BTF
 parsing, indicating that the implementation covers the domain concepts it
 claims to encode rather than only a small example set.
 
-\textbf{Static rejection suite.} The central Q1 result is a suite of
-\KSStaticTotal{} targeted programs that exercises the diagnostics of
+The central Q1 result is a suite of \KSStaticTotal{} targeted programs that exercises the diagnostics of
 Section~\ref{sec:model} directly: one positive control plus
 \KSStaticExpectedFailures{} expected rejections covering lifecycle misuses,
 program-signature violations, map type errors, domain crossings, and safety
 violations. Each case carries an expected diagnostic substring, so incidental
 rejections do not count as passing. The suite shows that the invariants are implemented and stable.
 
-\textbf{Differential failure-stage probe.} To ask whether the checks fire
-\emph{earlier} than the stock toolchain on the same mistake, we construct
+To ask whether the checks fire \emph{earlier} than the stock toolchain on the same mistake, we construct
 \KSOrganicTotal{} hand-chosen worked cases, each a realistic mistake injected
 identically into a working XDP map-counter written in \tool{} and in matched
 hand-written C/eBPF, and record the earliest stage each toolchain rejects it
@@ -369,8 +360,7 @@ Oversized stack buffer & safety & \KSOrganicStackOverflowKS{} & \KSOrganicStackO
 
 \subsection{Q2: One source generates the project}
 
-\textbf{Buildability and centralization.} Nearly all examples compile and
-build: \KSKSCompileOK{} of \KSTotalExamples{} compile, and \KSMakeOK{} produce
+Nearly all examples compile and build: \KSKSCompileOK{} of \KSTotalExamples{} compile, and \KSMakeOK{} produce
 working libbpf projects. The single compile-time rejection is
 \texttt{safety\_demo.ks}, where safety analysis detects 608 bytes of stack use
 (above the 512-byte eBPF limit) and halts before codegen, a verifier-relevant
@@ -415,8 +405,8 @@ User & \KSFeatUserspaceAttempt{} & \KSFeatUserspaceKS{} & \KSFeatUserspaceBuild{
 \end{tabular}
 \end{table}
 
-\textbf{External validation.} We hand-ported \KSExternalPortWorkloads{}
-\texttt{xdp-tutorial} XDP programs to \tool{}. The ports total
+We hand-ported \KSExternalPortWorkloads{} \texttt{xdp-tutorial} XDP programs
+to \tool{}. The ports total
 \KSExternalPortKSSloc{} lines while the original C/eBPF bodies total
 \KSExternalPortCSloc{} lines, showing that \tool{} handles external code at
 comparable line counts. A source-only scan of \KSExternalCorpusRepos{} public
@@ -452,15 +442,15 @@ map-creation failure, a missing kfunc symbol, and an object with no program
 section. For XDP, \KSAttachOK{} of \KSAttachEligible{} objects attach and
 detach cleanly; the workloads below exercise TC and struct\_ops.
 
-\textbf{Runtime sanity.} Beyond load and attach, matched workloads confirm the
-generated objects \emph{run}. Under \code{BPF_PROG_TEST_RUN}, a minimal
+Beyond load and attach, matched workloads confirm the generated objects
+\emph{run}. Under \code{BPF_PROG_TEST_RUN}, a minimal
 generated XDP pass program matches its hand-written baseline in instruction
 count and latency. Over \KSTrafficTrials{} veth/iperf3 trials, generated and
 hand-written XDP pass programs deliver comparable throughput, and matched TC
 programs pass traffic as well.
 
-\textbf{Where the toolchain leaks through.} Preserving the kernel toolchain
-means \tool{} also inherits its compatibility coupling. The two struct\_ops
+Preserving the kernel toolchain means \tool{} also inherits its compatibility
+coupling. The two struct\_ops
 build failures are not parser or type errors: both compile to valid eBPF
 objects but fail because the bpftool-generated skeleton references a libbpf
 field absent from the installed headers. This is a mismatched-toolchain pairing,
@@ -485,16 +475,15 @@ but they show that generated builds depend on toolchain alignment.
 
 \section{Related Work}
 
-\textbf{DSLs.} Compiling one typed description into a split low-level
-implementation has precedent: P4 compiles a protocol-independent program into
-target parser and match-action pipelines~\cite{p4}, and Click composes packet
-processing from typed elements~\cite{click}. Unlike a P4 pipeline, an eBPF
-application must also generate its userspace coordinator and survive a late
-general-purpose verifier~\cite{xdp,ebpfsurvey,linux-ebpf}. BeePL uses CompCert
-to generate verified BPF bytecode~\cite{beepl}; Jitk and Serval verify JIT
-correctness~\cite{jitk,serval}. These target formal proofs of bytecode or JIT;
-\tool{} instead types the cross-boundary application structure within the
-existing unverified toolchain.
+Compiling a typed source into low-level code has precedent in dataplane DSLs:
+P4 targets hardware pipelines~\cite{p4} and Click composes packet-processing
+elements~\cite{click}, but both operate in a single execution domain.
+Verified eBPF projects take a different direction: BeePL generates formally
+verified bytecode via CompCert~\cite{beepl}, while Jitk and Serval prove JIT
+correctness~\cite{jitk,serval}. \tool{} occupies a middle ground. It generates
+code for two domains (kernel and userspace) and types the cross-boundary
+relationships between them, but targets practical integration with the
+existing clang/bpftool/libbpf toolchain rather than formal verification.
 
 \section{Conclusion}
 
