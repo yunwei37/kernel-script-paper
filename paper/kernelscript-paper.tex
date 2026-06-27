@@ -33,7 +33,7 @@
 
 \title{\tool: Compiler-Checked Cross-Boundary Types for eBPF Applications}
 % Replace TBD with the actual submission-system paper ID before submitting.
-\author{Paper ID: TBD}
+\author{Paper ID: 29}
 \renewcommand{\shortauthors}{Paper ID: TBD}
 
 \begin{abstract}
@@ -511,8 +511,7 @@ Isolated XDP attach/detach & \KSAttachEligible{} & \KSAttachOK{} \\
 \end{tabular}
 \end{table}
 
-The verifier matrix script loads generated objects with
-\code{bpftool prog loadall}. It counts success only when bpftool returns
+The verifier matrix script loads generated object\code{bpftool prog loadall}. It counts success only when bpftool returns
 success \emph{and} at least one BPF program is pinned, avoiding false
 positives from empty sections. Of the \KSVerifierBuildObjects{} objects from
 fully built projects, \KSVerifierBuildLoadOK{} verifier-load
