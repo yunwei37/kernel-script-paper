@@ -43,8 +43,8 @@ processing, tracing, and security policies, but its programming model is
 fragmented. A single application spans kernel code, a userspace loader, and
 shared maps, yet the relationships among them (types, lifecycle ordering,
 shared state) are checked only at load time or not at all, leading to late,
-hard-to-diagnose failures. We observe that these cross-boundary relationships 
-are duplicated concepts a type system can unify. We present \tool{}, a 
+hard-to-diagnose failures. We observe that these cross-boundary relationships
+are duplicated concepts that a type system can unify. We present \tool{}, a 
 DSL that types maps, program handles, and
 execution domains in one source, then lowers to standard C through the
 clang/bpftool/libbpf toolchain. The compiler detects mismatches, such as wrong
@@ -84,7 +84,8 @@ late as cryptic verifier rejections or silent mismatches.
 Existing tools reduce boilerplate yet leave cross-boundary relationships
 implicit. The standard eBPF development workflow requires hand-written kernel C,
 userspace C, and a Makefile~\cite{libbpf}. Aya compiles both sides from Rust
-and shares typed maps~\cite{aya,cilium-ebpf}, though lifecycle ordering remains
+and shares typed maps~\cite{aya}; cilium/ebpf does similarly in
+Go~\cite{cilium-ebpf}. In both, lifecycle ordering remains
 a runtime property. bpftrace targets tracing with higher-level
 abstractions~\cite{bpftrace}, not general eBPF applications. No existing tool
 types the full cross-boundary structure at compile time.
@@ -217,7 +218,7 @@ userspace function cannot be passed to \code{load}.
 \frac{\Gamma \vdash h : \texttt{ProgramHandle}}
      {\Gamma \vdash \texttt{attach}(h, t, \mathit{fl}) : \texttt{u32}}
 \end{gather*}
-Because \code{attach} and \code{detach} consume a \code{ProgramHandle} and only
+Because \code{attach} and \code{detach} require a \code{ProgramHandle} and only
 \code{load} produces one, ``attach before load'' is a \emph{type} error, not a
 runtime failure. Passing a bare \code{FunctionRef}, an integer, or a string to
 a lifecycle builtin does not type-check. The typing rules enforce a
@@ -321,11 +322,11 @@ program-signature violations, map type errors, domain crossings, and safety
 violations. Each case carries an expected diagnostic substring, so incidental
 rejections do not count as passing. The suite shows that the invariants are implemented and stable.
 
-To ask whether the checks trigger \emph{earlier} than the stock toolchain on the same mistake, we construct
-\KSOrganicTotal{} hand-chosen test cases, each a realistic mistake injected
-identically into a working XDP map-counter written in \tool{} and in matched
-hand-written C/eBPF, and record the earliest stage each toolchain rejects it
-along a shared ladder
+To ask whether the checks trigger \emph{earlier} than the stock toolchain on
+the same mistake, we construct \KSOrganicTotal{} hand-chosen test cases. Each
+injects a realistic mistake identically into a working XDP map-counter written
+in \tool{} and in matched hand-written C/eBPF. We record the earliest stage
+each toolchain rejects it along a shared ladder
 (compile $<$ build $<$ verifier $<$ attach $<$ runtime $<$ undetected).
 Table~\ref{tab:organic} reports the outcome. \tool{} rejects all
 \KSOrganicTotal{} at compile time. The decisive case is the cross-boundary one:
@@ -579,8 +580,9 @@ The differential probe injects only \KSOrganicTotal{} hand-chosen mistakes;
 a stronger study would mine real eBPF bugs from revision histories.
 Lifecycle typing enforces a producer/consumer handle distinction but not
 full typestate, so use-after-detach and leaked handles are not statically
-ruled out. The corpus is author-written; the external port shows the
-line-count advantage does not transfer unchanged. The change-amplification
+ruled out. The corpus is author-written; the external port shows that
+line-count savings vary when porting existing code rather than writing from
+scratch. The change-amplification
 study uses small checked-in micro-edits rather than real revision histories,
 so it measures maintenance-surface coupling rather than true developer time or
 debugging effort. Traffic numbers are local
@@ -617,8 +619,8 @@ triggers a compile-time diagnostic, that one source generates buildable libbpf
 projects, and that generated objects load, attach, and pass traffic on a real
 kernel. The result is a concrete design point: typing eBPF's cross-boundary
 structure is feasible, and because the compiler lowers through the stock
-toolchain, both what the type system provides and the version-skew limits it cannot
-absorb stay visible and measurable.
+toolchain, both what the type system provides and the version-skew limits that
+source unification cannot absorb stay visible and measurable.
 
 \newpage
 \bibliographystyle{ACM-Reference-Format}
