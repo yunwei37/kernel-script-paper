@@ -300,7 +300,8 @@ declarations.
 
 The evaluation answers three questions: \emph{(Q1)} does each typed
 cross-boundary invariant trigger a compile-time diagnostic? \emph{(Q2)} does
-one source generate a complete, buildable libbpf project? \emph{(Q3)} does
+one source generate a complete, buildable libbpf project, and does unifying it
+reduce code footprint and change amplification? \emph{(Q3)} does
 generated code load, attach, and run on a real kernel? All experiments run on
 Linux \KSKernelVersion{} with clang 18, bpftool 7.7, and libbpf 1.3.0. We
 report SLOC counts as nonblank, noncomment lines, excluding generated headers.
@@ -471,10 +472,11 @@ stages that add progressively richer cross-boundary structure: pass-only XDP,
 then a counter map, then ring-buffer reporting, and finally a separate
 struct\_ops callback workload included as a higher-complexity cross-domain
 reference point rather than as the next step of the same program. The external
-\texttt{xdp-tutorial} ports provide supporting evidence for the first two XDP
-stages only: the pinned \texttt{basic01-xdp-pass} to
-\texttt{basic03-map-counter} pair totals \KSExternalPortKSSloc{} KernelScript
-lines and \KSExternalPortCSloc{} original kernel-C lines. Table~\ref{tab:evolution}
+\texttt{xdp-tutorial} ports provide supporting evidence for the early XDP
+stages only: the \KSExternalPortWorkloads{} pinned programs
+\texttt{basic01-xdp-pass} through \texttt{basic03-map-counter} total
+\KSExternalPortKSSloc{} KernelScript lines and \KSExternalPortCSloc{} original
+kernel-C lines. Table~\ref{tab:evolution}
 itself reports a local matched comparison. Within the XDP progression,
 \tool{} grows by \KSEvolutionPassToCountKSDelta{} and
 \KSEvolutionCountToRingbufKSDelta{} lines, while the matched C/libbpf baseline
