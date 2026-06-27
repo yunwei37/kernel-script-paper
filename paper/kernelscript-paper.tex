@@ -37,19 +37,19 @@
 \renewcommand{\shortauthors}{Paper ID: TBD}
 
 \begin{abstract}
-A realistic eBPF application spans several coupled artifacts: a
-verifier-constrained kernel program, a userspace loader, shared maps, and
-generated skeletons. The relationships among them (which program a handle
-refers to, a map's key and value types, the load-to-attach-to-detach order)
-today rely on naming conventions that surface errors only at verifier-load or
-attach time. \tool{} lifts these relationships into the type
-system. Typed maps, program-lifecycle handles, and execution domains turn
-cross-boundary mismatches into compile-time diagnostics while the compiler
-still lowers to ordinary C through the stock clang/bpftool/libbpf toolchain.
-\KSStaticExpectedFailures{} intentionally invalid programs confirm that each
-invariant fires; generated projects load, attach, and pass traffic on a real
-kernel. The result is a concrete design point showing that eBPF's
-cross-boundary structure can be typed while preserving the kernel toolchain.
+eBPF has become the standard mechanism for extending Linux with custom packet
+processing, tracing, and security policies, but its programming model is
+fragmented. A single application spans kernel code, a userspace loader, and
+shared maps; the relationships among them (types, lifecycle ordering, shared
+state) are checked only at load time or not at all, leading to late,
+hard-to-diagnose failures. We observe that these cross-boundary relationships 
+are duplicated concepts a type system can unify. We present \tool{}, a 
+DSL that types maps, program handles, and
+execution domains in one source, then lowers to standard C through the
+clang/bpftool/libbpf toolchain. The compiler catches mismatches, such as wrong
+context types or misordered lifecycle calls, before code generation. Generated
+projects load, attach, and pass traffic on a real kernel, showing that eBPF's
+cross-boundary structure can be typed while preserving the existing toolchain.
 \end{abstract}
 
 \ccsdesc[500]{Software and its engineering~Domain specific languages}
