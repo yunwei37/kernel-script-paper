@@ -133,6 +133,7 @@ def main() -> int:
     sched_ext_verifier = load_json("sched_ext_verifier_summary.json")
     sched_ext_attach = load_json("sched_ext_attach_summary.json")
     source_footprint = load_json("source_footprint_summary.json")
+    change_amplification = load_json("change_amplification_summary.json")
     external_corpus = load_json("external_corpus_summary.json")
     external_port = load_json("external_port_summary.json")
     organic = load_json("organic_mistakes_summary.json")
@@ -179,6 +180,8 @@ def main() -> int:
         raise SystemExit("sched_ext attach workload did not complete successfully")
     if source_footprint.get("status") != "ok":
         raise SystemExit("source-footprint proxy did not complete successfully")
+    if change_amplification.get("status") != "ok":
+        raise SystemExit("change-amplification study did not complete successfully")
     if external_corpus.get("status") != "ok":
         raise SystemExit("external corpus scan did not complete successfully")
     external_audit = external_corpus.get("classifier_audit", {})
@@ -232,6 +235,42 @@ def main() -> int:
         "KSSourceFootprintUniqueObjectRatio",
         f"{(source_footprint_unique['c_ebpf_sloc'] / source_footprint_unique['ks_sloc']):.2f}x",
     )
+    change_rows = {
+        (row["case"], row["implementation"]): row
+        for row in change_amplification["rows"]
+    }
+    change_agg_ks = change_amplification["aggregate"]["kernelscript"]
+    change_agg_c = change_amplification["aggregate"]["c_libbpf"]
+    content += macro("KSChangeAmpCases", change_amplification["case_count"])
+    content += macro("KSChangeAmpMedianFilesKS", change_agg_ks["median_changed_files"])
+    content += macro("KSChangeAmpMedianFilesC", change_agg_c["median_changed_files"])
+    content += macro("KSChangeAmpMedianSitesKS", change_agg_ks["median_edit_sites"])
+    content += macro("KSChangeAmpMedianSitesC", change_agg_c["median_edit_sites"])
+    content += macro("KSChangeAmpMedianLocKS", change_agg_ks["median_changed_loc"])
+    content += macro("KSChangeAmpMedianLocC", change_agg_c["median_changed_loc"])
+    content += macro("KSChangeAmpKernelSyncCasesKS", change_agg_ks["kernel_sync_cases"])
+    content += macro("KSChangeAmpKernelSyncCasesC", change_agg_c["kernel_sync_cases"])
+    content += macro("KSChangeAmpUserspaceSyncCasesKS", change_agg_ks["userspace_sync_cases"])
+    content += macro("KSChangeAmpUserspaceSyncCasesC", change_agg_c["userspace_sync_cases"])
+    content += macro("KSChangeAmpSkeletonSyncCasesKS", change_agg_ks["skeleton_sync_cases"])
+    content += macro("KSChangeAmpSkeletonSyncCasesC", change_agg_c["skeleton_sync_cases"])
+    change_case_labels = {
+        "map_type_percpu_array": "MapType",
+        "program_xdp_to_tc": "ProgType",
+        "attach_target_symbol": "AttachTarget",
+        "userspace_ringbuf_consumer": "Userspace",
+    }
+    for case_name, label in change_case_labels.items():
+        ks_row = change_rows[(case_name, "kernelscript")]
+        c_row = change_rows[(case_name, "c_libbpf")]
+        content += macro(f"KSChangeAmp{label}FilesKS", ks_row["changed_files"])
+        content += macro(f"KSChangeAmp{label}FilesC", c_row["changed_files"])
+        content += macro(f"KSChangeAmp{label}SitesKS", ks_row["edit_sites"])
+        content += macro(f"KSChangeAmp{label}SitesC", c_row["edit_sites"])
+        content += macro(f"KSChangeAmp{label}LocKS", ks_row["changed_loc"])
+        content += macro(f"KSChangeAmp{label}LocC", c_row["changed_loc"])
+        content += macro(f"KSChangeAmp{label}SyncKS", ks_row["sync_surface_label"])
+        content += macro(f"KSChangeAmp{label}SyncC", c_row["sync_surface_label"])
     external_features = external_corpus["feature_file_counts"]
     external_roles = external_corpus["roles"]
     external_sloc_by_role = external_corpus["sloc_by_role"]
@@ -293,6 +332,35 @@ def main() -> int:
         "KSExternalPortMapRatio",
         f"{external_port_comparison['basic03_map_counter']['ks_over_external_c_ratio']:.2f}x",
     )
+    source_rows = {row["name"]: row for row in source_footprint["rows"]}
+    evo_pass = source_rows["xdp_pass"]
+    evo_count = source_rows["xdp_count"]
+    evo_ringbuf = source_rows["ringbuf_emit"]
+    evo_struct_ops = source_rows["struct_ops_callback_flags"]
+    content += macro("KSEvolutionPassKSSloc", evo_pass["ks_sloc"])
+    content += macro("KSEvolutionPassCEbpfSloc", evo_pass["c_ebpf_sloc"])
+    content += macro("KSEvolutionPassCUserSloc", evo_pass["c_user_sloc"])
+    content += macro("KSEvolutionPassCTotalSloc", evo_pass["c_total_sloc"])
+    content += macro("KSEvolutionCountKSSloc", evo_count["ks_sloc"])
+    content += macro("KSEvolutionCountCEbpfSloc", evo_count["c_ebpf_sloc"])
+    content += macro("KSEvolutionCountCUserSloc", evo_count["c_user_sloc"])
+    content += macro("KSEvolutionCountCTotalSloc", evo_count["c_total_sloc"])
+    content += macro("KSEvolutionRingbufKSSloc", evo_ringbuf["ks_sloc"])
+    content += macro("KSEvolutionRingbufCEbpfSloc", evo_ringbuf["c_ebpf_sloc"])
+    content += macro("KSEvolutionRingbufCUserSloc", evo_ringbuf["c_user_sloc"])
+    content += macro("KSEvolutionRingbufCTotalSloc", evo_ringbuf["c_total_sloc"])
+    content += macro("KSEvolutionStructOpsKSSloc", evo_struct_ops["ks_sloc"])
+    content += macro("KSEvolutionStructOpsCEbpfSloc", evo_struct_ops["c_ebpf_sloc"])
+    content += macro("KSEvolutionStructOpsCUserSloc", evo_struct_ops["c_user_sloc"])
+    content += macro("KSEvolutionStructOpsCTotalSloc", evo_struct_ops["c_total_sloc"])
+    content += macro("KSEvolutionPassToCountKSDelta", evo_count["ks_sloc"] - evo_pass["ks_sloc"])
+    content += macro("KSEvolutionPassToCountCDelta", evo_count["c_total_sloc"] - evo_pass["c_total_sloc"])
+    content += macro("KSEvolutionCountToRingbufKSDelta", evo_ringbuf["ks_sloc"] - evo_count["ks_sloc"])
+    content += macro("KSEvolutionCountToRingbufCDelta", evo_ringbuf["c_total_sloc"] - evo_count["c_total_sloc"])
+    content += macro("KSEvolutionRingbufToStructOpsKSDelta", evo_struct_ops["ks_sloc"] - evo_ringbuf["ks_sloc"])
+    content += macro("KSEvolutionRingbufToStructOpsCDelta", evo_struct_ops["c_total_sloc"] - evo_ringbuf["c_total_sloc"])
+    content += macro("KSEvolutionRingbufRatio", f"{(evo_ringbuf['c_total_sloc'] / evo_ringbuf['ks_sloc']):.1f}x")
+    content += macro("KSEvolutionStructOpsRatio", f"{(evo_struct_ops['c_total_sloc'] / evo_struct_ops['ks_sloc']):.1f}x")
     organic_rows = {row["name"]: row for row in organic["rows"]}
     organic_stage_label = {
         "compile_reject": "compile reject",
@@ -335,6 +403,26 @@ def main() -> int:
     content += macro("KSStaticPerfEventGroup", static_categories.get("perf_event_group", 0))
     content += macro("KSStaticRingbuf", static_categories.get("ringbuf_api", 0))
     content += macro("KSStaticSafety", static_categories.get("safety_analysis", 0))
+    content += macro(
+        "KSBugClassCrossBoundary",
+        static_categories.get("program_signature", 0)
+        + static_categories.get("map_type", 0)
+        + static_categories.get("type_system", 0)
+        + static_categories.get("ringbuf_api", 0),
+    )
+    content += macro("KSBugClassLifecycle", static_categories.get("lifecycle_api", 0))
+    content += macro(
+        "KSBugClassAttachConfig",
+        static_categories.get("config_boundary", 0)
+        + static_categories.get("perf_event_group", 0),
+    )
+    content += macro(
+        "KSBugClassHelperDomain",
+        static_categories.get("helper_scope", 0)
+        + static_categories.get("kernel_context", 0)
+        + static_categories.get("symbol_validation", 0),
+    )
+    content += macro("KSBugClassSafetyBound", static_categories.get("safety_analysis", 0))
     content += macro("KSVerifierTotalObjects", verifier["total_objects"])
     content += macro("KSVerifierLoadOK", verifier["load_ok"])
     content += macro("KSVerifierLoadFailed", verifier["load_failed"])

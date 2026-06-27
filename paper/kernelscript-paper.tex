@@ -312,13 +312,12 @@ The compiler test suite contains \KSTotalUnitSuites{} suites and
 \KSTotalUnitTests{} tests with no failures, covering all major subsystems from
 lexer to code generation.
 
-The central Q1 result is a static rejection suite of \KSStaticTotal{} targeted
-programs that exercises the diagnostics of Section~\ref{sec:model} directly.
-The suite includes one positive control plus \KSStaticExpectedFailures{}
-expected rejections covering lifecycle misuses, program-signature violations,
-map type errors, domain crossings, and safety violations. Each case carries an
-expected diagnostic substring, ensuring that incidental rejections do not
-count as passing and that the invariants are implemented and stable.
+The central Q1 result is a suite of \KSStaticTotal{} targeted programs that exercises the diagnostics of
+Section~\ref{sec:model} directly: one positive control plus
+\KSStaticExpectedFailures{} expected rejections covering lifecycle misuses,
+program-signature violations, map type errors, domain crossings, and safety
+violations. Each case carries an expected diagnostic substring, so incidental
+rejections do not count as passing. The suite shows that the invariants are implemented and stable.
 
 To ask whether the checks trigger \emph{earlier} than the stock toolchain on the same mistake, we construct
 \KSOrganicTotal{} hand-chosen test cases, each a realistic mistake injected
@@ -328,19 +327,26 @@ along a shared ladder
 (compile $<$ build $<$ verifier $<$ attach $<$ runtime $<$ undetected).
 Table~\ref{tab:organic} reports the outcome. \tool{} rejects all
 \KSOrganicTotal{} at compile time. The decisive case is the cross-boundary one:
-an \texttt{@xdp} entry point given a \texttt{*\_\_sk\_buff} context instead of
-\texttt{*xdp\_md}. In C the program compiles and the verifier passes it, so the
-mistake propagates to a silently wrong load. The other \KSOrganicTie{} mistakes
-match because clang already detects them locally. The result is
-\KSOrganicKSEarlier{} earlier and \KSOrganicTie{} tied: the type system
-addresses the cross-boundary relation that local C checking cannot detect.
-Section~\ref{sec:limits} explains the limits of this small, author-injected set.
+an \texttt{@xdp} entry point handed a \texttt{*\_\_sk\_buff} context instead of
+\texttt{*xdp\_md}. \tool{} rejects it from the program-signature rule of
+Section~\ref{sec:model}. In C the program compiles, and because its body never
+dereferences the context the verifier has no invalid access to flag, so the
+mistake survives to a silently wrong load. The matched bodies deliberately touch
+only a map, not a context field; one that did read a context field could instead
+trip the verifier on an out-of-range access, but still would not be reported as
+the context-type confusion it is. The
+other \KSOrganicTie{} mistakes tie because clang already catches them locally:
+an undeclared map, a string stored into a \texttt{u64} value, and an oversized
+stack buffer. The result is therefore \KSOrganicKSEarlier{} earlier and
+\KSOrganicTie{} tied: typing helps precisely on the cross-boundary relation that
+local C checking cannot see. Section~\ref{sec:limits} explains the limits of
+this small, author-injected set.
 
 \begin{table}[!tb]
 \centering
 \caption{Differential failure-stage probe: earliest stage each toolchain
-detects the same injected mistake. \tool{} is strictly earlier only on the
-cross-boundary context-type mistake; the rest match because clang detects them.}
+catches the same injected mistake. \tool{} is strictly earlier only on the
+cross-boundary context-type mistake; the rest are ties clang already catches.}
 \label{tab:organic}
 \footnotesize
 \begin{tabular}{@{}>{\raggedright\arraybackslash}p{0.24\columnwidth}>{\raggedright\arraybackslash}p{0.24\columnwidth}>{\centering\arraybackslash}p{0.14\columnwidth}>{\centering\arraybackslash}p{0.18\columnwidth}@{}}
@@ -406,6 +412,102 @@ comparable line counts. A source-only scan of \KSExternalCorpusRepos{} public
 eBPF repositories confirms that the program classes we target appear in real
 code.
 
+\textbf{Change amplification.} Source-footprint totals show how much code a
+finished workload occupies; they do not show how many places a small
+requirement change touches. To measure that coupling directly, we construct
+\KSChangeAmpCases{} matched micro-edits and compare the diff size of one
+\tool{} source against a hand-written C/libbpf split. The edits are the ones
+the typed unified source is meant to centralize: changing a map from
+\code{array} to \code{percpu_array}, changing a program from \code{@xdp} to
+\code{@tc}, changing the
+attach target symbol, and adding ringbuf reporting plus userspace handling.
+Table~\ref{tab:change-amp} reports modified file count, edit-site count,
+changed LOC, and whether the author must manually keep kernel code,
+userspace code, or skeleton/section conventions in sync. Across the
+\KSChangeAmpCases{} edits, \tool{} has medians of
+\KSChangeAmpMedianFilesKS{} modified file, \KSChangeAmpMedianSitesKS{} edit
+sites, and \KSChangeAmpMedianLocKS{} changed lines; the matched C/libbpf
+versions have medians of \KSChangeAmpMedianFilesC{},
+\KSChangeAmpMedianSitesC{}, and \KSChangeAmpMedianLocC{}. More importantly,
+none of the \tool{} edits require manual cross-boundary synchronization,
+whereas hand-written C/libbpf requires userspace synchronization in
+\KSChangeAmpUserspaceSyncCasesC{}/\KSChangeAmpCases{} cases, kernel-side
+synchronization in \KSChangeAmpKernelSyncCasesC{}/\KSChangeAmpCases{}, and
+skeleton or section-convention synchronization in
+\KSChangeAmpSkeletonSyncCasesC{}/\KSChangeAmpCases{}. This is the direct evidence
+that ``one typed source'' reduces change amplification rather than only total
+lines.
+
+\begin{table}[!tb]
+\centering
+\caption{Change amplification for four matched micro-edits. ``Sync'' reports
+which manually synchronized surfaces change: kernel (K), userspace (U), or
+skeleton/section conventions (S).}
+\label{tab:change-amp}
+\footnotesize
+\setlength{\tabcolsep}{4pt}
+\renewcommand{\arraystretch}{0.95}
+\begin{tabular}{@{}>{\raggedright\arraybackslash}p{0.31\columnwidth}ccccc@{}}
+\toprule
+Edit & Impl. & Files & Sites & LOC & Sync \\
+\midrule
+\shortstack[l]{Map \\ \code{array}$\rightarrow$\code{percpu_array}} & KS & \KSChangeAmpMapTypeFilesKS{} & \KSChangeAmpMapTypeSitesKS{} & \KSChangeAmpMapTypeLocKS{} & \KSChangeAmpMapTypeSyncKS{} \\
+ & C & \KSChangeAmpMapTypeFilesC{} & \KSChangeAmpMapTypeSitesC{} & \KSChangeAmpMapTypeLocC{} & \KSChangeAmpMapTypeSyncC{} \\
+\addlinespace[2pt]
+\shortstack[l]{Program \\ \code{@xdp}$\rightarrow$\code{@tc}} & KS & \KSChangeAmpProgTypeFilesKS{} & \KSChangeAmpProgTypeSitesKS{} & \KSChangeAmpProgTypeLocKS{} & \KSChangeAmpProgTypeSyncKS{} \\
+ & C & \KSChangeAmpProgTypeFilesC{} & \KSChangeAmpProgTypeSitesC{} & \KSChangeAmpProgTypeLocC{} & \KSChangeAmpProgTypeSyncC{} \\
+\addlinespace[2pt]
+\shortstack[l]{Attach target \\ symbol} & KS & \KSChangeAmpAttachTargetFilesKS{} & \KSChangeAmpAttachTargetSitesKS{} & \KSChangeAmpAttachTargetLocKS{} & \KSChangeAmpAttachTargetSyncKS{} \\
+ & C & \KSChangeAmpAttachTargetFilesC{} & \KSChangeAmpAttachTargetSitesC{} & \KSChangeAmpAttachTargetLocC{} & \KSChangeAmpAttachTargetSyncC{} \\
+\addlinespace[2pt]
+\shortstack[l]{Add ringbuf \\ reporting/handling} & KS & \KSChangeAmpUserspaceFilesKS{} & \KSChangeAmpUserspaceSitesKS{} & \KSChangeAmpUserspaceLocKS{} & \KSChangeAmpUserspaceSyncKS{} \\
+ & C & \KSChangeAmpUserspaceFilesC{} & \KSChangeAmpUserspaceSitesC{} & \KSChangeAmpUserspaceLocC{} & \KSChangeAmpUserspaceSyncC{} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Staged cross-boundary growth.} Table~\ref{tab:evolution} compares four
+stages that add progressively richer cross-boundary structure: pass-only XDP,
+then a counter map, then ring-buffer reporting, and finally a separate
+struct\_ops callback workload included as a higher-complexity cross-domain
+reference point rather than as the next step of the same program. The external
+\texttt{xdp-tutorial} ports provide supporting evidence for the first two XDP
+stages only: the pinned \texttt{basic01-xdp-pass} to
+\texttt{basic03-map-counter} pair totals \KSExternalPortKSSloc{} KernelScript
+lines and \KSExternalPortCSloc{} original kernel-C lines. Table~\ref{tab:evolution}
+itself reports a local matched comparison. Within the XDP progression,
+\tool{} grows by \KSEvolutionPassToCountKSDelta{} and
+\KSEvolutionCountToRingbufKSDelta{} lines, while the matched C/libbpf baseline
+grows by \KSEvolutionPassToCountCDelta{} and
+\KSEvolutionCountToRingbufCDelta{}. The separate struct\_ops reference point
+adds \KSEvolutionRingbufToStructOpsKSDelta{} lines on the \tool{} side and
+\KSEvolutionRingbufToStructOpsCDelta{} in the matched C/libbpf baseline. By
+the reporting stage the maintained baseline is \KSEvolutionRingbufRatio{} the
+\tool{} source size, and the struct\_ops reference point reaches
+\KSEvolutionStructOpsRatio{}. The abstraction-fit result is therefore limited
+but direct: within one XDP family and again at a more complex cross-domain
+reference point, the DSL mostly extends one file, while C/libbpf accumulates
+more coordination code and userspace surface.
+
+\begin{table}[!tb]
+\centering
+\caption{Staged cross-boundary growth: maintained source footprint for a local
+matched XDP progression plus a separate struct\_ops reference point. C totals
+include hand-written userspace when the feature requires it.}
+\label{tab:evolution}
+\footnotesize
+\begin{tabular}{@{}lrrrr@{}}
+\toprule
+Stage & KS & C eBPF & C user & C total \\
+\midrule
+Pass-only XDP & \KSEvolutionPassKSSloc{} & \KSEvolutionPassCEbpfSloc{} & \KSEvolutionPassCUserSloc{} & \KSEvolutionPassCTotalSloc{} \\
+Add counter map & \KSEvolutionCountKSSloc{} & \KSEvolutionCountCEbpfSloc{} & \KSEvolutionCountCUserSloc{} & \KSEvolutionCountCTotalSloc{} \\
+Add ringbuf reporting & \KSEvolutionRingbufKSSloc{} & \KSEvolutionRingbufCEbpfSloc{} & \KSEvolutionRingbufCUserSloc{} & \KSEvolutionRingbufCTotalSloc{} \\
+Shift to struct\_ops callbacks & \KSEvolutionStructOpsKSSloc{} & \KSEvolutionStructOpsCEbpfSloc{} & \KSEvolutionStructOpsCUserSloc{} & \KSEvolutionStructOpsCTotalSloc{} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
 \subsection{Q3: Runtime Validation}
 
 We test a progression of increasingly stringent checks: build success, kernel
@@ -456,15 +558,18 @@ that source unification does not eliminate.
 \section{Limitations}
 \label{sec:limits}
 
-The differential probe injects only \KSOrganicTotal{} hand-chosen mistakes.
-A stronger study would mine real eBPF bugs from revision histories.
-Lifecycle typing enforces a producer/consumer handle distinction, not full
-typestate, so use-after-detach and leaked handles are not statically ruled
-out. The corpus is author-written, and the external port shows that the
-line-count advantage does not transfer unchanged. Traffic numbers are local
-sanity checks, not performance claims. Finally, the struct\_ops build failures
-reflect bpftool/libbpf version skew, not a deep limitation, though they show
-that generated builds depend on toolchain alignment.
+The differential probe injects only \KSOrganicTotal{} hand-chosen mistakes;
+a stronger study would mine real eBPF bugs from revision histories.
+Lifecycle typing enforces a producer/consumer handle distinction but not
+full typestate, so use-after-detach and leaked handles are not statically
+ruled out. The corpus is author-written; the external port shows the
+line-count advantage does not transfer unchanged. The change-amplification
+study uses small checked-in micro-edits rather than real revision histories,
+so it measures maintenance-surface coupling rather than true developer time or
+debugging effort. Traffic numbers are local
+sanity checks, not performance claims. Finally, the struct\_ops build
+failures reflect bpftool/libbpf version skew rather than a deep limitation,
+but they show that generated builds depend on toolchain alignment.
 
 \section{Related Work}
 

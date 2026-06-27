@@ -18,7 +18,7 @@ general runtime-equivalence or production-deployment claim.
 | Check | Evidence | Result |
 |---|---|---|
 | Required result files exist | Python audit over `results/*.json` inputs used by `experiments/update_paper_numbers.py` | pass |
-| Required status fields are clean | `smoke`, `microbench`, `source_footprint`, `external_corpus`, `external_port`, `static`, `lowering`, `compiler_patch`, `verifier`, `attach`, `xdp_traffic`, `tc_traffic`, `traffic_stress`, `perf_event_loader`, `perf_event_counter`, `ringbuf`, `struct_ops`, `struct_ops_workload`, `struct_ops_callback_workload`, `struct_ops_skeleton_repair`, `sched_ext_verifier`, and `sched_ext_attach` summaries all report `ok` | pass |
+| Required status fields are clean | `smoke`, `microbench`, `source_footprint`, `change_amplification`, `external_corpus`, `external_port`, `static`, `lowering`, `compiler_patch`, `verifier`, `attach`, `xdp_traffic`, `tc_traffic`, `traffic_stress`, `perf_event_loader`, `perf_event_counter`, `ringbuf`, `struct_ops`, `struct_ops_workload`, `struct_ops_callback_workload`, `struct_ops_skeleton_repair`, `sched_ext_verifier`, and `sched_ext_attach` summaries all report `ok` | pass |
 | Example corpus present | `results/examples_summary.json` contains 44 rows | pass |
 | Paper macro coverage | Parsed `paper/kernelscript-paper.tex` and `results/paper_numbers.tex`: all used `KS...` macros are defined | pass |
 | Paper-number reproducibility | `./experiments/update_paper_numbers.py && git diff --exit-code -- results/paper_numbers.tex` | pass |
@@ -36,6 +36,7 @@ The audit checked these paper-number inputs:
 - `results/evaluation_summary.json`
 - `results/examples_summary.json`
 - `results/source_footprint_summary.json`
+- `results/change_amplification_summary.json`
 - `results/external_corpus_summary.json`
 - `results/external_corpus_audit.csv`
 - `results/external_port_summary.json`
@@ -75,6 +76,10 @@ build completes from those macros.
   listed in `results/source_footprint_summary.json`; generated C, generated
   Makefiles, generated `vmlinux.h`, skeleton headers, KernelScript library
   headers, and Python experiment harnesses are excluded.
+- Change-amplification results use checked-in before/after KernelScript and
+  hand-written C/libbpf fixtures, compute file-level diff hunks as edit sites,
+  count added plus deleted lines as changed LOC, and record whether each edit
+  requires manual kernel, userspace, or skeleton/section synchronization.
 - External source-corpus results clone pinned public repository commits and scan
   selected C/header paths for file roles, SLOC, `SEC()` sections, and feature
   markers; they exclude vendored `vmlinux` headers, generated files, build
