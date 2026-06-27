@@ -1,0 +1,382 @@
+{
+  "aggregate": {
+    "c_libbpf": {
+      "kernel_sync_cases": 4,
+      "median_changed_files": 2,
+      "median_changed_loc": 24,
+      "median_edit_sites": 6,
+      "skeleton_sync_cases": 3,
+      "userspace_sync_cases": 4
+    },
+    "kernelscript": {
+      "kernel_sync_cases": 0,
+      "median_changed_files": 1,
+      "median_changed_loc": 6,
+      "median_edit_sites": 2,
+      "skeleton_sync_cases": 0,
+      "userspace_sync_cases": 0
+    }
+  },
+  "case_count": 4,
+  "description": "Diff-based change-amplification comparison for four matched cross-boundary micro-edits.",
+  "kernelscript_repo_head": "0c80d4e4ac0029d34cbc9d65e76d78c075b64555",
+  "policy": {
+    "changed_loc_definition": "added plus deleted source lines",
+    "edit_site_definition": "contiguous non-equal diff hunk within one source file",
+    "metrics": [
+      "changed_files",
+      "edit_sites",
+      "changed_loc",
+      "manual sync surfaces"
+    ],
+    "sync_surface_legend": {
+      "K": "kernel artifact requires manual synchronized edits",
+      "S": "skeleton/section-name conventions require manual synchronized edits",
+      "U": "userspace artifact requires manual synchronized edits"
+    }
+  },
+  "rows": [
+    {
+      "added_loc": 1,
+      "case": "map_type_percpu_array",
+      "changed_files": 1,
+      "changed_loc": 2,
+      "deleted_loc": 1,
+      "edit_sites": 1,
+      "implementation": "kernelscript",
+      "label": "Map type array -> percpu_array",
+      "note": "Change the counter map from array to percpu_array while keeping the counting logic.",
+      "sync_kernel": false,
+      "sync_skeleton_conventions": false,
+      "sync_surface_count": 0,
+      "sync_surface_label": "-",
+      "sync_userspace": false
+    },
+    {
+      "added_loc": 15,
+      "case": "map_type_percpu_array",
+      "changed_files": 2,
+      "changed_loc": 19,
+      "deleted_loc": 4,
+      "edit_sites": 7,
+      "implementation": "c_libbpf",
+      "label": "Map type array -> percpu_array",
+      "note": "Change the counter map from array to percpu_array while keeping the counting logic.",
+      "sync_kernel": true,
+      "sync_skeleton_conventions": true,
+      "sync_surface_count": 3,
+      "sync_surface_label": "K/U/S",
+      "sync_userspace": true
+    },
+    {
+      "added_loc": 4,
+      "case": "program_xdp_to_tc",
+      "changed_files": 1,
+      "changed_loc": 8,
+      "deleted_loc": 4,
+      "edit_sites": 2,
+      "implementation": "kernelscript",
+      "label": "Program type @xdp -> @tc",
+      "note": "Move the same pass-through logic from XDP to TC ingress.",
+      "sync_kernel": false,
+      "sync_skeleton_conventions": false,
+      "sync_surface_count": 0,
+      "sync_surface_label": "-",
+      "sync_userspace": false
+    },
+    {
+      "added_loc": 23,
+      "case": "program_xdp_to_tc",
+      "changed_files": 2,
+      "changed_loc": 30,
+      "deleted_loc": 7,
+      "edit_sites": 6,
+      "implementation": "c_libbpf",
+      "label": "Program type @xdp -> @tc",
+      "note": "Move the same pass-through logic from XDP to TC ingress.",
+      "sync_kernel": true,
+      "sync_skeleton_conventions": true,
+      "sync_surface_count": 3,
+      "sync_surface_label": "K/U/S",
+      "sync_userspace": true
+    },
+    {
+      "added_loc": 2,
+      "case": "attach_target_symbol",
+      "changed_files": 1,
+      "changed_loc": 4,
+      "deleted_loc": 2,
+      "edit_sites": 2,
+      "implementation": "kernelscript",
+      "label": "Attach target symbol change",
+      "note": "Change a kprobe attach target from one nearby kernel symbol to another.",
+      "sync_kernel": false,
+      "sync_skeleton_conventions": false,
+      "sync_surface_count": 0,
+      "sync_surface_label": "-",
+      "sync_userspace": false
+    },
+    {
+      "added_loc": 2,
+      "case": "attach_target_symbol",
+      "changed_files": 2,
+      "changed_loc": 4,
+      "deleted_loc": 2,
+      "edit_sites": 2,
+      "implementation": "c_libbpf",
+      "label": "Attach target symbol change",
+      "note": "Change a kprobe attach target from one nearby kernel symbol to another.",
+      "sync_kernel": true,
+      "sync_skeleton_conventions": false,
+      "sync_surface_count": 2,
+      "sync_surface_label": "K/U",
+      "sync_userspace": true
+    },
+    {
+      "added_loc": 22,
+      "case": "userspace_ringbuf_consumer",
+      "changed_files": 1,
+      "changed_loc": 23,
+      "deleted_loc": 1,
+      "edit_sites": 5,
+      "implementation": "kernelscript",
+      "label": "Add ringbuf reporting and userspace handling",
+      "note": "Extend a counter-only XDP program with ringbuf event reporting plus userspace-side event and map handling.",
+      "sync_kernel": false,
+      "sync_skeleton_conventions": false,
+      "sync_surface_count": 0,
+      "sync_surface_label": "-",
+      "sync_userspace": false
+    },
+    {
+      "added_loc": 84,
+      "case": "userspace_ringbuf_consumer",
+      "changed_files": 2,
+      "changed_loc": 89,
+      "deleted_loc": 5,
+      "edit_sites": 11,
+      "implementation": "c_libbpf",
+      "label": "Add ringbuf reporting and userspace handling",
+      "note": "Extend a counter-only XDP program with ringbuf event reporting plus userspace-side event and map handling.",
+      "sync_kernel": true,
+      "sync_skeleton_conventions": true,
+      "sync_surface_count": 3,
+      "sync_surface_label": "K/U/S",
+      "sync_userspace": true
+    }
+  ],
+  "status": "ok",
+  "validation": {
+    "policy": "compile all KernelScript and handwritten C/libbpf before/after fixtures before diff measurement",
+    "rows": [
+      {
+        "artifact": "app.ks",
+        "case": "map_type_percpu_array",
+        "detail": "KernelScript source compile",
+        "implementation": "kernelscript",
+        "status": "ok",
+        "variant": "before"
+      },
+      {
+        "artifact": "app.bpf.c",
+        "case": "map_type_percpu_array",
+        "detail": "hand-written eBPF clang compile",
+        "implementation": "c_libbpf",
+        "status": "ok",
+        "variant": "before"
+      },
+      {
+        "artifact": "app.skel.h",
+        "case": "map_type_percpu_array",
+        "detail": "bpftool skeleton generation",
+        "implementation": "c_libbpf",
+        "status": "ok",
+        "variant": "before"
+      },
+      {
+        "artifact": "app_user.c",
+        "case": "map_type_percpu_array",
+        "detail": "hand-written userspace gcc compile",
+        "implementation": "c_libbpf",
+        "status": "ok",
+        "variant": "before"
+      },
+      {
+        "artifact": "app.ks",
+        "case": "map_type_percpu_array",
+        "detail": "KernelScript source compile",
+        "implementation": "kernelscript",
+        "status": "ok",
+        "variant": "after"
+      },
+      {
+        "artifact": "app.bpf.c",
+        "case": "map_type_percpu_array",
+        "detail": "hand-written eBPF clang compile",
+        "implementation": "c_libbpf",
+        "status": "ok",
+        "variant": "after"
+      },
+      {
+        "artifact": "app.skel.h",
+        "case": "map_type_percpu_array",
+        "detail": "bpftool skeleton generation",
+        "implementation": "c_libbpf",
+        "status": "ok",
+        "variant": "after"
+      },
+      {
+        "artifact": "app_user.c",
+        "case": "map_type_percpu_array",
+        "detail": "hand-written userspace gcc compile",
+        "implementation": "c_libbpf",
+        "status": "ok",
+        "variant": "after"
+      },
+      {
+        "artifact": "app.ks",
+        "case": "program_xdp_to_tc",
+        "detail": "KernelScript source compile",
+        "implementation": "kernelscript",
+        "status": "ok",
+        "variant": "before"
+      },
+      {
+        "artifact": "app.bpf.c",
+        "case": "program_xdp_to_tc",
+        "detail": "hand-written eBPF clang compile",
+        "implementation": "c_libbpf",
+        "status": "ok",
+        "variant": "before"
+      },
+      {
+        "artifact": "app_user.c",
+        "case": "program_xdp_to_tc",
+        "detail": "hand-written userspace gcc compile",
+        "implementation": "c_libbpf",
+        "status": "ok",
+        "variant": "before"
+      },
+      {
+        "artifact": "app.ks",
+        "case": "program_xdp_to_tc",
+        "detail": "KernelScript source compile",
+        "implementation": "kernelscript",
+        "status": "ok",
+        "variant": "after"
+      },
+      {
+        "artifact": "app.bpf.c",
+        "case": "program_xdp_to_tc",
+        "detail": "hand-written eBPF clang compile",
+        "implementation": "c_libbpf",
+        "status": "ok",
+        "variant": "after"
+      },
+      {
+        "artifact": "app_user.c",
+        "case": "program_xdp_to_tc",
+        "detail": "hand-written userspace gcc compile",
+        "implementation": "c_libbpf",
+        "status": "ok",
+        "variant": "after"
+      },
+      {
+        "artifact": "app.ks",
+        "case": "attach_target_symbol",
+        "detail": "KernelScript source compile",
+        "implementation": "kernelscript",
+        "status": "ok",
+        "variant": "before"
+      },
+      {
+        "artifact": "app.bpf.c",
+        "case": "attach_target_symbol",
+        "detail": "hand-written eBPF clang compile",
+        "implementation": "c_libbpf",
+        "status": "ok",
+        "variant": "before"
+      },
+      {
+        "artifact": "app_user.c",
+        "case": "attach_target_symbol",
+        "detail": "hand-written userspace gcc compile",
+        "implementation": "c_libbpf",
+        "status": "ok",
+        "variant": "before"
+      },
+      {
+        "artifact": "app.ks",
+        "case": "attach_target_symbol",
+        "detail": "KernelScript source compile",
+        "implementation": "kernelscript",
+        "status": "ok",
+        "variant": "after"
+      },
+      {
+        "artifact": "app.bpf.c",
+        "case": "attach_target_symbol",
+        "detail": "hand-written eBPF clang compile",
+        "implementation": "c_libbpf",
+        "status": "ok",
+        "variant": "after"
+      },
+      {
+        "artifact": "app_user.c",
+        "case": "attach_target_symbol",
+        "detail": "hand-written userspace gcc compile",
+        "implementation": "c_libbpf",
+        "status": "ok",
+        "variant": "after"
+      },
+      {
+        "artifact": "app.ks",
+        "case": "userspace_ringbuf_consumer",
+        "detail": "KernelScript source compile",
+        "implementation": "kernelscript",
+        "status": "ok",
+        "variant": "before"
+      },
+      {
+        "artifact": "app.bpf.c",
+        "case": "userspace_ringbuf_consumer",
+        "detail": "hand-written eBPF clang compile",
+        "implementation": "c_libbpf",
+        "status": "ok",
+        "variant": "before"
+      },
+      {
+        "artifact": "app_user.c",
+        "case": "userspace_ringbuf_consumer",
+        "detail": "hand-written userspace gcc compile",
+        "implementation": "c_libbpf",
+        "status": "ok",
+        "variant": "before"
+      },
+      {
+        "artifact": "app.ks",
+        "case": "userspace_ringbuf_consumer",
+        "detail": "KernelScript source compile",
+        "implementation": "kernelscript",
+        "status": "ok",
+        "variant": "after"
+      },
+      {
+        "artifact": "app.bpf.c",
+        "case": "userspace_ringbuf_consumer",
+        "detail": "hand-written eBPF clang compile",
+        "implementation": "c_libbpf",
+        "status": "ok",
+        "variant": "after"
+      },
+      {
+        "artifact": "app_user.c",
+        "case": "userspace_ringbuf_consumer",
+        "detail": "hand-written userspace gcc compile",
+        "implementation": "c_libbpf",
+        "status": "ok",
+        "variant": "after"
+      }
+    ]
+  }
+}
