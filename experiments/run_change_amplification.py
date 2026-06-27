@@ -74,9 +74,16 @@ CASES = [
         c_sync=SyncSurface(True, True, True),
     ),
     Case(
-        name="attach_target_symbol",
-        label="Attach target symbol change",
-        note="Change a kprobe attach target from one nearby kernel symbol to another.",
+        name="perf_event_grouped",
+        label="Perf event standalone -> grouped",
+        note="Change one standalone perf-event attachment into a grouped leader/member pair with grouped reads.",
+        ks_sync=SyncSurface(False, False, False),
+        c_sync=SyncSurface(False, True, False),
+    ),
+    Case(
+        name="shared_event_schema",
+        label="Shared event schema change",
+        note="Extend a shared ringbuf event struct with one more field and read it in userspace.",
         ks_sync=SyncSurface(False, False, False),
         c_sync=SyncSurface(True, True, False),
     ),
@@ -412,10 +419,7 @@ def main() -> int:
     c_rows = [row for row in rows if row["implementation"] == "c_libbpf"]
     summary = {
         "status": "ok",
-        "description": (
-            "Diff-based change-amplification comparison for four matched "
-            "cross-boundary micro-edits."
-        ),
+        "description": f"Diff-based change-amplification comparison for {len(CASES)} matched cross-boundary micro-edits.",
         "policy": {
             "metrics": [
                 "changed_files",

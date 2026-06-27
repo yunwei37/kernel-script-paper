@@ -257,7 +257,8 @@ def main() -> int:
     change_case_labels = {
         "map_type_percpu_array": "MapType",
         "program_xdp_to_tc": "ProgType",
-        "attach_target_symbol": "AttachTarget",
+        "perf_event_grouped": "PerfGroup",
+        "shared_event_schema": "EventSchema",
         "userspace_ringbuf_consumer": "Userspace",
     }
     for case_name, label in change_case_labels.items():

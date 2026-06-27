@@ -1,8 +1,8 @@
 #include "vmlinux.h"
 #include <bpf/bpf_helpers.h>
 
-SEC("kprobe/do_exit")
-int trace_target(struct pt_regs *ctx) {
+SEC("perf_event")
+int count_samples(struct bpf_perf_event_data *ctx) {
     (void)ctx;
     return 0;
 }
