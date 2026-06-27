@@ -372,10 +372,10 @@ successfully and \KSMakeOK{} produce working libbpf projects. The single
 compile-time rejection is \texttt{safety\_demo.ks}, where safety analysis
 detects 608 bytes of stack use (above the 512-byte eBPF limit) and halts
 before codegen, catching a verifier-relevant problem early. The two examples
-that compile but do not build are both struct\_ops programs: each produces a
-valid eBPF object but fails because the bpftool-generated skeleton references
-a libbpf field absent from the host's older installed headers, a toolchain
-version skew we isolate later in this section. For examples that build successfully, the compiler emits a median of
+that compile but do not build are both struct\_ops programs whose
+bpftool-generated skeletons reference a libbpf field absent from the host
+headers (Section~\ref{sec:eval:q3} isolates this as toolchain version skew).
+For examples that build successfully, the compiler emits a median of
 \KSMedianGeneratedSloc{} lines from \KSMedianKSSloc{} source lines. Across
 \KSSourceFootprintWorkloads{} workloads with hand-written C/libbpf baselines,
 \tool{} sources total \KSSourceFootprintUniqueKSSloc{} lines versus
@@ -488,10 +488,9 @@ higher-complexity cross-domain reference point rather than the next step of the
 same program.
 
 The external \texttt{xdp-tutorial} ports provide supporting evidence for the
-early XDP stages: the \KSExternalPortWorkloads{} pinned programs
-\texttt{basic01-xdp-pass} through \texttt{basic03-map-counter} total
-\KSExternalPortKSSloc{} BPFScript lines and \KSExternalPortCSloc{} original
-kernel-C lines. Table~\ref{tab:evolution} itself reports a local matched
+early XDP stages (the \KSExternalPortWorkloads{} pinned programs span
+\texttt{basic01-xdp-pass} through \texttt{basic03-map-counter}).
+Table~\ref{tab:evolution} itself reports a local matched
 comparison. At each XDP stage, \tool{} grows modestly
 (\KSEvolutionPassToCountKSDelta{} lines for the counter map,
 \KSEvolutionCountToRingbufKSDelta{} for ring-buffer reporting), while the
@@ -526,6 +525,7 @@ Shift to struct\_ops callbacks & \KSEvolutionStructOpsKSSloc{} & \KSEvolutionStr
 \end{table}
 
 \subsection{Q3: Runtime Validation}
+\label{sec:eval:q3}
 
 We test a progression of increasingly stringent checks: build success, kernel
 acceptance, attachability, and runtime behavior. Table~\ref{tab:real}
