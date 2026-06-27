@@ -475,22 +475,18 @@ but they show that generated builds depend on toolchain alignment.
 
 \section{Related Work}
 
-Domain-specific DSLs compile high-level descriptions to eBPF for particular
-use cases. bpftrace provides a concise tracing DSL~\cite{bpftrace}; BPFBox
-expresses security confinement policies~\cite{bpfbox}; BMC accelerates
-memcached via XDP~\cite{bmc}. P4 and Click target dataplane pipelines but
-predate eBPF~\cite{p4,click}. These DSLs focus on a single domain and generate
-only kernel code; \tool{} handles general eBPF applications and generates both
-kernel and userspace code from one source.
-
-General eBPF development spans multiple approaches. The C/libbpf workflow is
-the reference but leaves boundaries implicit~\cite{libbpf}. Aya and Rex unify
-kernel and userspace in Rust~\cite{aya,rex}; eunomia-bpf supports dynamic
-loading~\cite{eunomia-bpf}. BeePL generates verified bytecode via
-CompCert~\cite{beepl}; Jitk and Serval verify JIT correctness~\cite{jitk,serval}.
-\tool{} differs from host-language bindings by being language-independent and
-lowering to stock libbpf, and differs from verified approaches by trading
-formal guarantees for practical toolchain integration.
+Domain-specific DSLs compile high-level descriptions to eBPF: bpftrace for
+tracing~\cite{bpftrace}, BPFBox and ActPlane for security
+policies~\cite{bpfbox,actplane}, BMC for caching~\cite{bmc}, P4c-eBPF for
+networking~\cite{p4c-ebpf}, and Yaksha-Prashna for bytecode
+analysis~\cite{yaksha}. These focus on a single domain and generate only
+kernel code. General eBPF tools include C/libbpf~\cite{libbpf}, Aya and Rex
+for Rust~\cite{aya,rex}, Wasm-bpf for WebAssembly deployment~\cite{wasmbpf},
+and eunomia-bpf for dynamic loading~\cite{eunomia-bpf}. BeePL generates
+verified bytecode~\cite{beepl}; Jitk and Serval verify JIT
+correctness~\cite{jitk,serval}. \tool{} differs by generating both kernel and
+userspace code from one source, being language-independent, and lowering to
+stock libbpf rather than requiring formal verification.
 
 \section{Conclusion}
 
