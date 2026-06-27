@@ -119,16 +119,14 @@ This paper contributes:
 \section{Background and Motivation}
 \label{sec:bg}
 
-\textbf{eBPF.} An eBPF application has
-a kernel program constrained by the verifier and a userspace loader that opens
-objects, attaches programs, and manages lifecycle. The two sides communicate
-through maps, ring buffers, or perf events. The reference C/libbpf workflow
-requires hand-written kernel C, userspace C, and a Makefile~\cite{libbpf};
-scaffolds such as libbpf-bootstrap reduce boilerplate~\cite{libbpf-bootstrap,xdp-tutorial}.
-Aya compiles both sides from Rust~\cite{aya,cilium-ebpf}; Rex provides safe
-Rust kernel extensions~\cite{rex}; bpftrace and BCC target tracing and
-scripting~\cite{bpftrace,bcc}; bpftime moves the runtime to
-userspace~\cite{bpftime}. These tools reduce boilerplate but leave
+\textbf{eBPF.} eBPF runs verified bytecode inside the Linux
+kernel~\cite{linux-ebpf,ebpfsurvey}. Applications include tracing~\cite{bpftrace,bcc},
+networking~\cite{xdp}, security~\cite{lsm-bpf}, scheduling~\cite{ghost},
+caching~\cite{cacheext}, GPU~\cite{gpuext}, and userspace runtimes~\cite{bpftime}. Each application has a kernel
+program and a userspace loader; they communicate through maps or ring buffers.
+The C/libbpf workflow requires separate kernel C, userspace C, and a
+Makefile~\cite{libbpf}; Aya unifies both sides in Rust~\cite{aya}; Rex adds
+safe kernel extensions~\cite{rex}. These tools reduce boilerplate but leave
 cross-boundary relationships implicit.
 
 \textbf{Cross-boundary couplings.} The kernel/userspace split creates three
@@ -139,6 +137,12 @@ mismatch is silent until something fails. \emph{Compatibility}: generated
 skeletons depend on the exact kernel and libbpf versions. The verifier catches
 many errors, but only at load time. A DSL helps if it moves lifecycle and
 representation checks into compile-time type errors.
+
+\textbf{Typestate.} Typestate tracks object state in the type
+system~\cite{typestate}; linear and affine types enforce single-use
+resources~\cite{lineartypes,vault,sessiontypes}. \tool{} applies a lightweight
+form: producer/consumer handle distinction and domain annotations, not full
+substructural typing.
 
 \section{A Typed Model of Cross-Boundary Structure}
 \label{sec:model}
@@ -486,17 +490,11 @@ implementation has precedent: P4 compiles a protocol-independent program into
 target parser and match-action pipelines~\cite{p4}, and Click composes packet
 processing from typed elements~\cite{click}. Unlike a P4 pipeline, an eBPF
 application must also generate its userspace coordinator and survive a late
-general-purpose verifier~\cite{xdp,ebpfsurvey,linux-ebpf}.
-
-\textbf{Typestate and resource typing.} \tool's lifecycle discipline is a
-lightweight instance of typestate~\cite{typestate}: we enforce the
-producer/consumer handle distinction, so the connection is a design influence
-rather than a claim of equivalent guarantees. Stronger substructural types
-would rule out use-after-detach and leaks~\cite{lineartypes}; Vault enforces
-such resource protocols in low-level software~\cite{vault}, and session types
-formalize the ordering more fully~\cite{sessiontypes}. Our domain separation
-echoes address-space type qualifiers such as the kernel's Sparse
-\texttt{\_\_user}/\texttt{\_\_kernel} annotations~\cite{sparse}.
+general-purpose verifier~\cite{xdp,ebpfsurvey,linux-ebpf}. BeePL uses CompCert
+to generate verified BPF bytecode~\cite{beepl}; Jitk and Serval verify JIT
+correctness~\cite{jitk,serval}. These target formal proofs of bytecode or JIT;
+\tool{} instead types the cross-boundary application structure within the
+existing unverified toolchain.
 
 \section{Conclusion}
 
