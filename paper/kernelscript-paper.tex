@@ -250,9 +250,8 @@ annotating execution domains, but does not attempt full substructural typing.
 To meet these goals, the compiler (written in OCaml with dune) parses
 \tool{} source, resolves imports and includes, builds symbol tables, runs
 multi-program analysis and type checking, performs safety analysis, builds an
-IR, and emits C. It keeps separate modules for maps, eBPF codegen, userspace
-codegen, kernel-module generation, safety checking, BTF parsing, dynptr
-bridging, tail-call analysis, and struct\_ops. For an input \texttt{foo.ks},
+IR, and emits C. It keeps nine separate modules covering maps, codegen, safety,
+and struct\_ops. For an input \texttt{foo.ks},
 the generated project contains \texttt{foo.ebpf.c}, \texttt{foo.c}, a
 \texttt{Makefile}, and, when kfuncs are present, \texttt{foo.mod.c}. The
 Makefile invokes bpftool to dump \texttt{vmlinux.h}, clang to produce a BPF
@@ -310,12 +309,9 @@ Timing numbers are local sanity checks rather than performance claims.
 \subsection{Q1: The typed invariants fire}
 
 The compiler test suite contains \KSTotalUnitSuites{} suites and
-\KSTotalUnitTests{} tests with no failures, covering lexer/parser, type
-checking, maps and map assignment, userspace codegen, context-field typing,
-safety, ring buffers, perf-event attach, detach APIs, kfunc attributes,
-struct\_ops, and BTF parsing. This coverage indicates that the implementation
-covers the domain concepts it claims to encode rather than only a small
-example set.
+\KSTotalUnitTests{} tests with no failures, covering all major subsystems from
+lexer to BTF parsing. This coverage indicates that the implementation covers
+the domain concepts it claims to encode rather than only a small example set.
 
 The central Q1 result is a static rejection suite of \KSStaticTotal{} targeted
 programs that exercises the diagnostics of Section~\ref{sec:model} directly.
@@ -386,9 +382,7 @@ effort saved is a matched
 comparison: across \KSSourceFootprintWorkloads{} workloads with hand-written
 C/libbpf baselines, \tool{} sources total \KSSourceFootprintUniqueKSSloc{}
 lines versus \KSSourceFootprintUniqueCSloc{}. Both corpora are author-written.
-Table~\ref{tab:features} shows the feature coverage, spanning XDP, TC, probes,
-tracepoints, perf, maps, ring buffers, dynptr, kfunc, struct\_ops, tail calls,
-and userspace.
+Table~\ref{tab:features} shows the feature coverage.
 
 \begin{table}[!tb]
 \centering
