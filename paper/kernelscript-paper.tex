@@ -116,34 +116,26 @@ This paper contributes:
   on a real kernel (Section~\ref{sec:eval}).
 \end{itemize}
 
-\section{Background: Three Couplings}
+\section{Background and Motivation}
 \label{sec:bg}
 
-An eBPF application has at least two components, a restricted kernel program
-and a userspace coordinator, communicating through maps, ring buffers, perf
-events, or global data. This split creates three kinds of coupling that a
-language could, in principle, check.
+\textbf{eBPF application structure.} An eBPF application has at least two
+components: a kernel program constrained by the verifier, and a userspace
+loader that opens objects, attaches programs, and manages lifecycle. The two
+sides communicate through maps, ring buffers, or perf events. For newer
+features such as struct\_ops and kfuncs, bpftool generates skeleton headers
+that the userspace code includes.
 
-\textbf{Lifecycle coupling.} Operations must occur in a valid order: an object
-is opened, loaded, attached, read, and detached using type-appropriate APIs.
-``Attach before load'' or ``read a handle that was never produced'' are
-ordering errors that C/libbpf catches only at runtime.
-
-\textbf{Representation coupling.} The same concept (a map, a typed context
-field) must be expressed consistently in kernel C, generated skeleton headers,
-userspace lookup code, and BTF-derived declarations. A key or value type that
-disagrees across those copies is a silent mismatch until something fails.
-
-\textbf{Compatibility coupling.} eBPF interfaces evolve quickly. struct\_ops,
-kfuncs, dynptrs, and scheduler extensions depend on the exact kernel, bpftool,
-and libbpf versions, so generated skeletons can disagree with installed
-headers.
-
-The verifier is essential but deliberately late. A developer may write,
-compile, generate skeletons, link a loader, and only then receive a rejection.
-A DSL helps if it moves the first two couplings earlier, into type errors,
-without hiding the execution model or abandoning the toolchain that enforces
-the third.
+\textbf{Cross-boundary couplings.} This split creates three kinds of coupling.
+\emph{Lifecycle coupling}: operations must occur in a valid order (load before
+attach, detach before close), but C/libbpf checks this only at runtime.
+\emph{Representation coupling}: a map's key and value types must agree across
+kernel code, skeleton headers, and userspace lookups, but a mismatch is silent
+until something fails. \emph{Compatibility coupling}: generated skeletons
+depend on the exact kernel, bpftool, and libbpf versions, so they can disagree
+with installed headers. The verifier catches many errors, but only at load
+time. A DSL helps if it moves lifecycle and representation checks earlier,
+into compile-time type errors.
 
 \section{A Typed Model of Cross-Boundary Structure}
 \label{sec:model}
@@ -265,13 +257,8 @@ eBPF \code{SEC(".maps")} definition and the userspace accessor from one source
 of truth (Listing~\ref{lst:map}). The front end \emph{enforces lifecycle
 handles}: only \code{load} yields a \code{ProgramHandle}, and \code{attach} and
 \code{detach} require one, so a misordered call fails type checking before any
-code generation. The handle then
-lowers to an ordinary file descriptor: \code{load} resolves the program by name
-(\code{bpf_object__find_program_by_name}) and takes its descriptor
-(\code{bpf_program__fd}), \code{attach} dispatches on the program type to the
-matching libbpf entry point (\code{bpf_xdp_attach},
-\code{bpf_program__attach_tcx}, \code{bpf_program__attach_kprobe}, and so on),
-and \code{detach} releases the link through \code{bpf_link__destroy}.
+code generation. The handle then lowers to an ordinary file descriptor using standard libbpf
+APIs.
 
 \begin{lstlisting}[language=C,caption={One typed map declaration lowers to both
 a kernel \texttt{SEC(".maps")} definition and a userspace accessor from a single
