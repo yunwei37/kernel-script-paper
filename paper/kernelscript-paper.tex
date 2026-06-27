@@ -353,7 +353,7 @@ cross-boundary context-type mistake; the rest are ties clang already catches.}
 \footnotesize
 \begin{tabular}{@{}>{\raggedright\arraybackslash}p{0.24\columnwidth}>{\raggedright\arraybackslash}p{0.24\columnwidth}>{\centering\arraybackslash}p{0.14\columnwidth}>{\centering\arraybackslash}p{0.18\columnwidth}@{}}
 \toprule
-Injected mistake & Coupling & KS & C/libbpf \\
+Injected mistake & Coupling & BS & C/libbpf \\
 \midrule
 Wrong context type & signature/domain & \KSOrganicWrongContextKS{} & \KSOrganicWrongContextC{} \\
 Undeclared map & representation & \KSOrganicMapUndeclaredKS{} & \KSOrganicMapUndeclaredC{} \\
@@ -383,12 +383,12 @@ coverage.
 
 \begin{table}[H]
 \centering
-\caption{Example marker coverage. A = attempted, KS = \tool{} compiler success,
+\caption{Example marker coverage. A = attempted, BS = \tool{} compiler success,
 B = generated project build success.}
 \label{tab:features}
 \begin{tabular}{lrrr@{\hspace{0.8em}}lrrr}
 \toprule
-Feature & A & KS & B & Feature & A & KS & B \\
+Feature & A & BS & B & Feature & A & BS & B \\
 \midrule
 XDP & \KSFeatXDPAttempt{} & \KSFeatXDPKS{} & \KSFeatXDPBuild{} &
 TC & \KSFeatTCAttempt{} & \KSFeatTCKS{} & \KSFeatTCBuild{} \\
@@ -441,16 +441,16 @@ skeleton/section conventions (S).}
 \toprule
 Edit & Impl. & Files & Sites & LOC & Sync \\
 \midrule
-\shortstack[l]{Map \\ \code{array}$\rightarrow$\code{percpu_array}} & KS & \KSChangeAmpMapTypeFilesKS{} & \KSChangeAmpMapTypeSitesKS{} & \KSChangeAmpMapTypeLocKS{} & \KSChangeAmpMapTypeSyncKS{} \\
+\shortstack[l]{Map \\ \code{array}$\rightarrow$\code{percpu_array}} & BS & \KSChangeAmpMapTypeFilesKS{} & \KSChangeAmpMapTypeSitesKS{} & \KSChangeAmpMapTypeLocKS{} & \KSChangeAmpMapTypeSyncKS{} \\
  & C & \KSChangeAmpMapTypeFilesC{} & \KSChangeAmpMapTypeSitesC{} & \KSChangeAmpMapTypeLocC{} & \KSChangeAmpMapTypeSyncC{} \\
 \addlinespace[2pt]
-\shortstack[l]{Program \\ \code{@xdp}$\rightarrow$\code{@tc}} & KS & \KSChangeAmpProgTypeFilesKS{} & \KSChangeAmpProgTypeSitesKS{} & \KSChangeAmpProgTypeLocKS{} & \KSChangeAmpProgTypeSyncKS{} \\
+\shortstack[l]{Program \\ \code{@xdp}$\rightarrow$\code{@tc}} & BS & \KSChangeAmpProgTypeFilesKS{} & \KSChangeAmpProgTypeSitesKS{} & \KSChangeAmpProgTypeLocKS{} & \KSChangeAmpProgTypeSyncKS{} \\
  & C & \KSChangeAmpProgTypeFilesC{} & \KSChangeAmpProgTypeSitesC{} & \KSChangeAmpProgTypeLocC{} & \KSChangeAmpProgTypeSyncC{} \\
 \addlinespace[2pt]
-\shortstack[l]{Attach target \\ symbol} & KS & \KSChangeAmpAttachTargetFilesKS{} & \KSChangeAmpAttachTargetSitesKS{} & \KSChangeAmpAttachTargetLocKS{} & \KSChangeAmpAttachTargetSyncKS{} \\
+\shortstack[l]{Attach target \\ symbol} & BS & \KSChangeAmpAttachTargetFilesKS{} & \KSChangeAmpAttachTargetSitesKS{} & \KSChangeAmpAttachTargetLocKS{} & \KSChangeAmpAttachTargetSyncKS{} \\
  & C & \KSChangeAmpAttachTargetFilesC{} & \KSChangeAmpAttachTargetSitesC{} & \KSChangeAmpAttachTargetLocC{} & \KSChangeAmpAttachTargetSyncC{} \\
 \addlinespace[2pt]
-\shortstack[l]{Add ringbuf \\ reporting/handling} & KS & \KSChangeAmpUserspaceFilesKS{} & \KSChangeAmpUserspaceSitesKS{} & \KSChangeAmpUserspaceLocKS{} & \KSChangeAmpUserspaceSyncKS{} \\
+\shortstack[l]{Add ringbuf \\ reporting/handling} & BS & \KSChangeAmpUserspaceFilesKS{} & \KSChangeAmpUserspaceSitesKS{} & \KSChangeAmpUserspaceLocKS{} & \KSChangeAmpUserspaceSyncKS{} \\
  & C & \KSChangeAmpUserspaceFilesC{} & \KSChangeAmpUserspaceSitesC{} & \KSChangeAmpUserspaceLocC{} & \KSChangeAmpUserspaceSyncC{} \\
 \bottomrule
 \end{tabular}
@@ -507,7 +507,7 @@ include hand-written userspace when the feature requires it.}
 \footnotesize
 \begin{tabular}{@{}lrrrr@{}}
 \toprule
-Stage & KS & C eBPF & C user & C total \\
+Stage & BS & C eBPF & C user & C total \\
 \midrule
 Pass-only XDP & \KSEvolutionPassKSSloc{} & \KSEvolutionPassCEbpfSloc{} & \KSEvolutionPassCUserSloc{} & \KSEvolutionPassCTotalSloc{} \\
 Add counter map & \KSEvolutionCountKSSloc{} & \KSEvolutionCountCEbpfSloc{} & \KSEvolutionCountCUserSloc{} & \KSEvolutionCountCTotalSloc{} \\
