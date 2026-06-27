@@ -46,7 +46,7 @@ hard-to-diagnose failures. We observe that these cross-boundary relationships
 are duplicated concepts a type system can unify. We present \tool{}, a 
 DSL that types maps, program handles, and
 execution domains in one source, then lowers to standard C through the
-clang/bpftool/libbpf toolchain. The compiler catches mismatches, such as wrong
+clang/bpftool/libbpf toolchain. The compiler detects mismatches, such as wrong
 context types or misordered lifecycle calls, before code generation. Generated
 projects load, attach, and pass traffic on a real kernel, showing that eBPF's
 cross-boundary structure can be typed while preserving the existing toolchain.
@@ -93,7 +93,7 @@ The key observation is that these relationships are single concepts duplicated
 across components. A map declaration is at once a kernel data structure, a
 userspace lookup target, and a type contract. A program handle is at once a
 function name, a BPF section, and a file descriptor. In C/libbpf, naming
-conventions tie those copies together, so mismatches surface late. In one
+conventions connect those copies, so mismatches surface late. In one
 typed source, the compiler can see and check them directly.
 
 % P5: Solution
@@ -111,7 +111,7 @@ This paper contributes:
   matching compiler diagnostic (Section~\ref{sec:model}).
 \item A compiler that realizes this model while preserving the stock kernel
   toolchain, so compatibility failures remain visible (Section~\ref{sec:impl}).
-\item An evaluation showing that each invariant fires, that one source generates
+\item An evaluation showing that each invariant triggers a diagnostic, that one source generates
   buildable libbpf projects, and that generated objects load, attach, and run
   on a real kernel (Section~\ref{sec:eval}).
 \end{itemize}
@@ -140,7 +140,7 @@ checks this only at runtime. \emph{Representation coupling} requires a map's
 key and value types to agree across kernel code, skeleton headers, and
 userspace lookups, but a mismatch is silent until something fails.
 \emph{Compatibility coupling} arises because generated skeletons depend on the
-exact kernel and libbpf versions. The verifier catches many errors, but only
+exact kernel and libbpf versions. The verifier detects many errors, but only
 at load time. A DSL can help by moving lifecycle and representation checks
 into compile-time type errors.
 
@@ -201,7 +201,7 @@ To address lifecycle coupling, the type system distinguishes a
 \code{FunctionRef} (a reference to an \code{@}-attributed function) from a
 \code{ProgramHandle} (a loaded program). The lifecycle builtins are typed so
 that only \code{load} produces a \code{ProgramHandle}, and the formation rule
-for \code{FunctionRef} ties lifecycle to domains: only an eBPF entry-point
+for \code{FunctionRef} connects lifecycle to domains: only an eBPF entry-point
 function inhabits \code{FunctionRef}, so an \code{@helper}, \code{@kfunc}, or
 userspace function cannot be passed to \code{load}.
 \begin{gather*}
@@ -229,13 +229,13 @@ builtins receive values of the right kind, but not full path-sensitive
 properties such as use-after-detach, double-attach, or leaked handles.
 
 The payoff is earlier, localized compiler errors in place of naming conventions or late verifier/attach
-failures. Section~\ref{sec:eval} measures whether those diagnostics fire;
+failures. Section~\ref{sec:eval} measures whether those diagnostics trigger;
 Section~\ref{sec:limits} explains the limits of that evidence.
 
 \section{Design and Implementation}
 \label{sec:impl}
 
-The compiler has three design goals. First, it must catch cross-boundary
+The compiler has three design goals. First, it must detect cross-boundary
 errors at compile time, before the verifier or runtime sees them. Second, it
 must preserve the existing Linux BPF toolchain so that BTF, CO-RE, skeleton
 generation, and verifier diagnostics remain available. Third, it must generate
@@ -299,14 +299,14 @@ escape hatch to generated header declarations.
 \label{sec:eval}
 
 The evaluation answers three questions: \emph{(Q1)} does each typed
-cross-boundary invariant fire as a compile-time diagnostic? \emph{(Q2)} does
+cross-boundary invariant trigger a compile-time diagnostic? \emph{(Q2)} does
 one source generate a complete, buildable libbpf project? \emph{(Q3)} does
 generated code load, attach, and run on a real kernel? All experiments run on
 Linux \KSKernelVersion{} with clang 18, bpftool 7.7, and libbpf 1.3.0. We
 report SLOC counts as nonblank, noncomment lines, excluding generated headers.
 Timing numbers are local sanity checks rather than performance claims.
 
-\subsection{Q1: The typed invariants fire}
+\subsection{Q1: Compile-Time Diagnostic Coverage}
 
 The compiler test suite contains \KSTotalUnitSuites{} suites and
 \KSTotalUnitTests{} tests with no failures, covering all major subsystems from
@@ -321,7 +321,7 @@ map type errors, domain crossings, and safety violations. Each case carries an
 expected diagnostic substring, so incidental rejections do not count as
 passing. The suite shows that the invariants are implemented and stable.
 
-To ask whether the checks fire \emph{earlier} than the stock toolchain on the same mistake, we construct
+To ask whether the checks trigger \emph{earlier} than the stock toolchain on the same mistake, we construct
 \KSOrganicTotal{} hand-chosen worked cases, each a realistic mistake injected
 identically into a working XDP map-counter written in \tool{} and in matched
 hand-written C/eBPF, and record the earliest stage each toolchain rejects it
@@ -331,17 +331,17 @@ Table~\ref{tab:organic} reports the outcome. \tool{} rejects all
 \KSOrganicTotal{} at compile time. The decisive case is the cross-boundary one:
 an \texttt{@xdp} entry point given a \texttt{*\_\_sk\_buff} context instead of
 \texttt{*xdp\_md}. In C the program compiles and the verifier passes it, so the
-mistake survives to a silently wrong load. The other \KSOrganicTie{} mistakes
-tie because clang already catches them locally. The result is
-\KSOrganicKSEarlier{} earlier and \KSOrganicTie{} tied: typing helps on the
-cross-boundary relation that local C checking cannot see.
+mistake propagates to a silently wrong load. The other \KSOrganicTie{} mistakes
+match because clang already detects them locally. The result is
+\KSOrganicKSEarlier{} earlier and \KSOrganicTie{} tied: the type system
+addresses the cross-boundary relation that local C checking cannot detect.
 Section~\ref{sec:limits} explains the limits of this small, author-injected set.
 
 \begin{table}[!tb]
 \centering
 \caption{Differential failure-stage probe: earliest stage each toolchain
-catches the same injected mistake. \tool{} is strictly earlier only on the
-cross-boundary context-type mistake; the rest are ties clang already catches.}
+detects the same injected mistake. \tool{} is strictly earlier only on the
+cross-boundary context-type mistake; the rest match because clang detects them.}
 \label{tab:organic}
 \footnotesize
 \begin{tabular}{@{}>{\raggedright\arraybackslash}p{0.24\columnwidth}>{\raggedright\arraybackslash}p{0.24\columnwidth}>{\centering\arraybackslash}p{0.14\columnwidth}>{\centering\arraybackslash}p{0.18\columnwidth}@{}}
@@ -356,7 +356,7 @@ Oversized stack buffer & safety & \KSOrganicStackOverflowKS{} & \KSOrganicStackO
 \end{tabular}
 \end{table}
 
-\subsection{Q2: One source generates the project}
+\subsection{Q2: Project Generation}
 
 To test whether \tool{} generates complete projects, we compiled
 \KSTotalExamples{} example programs. Of these, \KSKSCompileOK{} compile
@@ -407,7 +407,7 @@ comparable line counts. A source-only scan of \KSExternalCorpusRepos{} public
 eBPF repositories confirms that the program classes we target appear in real
 code.
 
-\subsection{Q3: Generated code runs}
+\subsection{Q3: Runtime Validation}
 
 Build success is weaker than kernel acceptance, which is weaker than
 attachability, which is weaker than running. Table~\ref{tab:real} summarizes
@@ -492,11 +492,11 @@ existing toolchain rather than formal verification.
 lifecycle, shared maps, and execution domains) as something a compiler can type
 rather than something developers hold together by convention and discover at
 verifier-load or attach time. The evaluation confirms that each typed invariant
-fires as a compile-time diagnostic, that one source generates buildable libbpf
+triggers a compile-time diagnostic, that one source generates buildable libbpf
 projects, and that generated objects load, attach, and pass traffic on a real
 kernel. The result is a concrete design point: typing eBPF's cross-boundary
 structure is feasible, and because the compiler lowers through the stock
-toolchain, both what the type system buys and the version-skew limits it cannot
+toolchain, both what the type system provides and the version-skew limits it cannot
 absorb stay visible and measurable.
 
 \bibliographystyle{ACM-Reference-Format}
