@@ -147,10 +147,9 @@ into compile-time type errors.
 \section{A Typed Model of Cross-Boundary Structure}
 \label{sec:model}
 
-The type system encodes the couplings of Section~\ref{sec:bg} informally
-rather than with a full semantics or soundness proof, but every rule
-corresponds to a diagnostic exercised by the rejection suite of
-Section~\ref{sec:eval}.
+We describe the type system informally because a full semantics or soundness
+proof is beyond scope. Every rule corresponds to a diagnostic exercised by
+the rejection suite of Section~\ref{sec:eval}.
 
 A \tool{} program is a flat sequence of declarations. Listing~\ref{lst:min}
 shows the minimal shape of an application, and the rest of this section makes
@@ -228,7 +227,7 @@ complete load-to-attach-to-detach protocol. It guarantees that lifecycle
 builtins receive values of the right kind, but not full path-sensitive
 properties such as use-after-detach, double-attach, or leaked handles.
 
-The payoff is earlier, localized compiler errors in place of naming conventions or late verifier/attach
+The benefit is earlier, localized compiler errors in place of naming conventions or late verifier/attach
 failures. Section~\ref{sec:eval} measures whether those diagnostics trigger;
 Section~\ref{sec:limits} explains the limits of that evidence.
 
@@ -265,7 +264,7 @@ generation can dispatch the same source function to the eBPF or userspace
 backend. Typed maps
 lower to a single descriptor that records key and value types once, and both
 backends read that descriptor to emit the eBPF \code{SEC(".maps")} definition
-and the userspace accessor from one source of truth (Listing~\ref{lst:map}).
+and the userspace accessor (Listing~\ref{lst:map}).
 Lifecycle handles are enforced in the front end: only \code{load} yields a
 \code{ProgramHandle}, and \code{attach} and \code{detach} require one, so a
 misordered call fails type checking before code generation. The handle then
@@ -294,7 +293,7 @@ The compiler does not replace the verifier, clang, bpftool, or libbpf, so it inh
 and existing diagnostics, and any compatibility failure remains visible and
 measurable instead of being papered over. For interfaces that move faster than
 the DSL can stabilize, \code{include} and \code{extern} declarations provide an
-escape hatch to generated header declarations.
+fallback to generated header declarations.
 
 \section{Evaluation}
 \label{sec:eval}
@@ -323,7 +322,7 @@ expected diagnostic substring, ensuring that incidental rejections do not
 count as passing and that the invariants are implemented and stable.
 
 To ask whether the checks trigger \emph{earlier} than the stock toolchain on the same mistake, we construct
-\KSOrganicTotal{} hand-chosen worked cases, each a realistic mistake injected
+\KSOrganicTotal{} hand-chosen test cases, each a realistic mistake injected
 identically into a working XDP map-counter written in \tool{} and in matched
 hand-written C/eBPF, and record the earliest stage each toolchain rejects it
 along a shared ladder
@@ -435,7 +434,7 @@ Most generated objects pass the verifier: \KSVerifierBuildLoadOK{} of
 \KSVerifierBuildLoadFailed{} failures are a reference-ownership leak, a
 map-creation failure, a missing kfunc symbol, and an object with no program
 section. For XDP, \KSAttachOK{} of \KSAttachEligible{} objects attach and
-detach cleanly; the workloads below exercise TC and struct\_ops.
+detach successfully; the workloads below exercise TC and struct\_ops.
 
 Beyond load and attach, matched workloads confirm the generated objects
 \emph{run}. Under \code{BPF_PROG_TEST_RUN}, a minimal
