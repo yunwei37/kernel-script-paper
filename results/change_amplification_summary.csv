@@ -3,7 +3,9 @@ map_type_percpu_array,Map type array -> percpu_array,kernelscript,1,1,1,1,2,Fals
 map_type_percpu_array,Map type array -> percpu_array,c_libbpf,2,7,15,4,19,True,True,True,3,K/U/S,Change the counter map from array to percpu_array while keeping the counting logic.
 program_xdp_to_tc,Program type @xdp -> @tc,kernelscript,1,2,4,4,8,False,False,False,0,-,Move the same pass-through logic from XDP to TC ingress.
 program_xdp_to_tc,Program type @xdp -> @tc,c_libbpf,2,6,23,7,30,True,True,True,3,K/U/S,Move the same pass-through logic from XDP to TC ingress.
-attach_target_symbol,Attach target symbol change,kernelscript,1,2,2,2,4,False,False,False,0,-,Change a kprobe attach target from one nearby kernel symbol to another.
-attach_target_symbol,Attach target symbol change,c_libbpf,2,2,2,2,4,True,True,False,2,K/U,Change a kprobe attach target from one nearby kernel symbol to another.
+perf_event_grouped,Perf event standalone -> grouped,kernelscript,1,1,4,2,6,False,False,False,0,-,Change one standalone perf-event attachment into a grouped leader/member pair with grouped reads.
+perf_event_grouped,Perf event standalone -> grouped,c_libbpf,1,8,67,24,91,False,True,False,1,U,Change one standalone perf-event attachment into a grouped leader/member pair with grouped reads.
+shared_event_schema,Shared event schema change,kernelscript,1,3,3,1,4,False,False,False,0,-,Extend a shared ringbuf event struct with one more field and read it in userspace.
+shared_event_schema,Shared event schema change,c_libbpf,2,4,6,1,7,True,True,False,2,K/U,Extend a shared ringbuf event struct with one more field and read it in userspace.
 userspace_ringbuf_consumer,Add ringbuf reporting and userspace handling,kernelscript,1,5,22,1,23,False,False,False,0,-,Extend a counter-only XDP program with ringbuf event reporting plus userspace-side event and map handling.
 userspace_ringbuf_consumer,Add ringbuf reporting and userspace handling,c_libbpf,2,11,84,5,89,True,True,True,3,K/U/S,Extend a counter-only XDP program with ringbuf event reporting plus userspace-side event and map handling.

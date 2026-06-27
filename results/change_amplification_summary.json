@@ -3,10 +3,10 @@
     "c_libbpf": {
       "kernel_sync_cases": 4,
       "median_changed_files": 2,
-      "median_changed_loc": 24,
-      "median_edit_sites": 6,
+      "median_changed_loc": 30,
+      "median_edit_sites": 7,
       "skeleton_sync_cases": 3,
-      "userspace_sync_cases": 4
+      "userspace_sync_cases": 5
     },
     "kernelscript": {
       "kernel_sync_cases": 0,
@@ -17,8 +17,8 @@
       "userspace_sync_cases": 0
     }
   },
-  "case_count": 4,
-  "description": "Diff-based change-amplification comparison for four matched cross-boundary micro-edits.",
+  "case_count": 5,
+  "description": "Diff-based change-amplification comparison for 5 matched cross-boundary micro-edits.",
   "kernelscript_repo_head": "0c80d4e4ac0029d34cbc9d65e76d78c075b64555",
   "policy": {
     "changed_loc_definition": "added plus deleted source lines",
@@ -101,15 +101,15 @@
       "sync_userspace": true
     },
     {
-      "added_loc": 2,
-      "case": "attach_target_symbol",
+      "added_loc": 4,
+      "case": "perf_event_grouped",
       "changed_files": 1,
-      "changed_loc": 4,
+      "changed_loc": 6,
       "deleted_loc": 2,
-      "edit_sites": 2,
+      "edit_sites": 1,
       "implementation": "kernelscript",
-      "label": "Attach target symbol change",
-      "note": "Change a kprobe attach target from one nearby kernel symbol to another.",
+      "label": "Perf event standalone -> grouped",
+      "note": "Change one standalone perf-event attachment into a grouped leader/member pair with grouped reads.",
       "sync_kernel": false,
       "sync_skeleton_conventions": false,
       "sync_surface_count": 0,
@@ -117,15 +117,47 @@
       "sync_userspace": false
     },
     {
-      "added_loc": 2,
-      "case": "attach_target_symbol",
-      "changed_files": 2,
-      "changed_loc": 4,
-      "deleted_loc": 2,
-      "edit_sites": 2,
+      "added_loc": 67,
+      "case": "perf_event_grouped",
+      "changed_files": 1,
+      "changed_loc": 91,
+      "deleted_loc": 24,
+      "edit_sites": 8,
       "implementation": "c_libbpf",
-      "label": "Attach target symbol change",
-      "note": "Change a kprobe attach target from one nearby kernel symbol to another.",
+      "label": "Perf event standalone -> grouped",
+      "note": "Change one standalone perf-event attachment into a grouped leader/member pair with grouped reads.",
+      "sync_kernel": false,
+      "sync_skeleton_conventions": false,
+      "sync_surface_count": 1,
+      "sync_surface_label": "U",
+      "sync_userspace": true
+    },
+    {
+      "added_loc": 3,
+      "case": "shared_event_schema",
+      "changed_files": 1,
+      "changed_loc": 4,
+      "deleted_loc": 1,
+      "edit_sites": 3,
+      "implementation": "kernelscript",
+      "label": "Shared event schema change",
+      "note": "Extend a shared ringbuf event struct with one more field and read it in userspace.",
+      "sync_kernel": false,
+      "sync_skeleton_conventions": false,
+      "sync_surface_count": 0,
+      "sync_surface_label": "-",
+      "sync_userspace": false
+    },
+    {
+      "added_loc": 6,
+      "case": "shared_event_schema",
+      "changed_files": 2,
+      "changed_loc": 7,
+      "deleted_loc": 1,
+      "edit_sites": 4,
+      "implementation": "c_libbpf",
+      "label": "Shared event schema change",
+      "note": "Extend a shared ringbuf event struct with one more field and read it in userspace.",
       "sync_kernel": true,
       "sync_skeleton_conventions": false,
       "sync_surface_count": 2,
@@ -283,7 +315,7 @@
       },
       {
         "artifact": "app.ks",
-        "case": "attach_target_symbol",
+        "case": "perf_event_grouped",
         "detail": "KernelScript source compile",
         "implementation": "kernelscript",
         "status": "ok",
@@ -291,7 +323,7 @@
       },
       {
         "artifact": "app.bpf.c",
-        "case": "attach_target_symbol",
+        "case": "perf_event_grouped",
         "detail": "hand-written eBPF clang compile",
         "implementation": "c_libbpf",
         "status": "ok",
@@ -299,7 +331,7 @@
       },
       {
         "artifact": "app_user.c",
-        "case": "attach_target_symbol",
+        "case": "perf_event_grouped",
         "detail": "hand-written userspace gcc compile",
         "implementation": "c_libbpf",
         "status": "ok",
@@ -307,7 +339,7 @@
       },
       {
         "artifact": "app.ks",
-        "case": "attach_target_symbol",
+        "case": "perf_event_grouped",
         "detail": "KernelScript source compile",
         "implementation": "kernelscript",
         "status": "ok",
@@ -315,7 +347,7 @@
       },
       {
         "artifact": "app.bpf.c",
-        "case": "attach_target_symbol",
+        "case": "perf_event_grouped",
         "detail": "hand-written eBPF clang compile",
         "implementation": "c_libbpf",
         "status": "ok",
@@ -323,7 +355,55 @@
       },
       {
         "artifact": "app_user.c",
-        "case": "attach_target_symbol",
+        "case": "perf_event_grouped",
+        "detail": "hand-written userspace gcc compile",
+        "implementation": "c_libbpf",
+        "status": "ok",
+        "variant": "after"
+      },
+      {
+        "artifact": "app.ks",
+        "case": "shared_event_schema",
+        "detail": "KernelScript source compile",
+        "implementation": "kernelscript",
+        "status": "ok",
+        "variant": "before"
+      },
+      {
+        "artifact": "app.bpf.c",
+        "case": "shared_event_schema",
+        "detail": "hand-written eBPF clang compile",
+        "implementation": "c_libbpf",
+        "status": "ok",
+        "variant": "before"
+      },
+      {
+        "artifact": "app_user.c",
+        "case": "shared_event_schema",
+        "detail": "hand-written userspace gcc compile",
+        "implementation": "c_libbpf",
+        "status": "ok",
+        "variant": "before"
+      },
+      {
+        "artifact": "app.ks",
+        "case": "shared_event_schema",
+        "detail": "KernelScript source compile",
+        "implementation": "kernelscript",
+        "status": "ok",
+        "variant": "after"
+      },
+      {
+        "artifact": "app.bpf.c",
+        "case": "shared_event_schema",
+        "detail": "hand-written eBPF clang compile",
+        "implementation": "c_libbpf",
+        "status": "ok",
+        "variant": "after"
+      },
+      {
+        "artifact": "app_user.c",
+        "case": "shared_event_schema",
         "detail": "hand-written userspace gcc compile",
         "implementation": "c_libbpf",
         "status": "ok",
