@@ -22,7 +22,7 @@ nonblank noncomment lines, the matching hand-written C/eBPF object sources
 total 254 lines, and the C/libbpf baseline source footprint totals 1105 lines
 when runner or loader files are included. This is matched source-footprint evidence,
 not a developer-time study. A separate checked-in change-amplification study
-applies 5 matched micro-edits to BPFScript and hand-written C/libbpf fixtures:
+applies 5 matched micro-edits to KernelScript and hand-written C/libbpf fixtures:
 the medians are 1 changed file, 2 edit sites, and 6 changed lines for
 KernelScript versus 2 changed files, 7 edit sites, and 30 changed lines for
 the hand-written split. None of the 5 KernelScript edits require manual

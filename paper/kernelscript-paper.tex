@@ -29,7 +29,7 @@
 
 \input{../results/paper_numbers}
 
-\newcommand{\tool}{BPFScript}
+\newcommand{\tool}{KernelScript}
 \newcommand{\code}[1]{\texttt{\detokenize{#1}}}
 
 \title{\tool: Compiler-Checked Cross-Boundary Typed DSL for eBPF Applications}
@@ -275,7 +275,7 @@ lowers to a file descriptor via libbpf APIs.
 \begin{lstlisting}[language=C,caption={One typed map declaration lowers to both
 a kernel \texttt{SEC(".maps")} definition and a userspace accessor from a single
 descriptor.},label={lst:map}]
-// BPFScript source
+// KernelScript source
 var counts : hash<u32, u64>(1024)
 
 // generated eBPF C
