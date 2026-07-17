@@ -71,7 +71,7 @@ Generated projects load, attach, and pass traffic on a real kernel, showing that
 % P1: Context/Importance
 eBPF lets developers run application-specific logic inside the Linux kernel under a verifier that proves memory safety and bounded execution~\cite{linux-ebpf}.
 % eBPF 让开发者在 Linux 内核内运行应用程序特定的逻辑，由验证器证明内存安全和有界执行。
-It now underpins packet processing in major cloud providers, powers observability platforms, enforces security policies, and enables scheduler experimentation within a large and growing ecosystem.
+It now underpins packet processing in major cloud providers, powers observability platforms, enforces security policies, and enables scheduler experimentation within a large and growing ecosystem~\cite{ebpfsurvey}.
 % 它现在支撑着主要云提供商的数据包处理，驱动可观测性平台，执行安全策略，并在一个庞大且不断增长的生态系统中支持调度器实验。
 
 % P2: Problem
@@ -143,8 +143,8 @@ Every eBPF application has a kernel program and a userspace loader that communic
 % 每个 eBPF 应用程序都有一个内核程序和一个通过映射或环形缓冲区通信的用户空间加载器。
 The standard eBPF development workflow requires developers to maintain separate kernel C, userspace C, and a Makefile~\cite{libbpf}.
 % 标准的 eBPF 开发工作流要求开发者维护单独的内核 C、用户空间 C 和 Makefile。
-Aya unifies both sides in Rust~\cite{aya}, and Rex provides safe Rust kernel extensions~\cite{rex}, but these tools still leave cross-boundary relationships implicit.
-% Aya 在 Rust 中统一两端，Rex 提供安全的 Rust 内核扩展，但这些工具仍然使跨边界关系保持隐式。
+Aya unifies both sides in Rust~\cite{aya}, and Rex replaces the verifier with language-level safety in Rust~\cite{rex}, but neither types the full cross-boundary structure at compile time.
+% Aya 在 Rust 中统一两端，Rex 用语言级别的安全性替代验证器，但两者都未在编译时对完整的跨边界结构进行类型化。
 
 The kernel/userspace split introduces three kinds of coupling that current tools do not fully address.
 % 内核/用户空间分离引入了三种当前工具未完全解决的耦合。
@@ -398,7 +398,7 @@ User & \KSFeatUserspaceAttempt{} & \KSFeatUserspaceKS{} & \KSFeatUserspaceBuild{
 \end{tabular}
 \end{table}
 
-Hand-porting \KSExternalPortWorkloads{} \texttt{xdp-tutorial} XDP programs to \tool{} yields \KSExternalPortKSSloc{} lines versus \KSExternalPortCSloc{} in the original C/eBPF, confirming comparable line counts for external code.
+Hand-porting \KSExternalPortWorkloads{} \texttt{xdp-tutorial}~\cite{xdp-tutorial} XDP programs to \tool{} yields \KSExternalPortKSSloc{} lines versus \KSExternalPortCSloc{} in the original C/eBPF, confirming comparable line counts for external code.
 % 手动将 \KSExternalPortWorkloads{} 个 \texttt{xdp-tutorial} XDP 程序移植到 \tool{} 产生 \KSExternalPortKSSloc{} 行，而原始 C/eBPF 为 \KSExternalPortCSloc{} 行，确认外部代码的行数相当。
 A source-only scan of \KSExternalCorpusRepos{} public eBPF repositories confirms that the program types and map patterns we generate (XDP, TC, kprobe, ring buffers, struct\_ops) appear together in real projects.
 % 对 \KSExternalCorpusRepos{} 个公共 eBPF 仓库的纯源代码扫描确认我们生成的程序类型和映射模式（XDP、TC、kprobe、环形缓冲区、struct\_ops）在真实项目中一起出现。
@@ -550,14 +550,14 @@ Prior work on eBPF development falls into three categories.
 % 关于 eBPF 开发的先前工作分为三类。
 Domain-specific DSLs target particular use cases: bpftrace for tracing~\cite{bpftrace}, BPFBox and ActPlane for security policies~\cite{bpfbox,actplane}, BMC for caching~\cite{bmc}, P4c-eBPF for networking~\cite{p4c-ebpf}, and Yaksha-Prashna for bytecode analysis~\cite{yaksha}.
 % 领域特定 DSL 针对特定用例：用于追踪的 bpftrace，用于安全策略的 BPFBox 和 ActPlane，用于缓存的 BMC，用于网络的 P4c-eBPF，以及用于字节码分析的 Yaksha-Prashna。
-These DSLs generate only kernel code and do not address the cross-boundary structure that \tool{} targets.
-% 这些 DSL 仅生成内核代码，不解决 \tool{} 针对的跨边界结构。
-General eBPF development tools include the standard eBPF development workflow~\cite{libbpf}, Aya and Rex for Rust~\cite{aya,rex}, Wasm-bpf for WebAssembly deployment~\cite{wasmbpf}, and eunomia-bpf for dynamic loading~\cite{eunomia-bpf}.
-% 通用 eBPF 开发工具包括标准 eBPF 开发工作流、用于 Rust 的 Aya 和 Rex、用于 WebAssembly 部署的 Wasm-bpf，以及用于动态加载的 eunomia-bpf。
+These DSLs primarily target kernel-side code and do not type the full cross-boundary structure that \tool{} addresses.
+% 这些 DSL 主要针对内核侧代码，不对 \tool{} 所处理的完整跨边界结构进行类型化。
+General eBPF development tools include the standard eBPF development workflow~\cite{libbpf}, Aya for Rust~\cite{aya}, Rex for safe Rust kernel extensions without a verifier~\cite{rex}, Wasm-bpf for WebAssembly deployment~\cite{wasmbpf}, and eunomia-bpf for dynamic loading~\cite{eunomia-bpf}.
+% 通用 eBPF 开発工具包括标准 eBPF 开发工作流、用于 Rust 的 Aya、不使用验证器的安全 Rust 内核扩展 Rex、用于 WebAssembly 部署的 Wasm-bpf，以及用于动态加载的 eunomia-bpf。
 These reduce boilerplate but leave lifecycle and representation relationships implicit.
 % 这些减少样板但使生命周期和表示关系保持隐式。
-Verified approaches take a different direction: BeePL generates formally verified bytecode~\cite{beepl}, and Jitk and Serval verify JIT correctness~\cite{jitk,serval}.
-% 验证方法采取不同方向：BeePL 生成正式验证的字节码，Jitk 和 Serval 验证 JIT 正确性。
+Verified approaches take a different direction: BeePL provides correct-by-compilation kernel extensions~\cite{beepl}, and Jitk and Serval verify JIT correctness~\cite{jitk,serval}.
+% 验证方法采取不同方向：BeePL 提供编译即正确的内核扩展，Jitk 和 Serval 验证 JIT 正确性。
 \tool{} occupies a middle ground: it generates both kernel and userspace code from one source and types cross-boundary relationships, but targets practical integration with the existing toolchain rather than formal verification.
 % \tool{} 占据中间地带：它从一个源生成内核和用户空间代码并对跨边界关系进行类型化，但目标是与现有工具链的实际集成而不是正式验证。
 

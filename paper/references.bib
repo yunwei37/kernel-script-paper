@@ -1,3 +1,10 @@
+% VERIFIED: 2026-07-17
+% REAL: yes
+% PDF: not available
+% ABSTRACT: Official Linux kernel documentation for eBPF, covering
+%   program types, maps, helpers, and the verifier.
+% USED_FOR: Primary reference for eBPF as the mechanism for running
+%   user-supplied code inside the Linux kernel
 @misc{linux-ebpf,
   title = {{eBPF} Documentation},
   author = {{The Linux Kernel Documentation Project}},
@@ -5,6 +12,13 @@
   howpublished = {\url{https://docs.kernel.org/bpf/}}
 }
 
+% VERIFIED: 2026-07-17
+% REAL: yes
+% PDF: not available
+% ABSTRACT: CO-RE (Compile Once, Run Everywhere) userspace library for
+%   loading and interacting with BPF programs via the standard C toolchain.
+% USED_FOR: Reference for the standard eBPF development workflow
+%   (hand-written kernel C, userspace C, Makefile)
 @misc{libbpf,
   title = {{libbpf}: a BPF CO-RE userspace library},
   author = {{libbpf developers}},
@@ -12,6 +26,13 @@
   howpublished = {\url{https://github.com/libbpf/libbpf}}
 }
 
+% VERIFIED: 2026-07-17
+% REAL: yes
+% PDF: not available
+% ABSTRACT: High-level tracing language for Linux eBPF, enabling concise
+%   one-liners and scripts for dynamic tracing and profiling.
+% USED_FOR: Example of a higher-level eBPF abstraction targeting tracing
+%   rather than general eBPF applications
 @misc{bpftrace,
   title = {{bpftrace}: High-level tracing language for Linux eBPF},
   author = {{bpftrace developers}},
@@ -19,6 +40,12 @@
   howpublished = {\url{https://github.com/bpftrace/bpftrace}}
 }
 
+% VERIFIED: 2026-07-17
+% REAL: yes
+% PDF: not available
+% ABSTRACT: Collection of BPF-based tools for Linux I/O analysis,
+%   networking, monitoring, and performance debugging.
+% USED_FOR: Example of eBPF tracing and profiling tooling
 @misc{bcc,
   title = {{BCC}: Tools for BPF-based Linux IO analysis, networking, monitoring, and more},
   author = {{iovisor/bcc developers}},
@@ -26,6 +53,13 @@
   howpublished = {\url{https://github.com/iovisor/bcc}}
 }
 
+% VERIFIED: 2026-07-17
+% REAL: yes
+% PDF: not available
+% STATUS: unused
+% ABSTRACT: Uses eBPF to enable fine-grained tracing of distributed LLM
+%   inference pipelines, capturing per-request latencies across services.
+% USED_FOR: Not currently cited
 @inproceedings{einfer-ebpf,
   title = {{eInfer}: Unlocking Fine-Grained Tracing for Distributed {LLM} Inference with {eBPF}},
   author = {Chu, Kexin and Su, Jianchang and Zhang, Yifan and Zhao, Chenxingyu and Yang, Yiwei and Zheng, Yusheng and Lin, Shengkai and Zhao, Shizhen and Zhang, Wei},
@@ -35,6 +69,13 @@
   doi = {10.1145/3748355.3748372}
 }
 
+% VERIFIED: 2026-07-17
+% REAL: yes
+% PDF: not available
+% ABSTRACT: Rust library for writing, loading, and managing eBPF programs,
+%   unifying kernel and userspace in Rust with typed map sharing.
+% USED_FOR: Example of a language-integrated eBPF framework that shares
+%   typed maps but leaves lifecycle ordering as a runtime property
 @misc{aya,
   title = {{Aya}: Rust eBPF library},
   author = {{Aya contributors}},
@@ -42,6 +83,13 @@
   howpublished = {\url{https://github.com/aya-rs/aya}}
 }
 
+% VERIFIED: 2026-07-17
+% REAL: yes
+% PDF: not available
+% ABSTRACT: Pure Go library for loading and managing eBPF programs and
+%   maps, used by the Cilium networking project.
+% USED_FOR: Example of a Go eBPF framework with similar implicit
+%   cross-boundary relationships
 @misc{cilium-ebpf,
   title = {{cilium/ebpf}: eBPF library for Go},
   author = {{Cilium contributors}},
@@ -49,6 +97,12 @@
   howpublished = {\url{https://github.com/cilium/ebpf}}
 }
 
+% VERIFIED: 2026-07-17
+% REAL: yes
+% PDF: not available
+% ABSTRACT: Describes the XDP framework for programmable high-performance
+%   packet processing in the Linux kernel using eBPF.
+% USED_FOR: Example of eBPF high-performance networking application
 @inproceedings{xdp,
   title = {The {eXpress} {Data} {Path}: Fast Programmable Packet Processing in the Operating System Kernel},
   author = {H{\o}iland-J{\o}rgensen, Toke and Brouer, Jesper Dangaard and Borkmann, Daniel and Fastabend, John and Herbert, Tom and Ahern, David and Miller, David},
@@ -57,6 +111,12 @@
   year = {2018}
 }
 
+% VERIFIED: 2026-07-17
+% REAL: yes
+% PDF: not available
+% ABSTRACT: Surveys eBPF and XDP for fast packet processing, covering
+%   architecture, programming model, use cases, and performance.
+% USED_FOR: General eBPF survey reference in background
 @article{ebpfsurvey,
   title = {Fast Packet Processing with {eBPF} and {XDP}: Concepts, Code, Challenges, and Applications},
   author = {Vieira, Marcos A. M. and Castanho, Matheus S. and Pac{\'i}fico, Racyus D. G. and Santos, Elerson R. S. and Ju{\'n}ior, Eduardo P. M. C{\^a}mara and Vieira, Luiz F. M.},
@@ -64,33 +124,68 @@
   volume = {53},
   number = {1},
   pages = {1--36},
-  year = {2020}
+  year = {2021},
+  doi = {10.1145/3371038}
 }
 
+% VERIFIED: 2026-07-17
+% REAL: yes
+% PDF: not available
+% STATUS: unused
+% ABSTRACT: Presents a static analysis for proving safety of eBPF
+%   programs using abstract interpretation, as an alternative to the
+%   kernel verifier.
+% USED_FOR: Not currently cited
 @inproceedings{prevail,
   title = {Simple and Precise Static Analysis of Untrusted {Linux} Kernel Extensions},
   author = {Gershuni, Elazar and Amit, Nadav and Gurfinkel, Arie and Narodytska, Nina and Navas, Jorge A. and Rinetzky, Noam and Ryzhyk, Leonid and Sagiv, Mooly},
   booktitle = {Proceedings of the 40th ACM SIGPLAN Conference on Programming Language Design and Implementation (PLDI)},
   pages = {1069--1084},
-  year = {2019}
+  year = {2019},
+  doi = {10.1145/3314221.3314590}
 }
 
+% VERIFIED: 2026-07-17
+% REAL: yes
+% PDF: not available
+% STATUS: unused
+% ABSTRACT: Uses program synthesis to automatically generate safe and
+%   efficient eBPF packet-processing programs from high-level specs.
+% USED_FOR: Not currently cited
 @inproceedings{k2,
   title = {Synthesizing Safe and Efficient Kernel Extensions for Packet Processing},
   author = {Xu, Qiongwen and Wong, Michael D. and Wagle, Tanvi and Narayana, Srinivas and Sivaraman, Anirudh},
   booktitle = {Proceedings of the 2021 ACM SIGCOMM Conference},
   pages = {50--64},
-  year = {2021}
+  year = {2021},
+  doi = {10.1145/3452296.3472929}
 }
 
+% VERIFIED: 2026-07-17
+% REAL: yes
+% PDF: not available
+% STATUS: unused
+% NOTE: DBLP false positive — matches CACM 2022 reprint instead of OSDI
+%   2020 original. Entry metadata is correct for OSDI 2020.
+% ABSTRACT: Runs eBPF/XDP packet processing programs on FPGA NICs,
+%   achieving high throughput with 10x lower latency than CPU cores.
+% USED_FOR: Not currently cited
 @inproceedings{hxdp,
   title = {{hXDP}: Efficient Software Packet Processing on {FPGA} {NICs}},
   author = {Brunella, Marco Spaziani and Belocchi, Giacomo and Bonola, Marco and Pontarelli, Salvatore and Siracusano, Giuseppe and Bianchi, Giuseppe and Cammarano, Aniello and Palumbo, Alessandro and Petrucci, Luca and Bifulco, Roberto},
   booktitle = {Proceedings of the 14th USENIX Symposium on Operating Systems Design and Implementation (OSDI)},
   pages = {973--990},
-  year = {2020}
+  year = {2020},
+  url = {https://www.usenix.org/conference/osdi20/presentation/brunella}
 }
 
+% VERIFIED: 2026-07-17
+% REAL: yes
+% PDF: not available
+% STATUS: unused
+% ABSTRACT: Introduces P4, a high-level language for programming
+%   protocol-independent packet processors in software-defined networks.
+% USED_FOR: Not currently cited
 @article{p4,
   title = {{P4}: Programming Protocol-Independent Packet Processors},
   author = {Bosshart, Pat and Daly, Dan and Gibb, Glen and Izzard, Martin and McKeown, Nick and Rexford, Jennifer and Schlesinger, Cole and Talayco, Dan and Vahdat, Amin and Varghese, George and Walker, David},
@@ -98,9 +193,17 @@
   volume = {44},
   number = {3},
   pages = {87--95},
-  year = {2014}
+  year = {2014},
+  doi = {10.1145/2656877.2656890}
 }
 
+% VERIFIED: 2026-07-17
+% REAL: yes
+% PDF: not available
+% STATUS: unused
+% ABSTRACT: Presents Click, a modular software architecture for building
+%   flexible and efficient routers from composable packet-processing elements.
+% USED_FOR: Not currently cited
 @article{click,
   title = {The {Click} Modular Router},
   author = {Kohler, Eddie and Morris, Robert and Chen, Benjie and Jannotti, John and Kaashoek, M. Frans},
@@ -108,9 +211,18 @@
   volume = {18},
   number = {3},
   pages = {263--297},
-  year = {2000}
+  year = {2000},
+  doi = {10.1145/354871.354874}
 }
 
+% VERIFIED: 2026-07-17
+% REAL: yes
+% PDF: not available
+% ABSTRACT: Introduces typestate as a programming language mechanism that
+%   tracks the abstract state of objects in the type system to prevent
+%   protocol violations at compile time.
+% USED_FOR: Foundational reference for typestate concept; KernelScript
+%   applies a lightweight form to track program handle lifecycle
 @article{typestate,
   title = {Typestate: A Programming Language Concept for Enhancing Software Reliability},
   author = {Strom, Robert E. and Yemini, Shaula},
@@ -118,138 +230,287 @@
   volume = {SE-12},
   number = {1},
   pages = {157--171},
-  year = {1986}
+  year = {1986},
+  doi = {10.1109/TSE.1986.6312929}
 }
 
+% VERIFIED: 2026-07-17
+% REAL: yes
+% PDF: not available
+% ABSTRACT: Provides safe Rust abstractions for writing eBPF kernel
+%   extensions, closing the gap between the Rust type system and the
+%   BPF verifier.
+% USED_FOR: Example of a Rust-based approach to safe kernel extensions
+%   that still leaves cross-boundary relationships implicit
 @inproceedings{rex,
   title = {{Rex}: Closing the Language-Verifier Gap with Safe and Usable Kernel Extensions},
   author = {Jia, Jinghao and Qin, Ruowen and Craun, Milo and Lukiyanov, Egor and Bansal, Ayush and Phan, Minh and Le, Michael V. and Franke, Hubertus and Jamjoom, Hani and Xu, Tianyin and Williams, Dan},
   booktitle = {2025 USENIX Annual Technical Conference (USENIX ATC 25)},
-  year = {2025}
+  year = {2025},
+  url = {https://www.usenix.org/conference/atc25/presentation/jia}
 }
 
+% VERIFIED: 2026-07-17
+% REAL: yes
+% PDF: not available
+% ABSTRACT: Presents a userspace eBPF runtime (bpftime) that extends
+%   applications safely and efficiently without kernel modifications,
+%   using an extension-in-the-middle model.
+% USED_FOR: Example of eBPF userspace extension runtime application
 @inproceedings{bpftime,
   title = {Extending Applications Safely and Efficiently},
   author = {Zheng, Yusheng and Yu, Tong and Yang, Yiwei and Hu, Yanpeng and Lai, Xiaozheng and Williams, Dan and Quinn, Andi},
   booktitle = {19th USENIX Symposium on Operating Systems Design and Implementation (OSDI 25)},
-  year = {2025}
+  year = {2025},
+  url = {https://www.usenix.org/conference/osdi25/presentation/zheng-yusheng}
 }
 
+% VERIFIED: 2026-07-17
+% REAL: yes
+% PDF: not available
+% STATUS: unused
+% ABSTRACT: Scaffolding repository with example BPF applications using
+%   libbpf and CO-RE, providing templates for common program types.
+% USED_FOR: Not currently cited
 @misc{libbpf-bootstrap,
   title = {{libbpf-bootstrap}: Scaffolding for {BPF} Application Development},
   author = {{libbpf authors}},
   howpublished = {\url{https://github.com/libbpf/libbpf-bootstrap}},
+  year = {2026},
   note = {Accessed 2026}
 }
 
+% VERIFIED: 2026-07-17
+% REAL: yes
+% PDF: not available
+% STATUS: unused
+% ABSTRACT: Hands-on tutorial for XDP programming with progressive
+%   exercises from basic pass-through to advanced packet rewriting.
+% USED_FOR: Not currently cited
 @misc{xdp-tutorial,
   title = {{xdp-tutorial}: {XDP} Hands-On Tutorial},
   author = {{The XDP Project}},
   howpublished = {\url{https://github.com/xdp-project/xdp-tutorial}},
+  year = {2026},
   note = {Accessed 2026}
 }
 
+% VERIFIED: 2026-07-17
+% REAL: yes
+% PDF: not available
+% ABSTRACT: Argues that linear types, which enforce single-use resource
+%   discipline, can express state changes and enable safe in-place
+%   updates and resource management.
+% USED_FOR: Foundational reference for linear types enforcing single-use
+%   resource protocols in the type system
 @incollection{lineartypes,
   title = {Linear Types Can Change the World!},
   author = {Wadler, Philip},
   booktitle = {Programming Concepts and Methods},
   editor = {Broy, M. and Jones, C.},
   publisher = {North-Holland},
-  year = {1990}
+  year = {1990},
+  url = {https://oa.mg/work/2912106379}
 }
 
+% VERIFIED: 2026-07-17
+% REAL: yes
+% PDF: not available
+% ABSTRACT: Presents Vault, a language that uses typestate to enforce
+%   high-level resource-usage protocols (e.g., lock ordering, file
+%   handle discipline) in low-level C-like code at compile time.
+% USED_FOR: Example of enforcing resource protocols in low-level software
+%   via typestate; KernelScript applies a similar idea to eBPF handles
 @inproceedings{vault,
   title = {Enforcing High-Level Protocols in Low-Level Software},
   author = {DeLine, Robert and F{\"a}hndrich, Manuel},
   booktitle = {Proceedings of the ACM SIGPLAN Conference on Programming Language Design and Implementation (PLDI)},
   pages = {59--69},
-  year = {2001}
+  year = {2001},
+  doi = {10.1145/378795.378811}
 }
 
+% VERIFIED: 2026-07-17
+% REAL: yes
+% PDF: not available
+% ABSTRACT: Introduces session types as language primitives for
+%   structured communication-based programming, ensuring protocol
+%   compliance of message-passing programs at compile time.
+% USED_FOR: Foundational reference for structured communication typing;
+%   KernelScript draws on this tradition for cross-boundary typing
 @inproceedings{sessiontypes,
   title = {Language Primitives and Type Discipline for Structured Communication-Based Programming},
   author = {Honda, Kohei and Vasconcelos, Vasco T. and Kubo, Makoto},
   booktitle = {Programming Languages and Systems (ESOP)},
   pages = {122--138},
-  year = {1998}
+  year = {1998},
+  doi = {10.1007/BFb0053567}
 }
 
+% VERIFIED: 2026-07-17
+% REAL: yes
+% PDF: not available
+% STATUS: unused
+% ABSTRACT: Sparse is a semantic checker for C that uses compiler
+%   annotations to detect type errors, locking bugs, and other
+%   common kernel programming mistakes.
+% USED_FOR: Not currently cited
 @misc{sparse,
   title = {{Sparse}: A Semantic Parser for {C}},
   author = {{Linux kernel developers}},
   howpublished = {\url{https://www.kernel.org/doc/html/latest/dev-tools/sparse.html}},
+  year = {2026},
   note = {Accessed 2026}
 }
 
+% VERIFIED: 2026-07-17
+% REAL: yes
+% PDF: not available
+% ABSTRACT: Presents a correct-by-compilation approach for kernel
+%   extensions, generating verified eBPF bytecode from a high-level
+%   functional language with formal guarantees.
+% USED_FOR: Example of a verified/formal approach to eBPF bytecode
+%   generation (contrasted with KernelScript's practical integration)
 @inproceedings{beepl,
   title = {{BeePL}: Correct-by-Compilation Kernel Extensions},
   author = {Priya, Swarn and Besson, Fr{\'e}d{\'e}ric and Sughrue, Connor and Steenvoorden, Tim and Fulford, Jamie and Verbeek, Freek and Ravindran, Binoy},
   booktitle = {Principles of Secure Compilation (PriSC @ POPL)},
-  year = {2025}
+  year = {2025},
+  url = {https://popl25.sigplan.org/details/prisc-2025-PriSC-2024-1/3/BeePL-Correct-by-compilation-kernel-extensions}
 }
 
+% VERIFIED: 2026-07-17
+% REAL: yes
+% PDF: not available
+% ABSTRACT: Presents a trustworthy in-kernel BPF JIT compiler
+%   infrastructure verified using the Coq proof assistant, ensuring
+%   that JIT compilation preserves program semantics.
+% USED_FOR: Example of verified JIT correctness for eBPF (formal
+%   verification direction, contrasted with KernelScript's approach)
 @inproceedings{jitk,
   title = {{Jitk}: A Trustworthy In-Kernel Interpreter Infrastructure},
   author = {Wang, Xi and Lazar, David and Zeldovich, Nickolai and Chlipala, Adam and Tatlock, Zachary},
   booktitle = {Proceedings of the 11th USENIX Symposium on Operating Systems Design and Implementation (OSDI)},
   pages = {33--47},
-  year = {2014}
+  year = {2014},
+  url = {https://www.usenix.org/conference/osdi14/technical-sessions/presentation/wang_xi}
 }
 
+% VERIFIED: 2026-07-17
+% REAL: yes
+% PDF: not available
+% ABSTRACT: Presents Serval, a framework for scalable symbolic evaluation
+%   that automates verification of systems code including BPF JIT
+%   compilers across multiple architectures.
+% USED_FOR: Example of verified JIT correctness for eBPF (formal
+%   verification direction, contrasted with KernelScript's approach)
 @inproceedings{serval,
   title = {Scaling Symbolic Evaluation for Automated Verification of Systems Code with {Serval}},
   author = {Nelson, Luke and Bornholt, James and Gu, Ronghui and Baumann, Andrew and Torlak, Emina and Wang, Xi},
   booktitle = {Proceedings of the 27th ACM Symposium on Operating Systems Principles (SOSP)},
   pages = {225--242},
-  year = {2019}
+  year = {2019},
+  doi = {10.1145/3341301.3359641}
 }
 
+% VERIFIED: 2026-07-17
+% REAL: yes
+% PDF: not available
+% ABSTRACT: Presents ghOSt, a framework that delegates Linux CPU
+%   scheduling decisions to userspace agents, enabling rapid
+%   experimentation with scheduling policies.
+% USED_FOR: Example of eBPF-enabled CPU scheduling application
 @inproceedings{ghost,
   title = {{ghOSt}: Fast \& Flexible User-Space Delegation of {Linux} Scheduling},
   author = {Humphries, Jack Tigar and Natu, Neel and Chaugule, Ashwin and Weisse, Ofir and Rhoden, Barret and Don, Josh and Rizzo, Luigi and Noskov, Oleg and Turner, Paul and Kozyrakis, Christos},
   booktitle = {Proceedings of the 28th ACM Symposium on Operating Systems Principles (SOSP)},
   pages = {588--604},
-  year = {2021}
+  year = {2021},
+  doi = {10.1145/3477132.3483542}
 }
 
+% VERIFIED: 2026-07-17
+% REAL: yes
+% PDF: not available
+% ABSTRACT: Presents cache_ext, a system that uses eBPF to allow
+%   applications to customize Linux page cache policies (eviction,
+%   prefetching) without kernel modifications.
+% USED_FOR: Example of eBPF-enabled page-cache customization application
 @inproceedings{cacheext,
   title = {{cache\_ext}: Customizing the Page Cache with {eBPF}},
   author = {Zussman, Tal and Zarkadas, Ioannis and Carin, Jeremy and Cheng, Andrew and Franke, Hubertus and Pfefferle, Jonas and Cidon, Asaf},
   booktitle = {Proceedings of the 30th ACM Symposium on Operating Systems Principles (SOSP)},
   pages = {462--478},
-  year = {2025}
+  year = {2025},
+  doi = {10.1145/3731569.3764820}
 }
 
-@article{gpuext,
+% VERIFIED: 2026-07-17
+% REAL: yes
+% PDF: not available
+% ABSTRACT: Proposes using eBPF to implement extensible OS-level GPU
+%   resource management policies for scheduling, memory, and power.
+% USED_FOR: Example of eBPF-enabled GPU resource control application
+@misc{gpuext,
   title = {{gpu\_ext}: Extensible {OS} Policies for {GPUs} via {eBPF}},
   author = {Zheng, Yusheng and Yu, Tong and Yang, Yiwei and Jiang, Minghui and Gao, Xiangyu and Su, Jianchang and Hu, Yanpeng and Mao, Wenan and Zhang, Wei and Williams, Dan and Quinn, Andi},
-  journal = {arXiv preprint arXiv:2512.12615},
+  howpublished = {arXiv preprint arXiv:2512.12615},
   year = {2025}
 }
 
+% VERIFIED: 2026-07-17
+% REAL: yes
+% PDF: not available
+% ABSTRACT: Documents Linux Security Module (LSM) BPF programs, which
+%   allow attaching eBPF programs to LSM hooks for runtime security
+%   policy enforcement.
+% USED_FOR: Reference for eBPF security policy enforcement via LSM hooks
 @misc{lsm-bpf,
   title = {{LSM BPF}: Kernel Runtime Security Instrumentation},
-  author = {Singh, KP and others},
+  author = {{KP Singh}},
   howpublished = {\url{https://docs.kernel.org/bpf/prog_lsm.html}},
+  year = {2020},
   note = {Linux kernel 5.7+}
 }
 
+% VERIFIED: 2026-07-17
+% REAL: yes
+% PDF: not available
+% ABSTRACT: Presents BPFBox, a process confinement system using eBPF/LSM
+%   that provides simple, precise security policies with low overhead.
+% USED_FOR: Example of a domain-specific eBPF DSL for security policies
 @inproceedings{bpfbox,
   title = {{BPFBox}: Simple Precise Process Confinement with {eBPF}},
   author = {Findlay, William and Somayaji, Anil and Barrera, David},
   booktitle = {Proceedings of the 2020 ACM SIGSAC Conference on Cloud Computing Security Workshop (CCSW)},
   pages = {91--103},
-  year = {2020}
+  year = {2020},
+  doi = {10.1145/3411495.3421358}
 }
 
+% VERIFIED: 2026-07-17
+% REAL: yes
+% PDF: not available
+% ABSTRACT: Accelerates Memcached by using eBPF/XDP for safe in-kernel
+%   caching and pre-stack processing, eliminating kernel-userspace
+%   round-trips for cache hits.
+% USED_FOR: Example of a domain-specific eBPF DSL for caching
 @inproceedings{bmc,
   title = {{BMC}: Accelerating Memcached using Safe In-kernel Caching and Pre-stack Processing},
   author = {Ghigoff, Yoann and Sopena, Julien and Lazri, Kahina and Blin, Antoine and Muller, Gilles},
   booktitle = {Proceedings of the 18th USENIX Symposium on Networked Systems Design and Implementation (NSDI)},
   pages = {487--501},
-  year = {2021}
+  year = {2021},
+  url = {https://www.usenix.org/conference/nsdi21/presentation/ghigoff}
 }
 
+% VERIFIED: 2026-07-17
+% REAL: yes
+% PDF: not available
+% ABSTRACT: Framework for dynamically loading and running eBPF programs
+%   using JSON descriptors, simplifying deployment without recompilation.
+% USED_FOR: Example of a general eBPF development tool for dynamic
+%   loading (reduces boilerplate but leaves relationships implicit)
 @misc{eunomia-bpf,
   title = {{eunomia-bpf}: A Dynamic Loading Framework for {eBPF}},
   author = {{eunomia-bpf developers}},
@@ -257,20 +518,41 @@
   year = {2024}
 }
 
-@article{yaksha,
+% VERIFIED: 2026-07-17
+% REAL: yes
+% PDF: not available
+% ABSTRACT: Analyzes and characterizes eBPF bytecode network functions
+%   to understand their behavior patterns, instruction mixes, and
+%   complexity profiles.
+% USED_FOR: Example of a domain-specific eBPF tool for bytecode analysis
+@misc{yaksha,
   title = {{Yaksha-Prashna}: Understanding {eBPF} Bytecode Network Function Behavior},
   author = {Singh, Animesh and Kumar, K. Shiv and VenkataKeerthy, S. and Mamidipaka, Pragna and Aaseesh, R. V. B. R. N. and Sen, Sayandeep and Kodeswaran, Palanivel A. and Benson, Theophilus A. and Upadrasta, Ramakrishna and Tammana, Praveen},
-  journal = {arXiv preprint arXiv:2602.11232},
-  year = {2025}
+  howpublished = {arXiv preprint arXiv:2602.11232},
+  year = {2026}
 }
 
-@article{wasmbpf,
+% VERIFIED: 2026-07-17
+% REAL: yes
+% PDF: not available
+% ABSTRACT: Enables deploying eBPF programs via WebAssembly containers,
+%   streamlining distribution and portability in cloud environments.
+% USED_FOR: Example of a general eBPF development tool for WebAssembly
+%   deployment (reduces boilerplate but leaves relationships implicit)
+@misc{wasmbpf,
   title = {{Wasm-bpf}: Streamlining {eBPF} Deployment in Cloud Environments with {WebAssembly}},
   author = {Zheng, Yusheng and Yu, Tong and Yang, Yiwei and Quinn, Andrew},
-  journal = {arXiv preprint arXiv:2408.04856},
+  howpublished = {arXiv preprint arXiv:2408.04856},
   year = {2024}
 }
 
+% VERIFIED: 2026-07-17
+% REAL: yes
+% PDF: not available
+% ABSTRACT: Compiler backend that translates P4 network programs into
+%   eBPF bytecode for execution in the Linux kernel data path.
+% USED_FOR: Example of a domain-specific DSL (P4) targeting eBPF for
+%   networking
 @misc{p4c-ebpf,
   title = {{P4c-eBPF}: {P4} Compiler Backend for {eBPF}},
   author = {{P4 Language Consortium}},
@@ -278,9 +560,17 @@
   year = {2024}
 }
 
-@article{actplane,
-  title = {Securing {AI} Agents with Information-Flow Control},
-  author = {Costa, Manuel and K{\"o}pf, Boris and Kolluri, Aashish and Paverd, Andrew and Russinovich, Mark and Salem, Ahmed and Tople, Shruti and Wutschitz, Lukas and Zanella-B{\'e}guelin, Santiago},
-  journal = {arXiv preprint arXiv:2505.23643},
-  year = {2025}
+% VERIFIED: 2026-07-17
+% REAL: yes
+% PDF: not available
+% ABSTRACT: eBPF-based policy engine that lets AI agent harnesses declare
+%   and enforce OS-level policies using an information-flow control DSL,
+%   covering execution paths that tool-call interception misses.
+% USED_FOR: Example of a domain-specific eBPF DSL for security policies
+%   (cited alongside BPFBox for security DSLs)
+@misc{actplane,
+  title = {{ActPlane}: Programmable {OS}-Level Policy Enforcement for Agent Harnesses},
+  author = {Zheng, Yusheng and Wu, Tianyuan and Fu, Quanzhi and Yu, Tong and Mao, Wenan and Ma, Tao and Williams, Dan and Wang, Wei and Quinn, Andi},
+  howpublished = {arXiv preprint arXiv:2606.25189},
+  year = {2026}
 }
