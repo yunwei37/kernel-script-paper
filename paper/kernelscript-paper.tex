@@ -8,6 +8,7 @@
 \usepackage{listings}
 \usepackage{needspace}
 \usepackage{placeins}
+\usepackage{tikz}
 \usepackage{xcolor}
 
 \renewcommand\footnotetextcopyrightpermission[1]{}
@@ -45,8 +46,8 @@
 \begin{abstract}
 eBPF has become the standard mechanism for extending Linux with custom packet processing, tracing, and security policies, but its programming model is fragmented.
 % eBPF 已成为使用自定义数据包处理、追踪和安全策略扩展 Linux 的标准机制，但其编程模型是碎片化的。
-A single application spans kernel code, a userspace loader, and shared maps, yet the relationships among them (types, lifecycle ordering, shared state) are checked only at load time or not at all, leading to late, hard-to-diagnose failures.
-% 单个应用程序跨越内核代码、用户空间加载器和共享映射，但它们之间的关系（类型、生命周期顺序、共享状态）仅在加载时检查或根本不检查，导致难以诊断的延迟故障。
+A single application spans kernel code, a userspace loader, and shared maps, yet the relationships among them (types, lifecycle ordering, shared state) are checked only at load time or not at all --- an event struct defined differently on each side silently garbles every record, and misordered lifecycle calls quietly drop events.
+% 单个应用程序跨越内核代码、用户空间加载器和共享映射，但它们之间的关系（类型、生命周期顺序、共享状态）仅在加载时检查或根本不检查——两侧定义不同的事件结构体静默篡改每条记录，错序的生命周期调用静默丢失事件。
 We observe that these cross-boundary relationships are duplicated concepts that a type system can unify.
 % 我们观察到这些跨边界关系是类型系统可以统一的重复概念。
 We present \tool{}, a DSL that types maps, program handles, and execution domains in one source, then lowers to standard C through the clang/bpftool/libbpf toolchain.
@@ -81,8 +82,8 @@ A single eBPF application spans kernel code constrained by the verifier, a users
 % 单个 eBPF 应用程序跨越受验证器约束的内核代码、打开对象并管理生命周期的用户空间加载器、共享映射和环形缓冲区，以及（对于较新功能）必须与运行中的内核匹配的生成骨架头文件。
 The relationships among these pieces, such as a map's key and value types or the order of load, attach, and detach, are checked only at load time or not at all.
 % 这些部分之间的关系，例如映射的键和值类型或加载、附加和分离的顺序，仅在加载时检查或根本不检查。
-Errors surface late as cryptic verifier rejections or silent mismatches.
-% 错误以神秘的验证器拒绝或静默不匹配的形式延迟出现。
+Errors surface late as cryptic verifier rejections or, worse, go undetected entirely: when a map's value struct is redefined in kernel C but not in the userspace loader, data is silently misinterpreted at runtime; when a skeleton header becomes stale after a struct change, userspace compiles against the old layout and reads corrupt fields.
+% 错误以神秘的验证器拒绝延迟出现，或者更糟，完全不被检测：当映射的值结构体在内核 C 中被重新定义但用户空间加载器未更新时，数据在运行时被静默误解；当骨架头文件在结构体更改后变得过时，用户空间针对旧布局编译并读取损坏的字段。
 
 % P3: Gap
 Existing tools reduce boilerplate yet leave cross-boundary relationships implicit.
@@ -154,8 +155,10 @@ The kernel/userspace split introduces three kinds of coupling that current tools
 % 表示耦合要求映射的键和值类型在内核代码、生成的头文件和用户空间查找之间一致，不匹配在出现故障之前是静默的。
 \emph{Compatibility coupling} arises because generated bindings depend on the exact kernel and libbpf versions.
 % 兼容性耦合出现是因为生成的绑定依赖于确切的内核和 libbpf 版本。
-The verifier detects many errors, though only at load time.
-% 验证器检测许多错误，但仅在加载时。
+The verifier guarantees memory safety but not application correctness across the boundary: calling \code{attach} before populating maps lets the kernel program run against empty state, redefining a ring-buffer event struct on one side without updating the other silently garbles every record, and a stale skeleton header after a kernel struct change compiles without warning but misaligns every shared field.
+% 验证器保证内存安全，但不保证跨边界的应用正确性：在填充映射之前调用 attach 使内核程序在空状态下运行，在一侧重新定义环形缓冲区事件结构体而不更新另一侧会静默篡改每条记录，内核结构体更改后过时的骨架头文件在没有警告的情况下编译但使每个共享字段对齐错误。
+Automated eBPF-to-Rust migration confirms that these implicit cross-boundary relationships are a primary source of translation errors~\cite{heimdall}.
+% 自动化的 eBPF 到 Rust 迁移证实这些隐式跨边界关系是翻译错误的主要来源。
 A DSL can move lifecycle and representation checks to compile time.
 % DSL 可以将生命周期和表示检查移至编译时。
 
@@ -260,14 +263,70 @@ Typestate tracks object state in types~\cite{typestate}, and linear types enforc
 \tool{} applies a lightweight form of these ideas, distinguishing producer and consumer handles and annotating execution domains without full substructural typing.
 % \tool{} 应用这些思想的轻量级形式，区分生产者和消费者句柄并注释执行域，而没有完整的子结构类型。
 
-To meet these goals, the compiler (written in OCaml with dune) parses \tool{} source, resolves imports and includes, builds symbol tables, runs multi-program analysis and type checking, performs safety analysis, builds an IR, and emits C.
-% 为了实现这些目标，编译器（用 OCaml 和 dune 编写）解析 \tool{} 源代码，解析导入和包含，构建符号表，运行多程序分析和类型检查，执行安全分析，构建 IR，并发出 C 代码。
+To meet these goals, the compiler (written in OCaml with dune) parses \tool{} source, resolves imports and includes, builds symbol tables, runs multi-program analysis and type checking, performs safety analysis, builds an IR, and emits C (Figure~\ref{fig:pipeline}).
+% 为了实现这些目标，编译器（用 OCaml 和 dune 编写）解析 \tool{} 源代码，解析导入和包含，构建符号表，运行多程序分析和类型检查，执行安全分析，构建 IR，并发出 C 代码（图~\ref{fig:pipeline}）。
 The compiler comprises nine modules covering maps, codegen, safety, and struct\_ops.
 % 编译器包含九个模块，涵盖映射、代码生成、安全性和 struct\_ops。
 For an input \texttt{foo.ks}, the generated project contains \texttt{foo.ebpf.c}, \texttt{foo.c}, a \texttt{Makefile}, and, when kfuncs are present, \texttt{foo.mod.c}.
 % 对于输入 \texttt{foo.ks}，生成的项目包含 \texttt{foo.ebpf.c}、\texttt{foo.c}、\texttt{Makefile}，以及当存在 kfuncs 时的 \texttt{foo.mod.c}。
 The Makefile invokes bpftool to dump \texttt{vmlinux.h}, clang to produce a BPF object, bpftool to generate a skeleton, and gcc to link the userspace loader against libbpf (together with libelf and zlib).
 % Makefile 调用 bpftool 转储 \texttt{vmlinux.h}，clang 生成 BPF 对象，bpftool 生成骨架，gcc 将用户空间加载器与 libbpf（以及 libelf 和 zlib）链接。
+
+\begin{figure}[t]
+\centering
+\begin{tikzpicture}[
+  font=\scriptsize,
+  file/.style={draw, rounded corners=1.5pt, fill=gray!10,
+    inner sep=2.5pt, font=\scriptsize\ttfamily, minimum height=5mm},
+  phase/.style={draw, rounded corners=3pt, fill=blue!8,
+    inner sep=4pt, align=center, text width=50mm},
+  tool/.style={draw, rounded corners=1.5pt, fill=orange!8,
+    inner sep=2.5pt, minimum height=5mm},
+  arr/.style={->, >=stealth, semithick},
+]
+
+\node[file] (src) at (0, 0) {foo.ks};
+
+\node[phase] (comp) at (0, -1.05) {%
+  \textbf{KernelScript Compiler}\\[1pt]
+  {\tiny domains \quad typed maps \quad lifecycle \quad safety}};
+\draw[arr] (src) -- (comp);
+
+\node[file] (ebpfc) at (-1.8, -2.3) {foo.ebpf.c};
+\node[file] (userc) at (0, -2.3) {foo.c};
+\node[file] (makef) at (1.6, -2.3) {Makefile};
+\draw[arr] (comp) -- (ebpfc);
+\draw[arr] (comp) -- (userc);
+\draw[arr] (comp) -- (makef);
+
+\draw[dashed, gray, semithick] (-3.2, -2.8) -- (3.2, -2.8);
+\node[anchor=east, gray, font=\tiny\itshape] at (3.2, -2.65) {stock toolchain};
+
+\node[tool] (clang) at (-1.8, -3.4) {clang};
+\draw[arr] (ebpfc) -- (clang);
+
+\node[file] (bpfo) at (-1.8, -4.1) {foo.bpf.o};
+\draw[arr] (clang) -- (bpfo);
+
+\node[tool] (bpftool) at (-1.8, -4.8) {bpftool};
+\draw[arr] (bpfo) -- (bpftool);
+
+\node[file] (skel) at (-1.8, -5.5) {foo.skel.h};
+\draw[arr] (bpftool) -- (skel);
+
+\node[tool] (gcc) at (1.2, -4.8) {gcc + libbpf};
+\draw[arr] (userc) -- (gcc);
+\draw[arr, rounded corners=3pt] (skel.east) -- ++(0.6, 0) |- (gcc.west);
+
+\node[file, font=\scriptsize\ttfamily\bfseries] (bin) at (1.2, -5.8) {foo};
+\draw[arr] (gcc) -- (bin);
+
+\end{tikzpicture}
+\caption{Compilation pipeline. The compiler checks cross-boundary
+invariants and emits C\@; the stock clang/bpftool/libbpf toolchain
+produces the final binary.}
+\label{fig:pipeline}
+\end{figure}
 
 Each typing rule of Section~\ref{sec:model} maps to a concrete compiler pass.
 % 第~\ref{sec:model} 节的每条类型规则映射到一个具体的编译器遍。
