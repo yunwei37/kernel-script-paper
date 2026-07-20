@@ -231,12 +231,12 @@ The lifecycle builtins are typed so that only \code{load} produces a \code{Progr
 \end{gather*}
 Because \code{attach} and \code{detach} require a \code{ProgramHandle} and only \code{load} produces one, ``attach before load'' is a \emph{type} error, not a runtime failure.
 % 因为 \code{attach} 和 \code{detach} 需要 \code{ProgramHandle} 而只有 \code{load} 产生它，"加载前附加"是一个类型错误，而不是运行时故障。
-Passing a bare \code{FunctionRef}, an integer, or a string to a lifecycle builtin does not type-check.
-% 将裸 \code{FunctionRef}、整数或字符串传递给生命周期内置函数不会通过类型检查。
+Passing a bare \code{FunctionRef}, an integer, or a string to a lifecycle builtin is a type error.
+% 将裸 \code{FunctionRef}、整数或字符串传递给生命周期内置函数是类型错误。
 The typing rules enforce a producer/consumer handle discipline. Because only \code{load} produces a \code{ProgramHandle}, the system enforces the single ordering constraint $\textit{load} \prec \{\textit{attach},\,\textit{detach}\}$ rather than the complete load-to-attach-to-detach protocol.
 % 类型规则强制执行生产者/消费者句柄纪律。因为只有 \code{load} 产生 \code{ProgramHandle}，系统强制执行单一排序约束 $\textit{load} \prec \{\textit{attach},\,\textit{detach}\}$，而不是完整的加载到附加到分离协议。
-It guarantees that lifecycle builtins receive values of the right kind without enforcing full path-sensitive properties such as use-after-detach, double-attach, or leaked handles.
-% 它保证生命周期内置函数接收正确类型的值，而不强制执行完整的路径敏感属性，如分离后使用、双重附加或泄漏的句柄。
+It guarantees that lifecycle builtins receive values of the right kind. Full path-sensitive properties such as use-after-detach, double-attach, or leaked handles remain outside the type system's scope.
+% 它保证生命周期内置函数接收正确类型的值。完整的路径敏感属性如分离后使用、双重附加或泄漏的句柄仍在类型系统范围之外。
 
 The benefit is earlier, localized compiler errors instead of naming conventions or late verifier/attach failures.
 % 好处是更早的、局部化的编译器错误，而不是命名约定或延迟的验证器/附加故障。
@@ -333,8 +333,8 @@ The compiler attaches a domain to each function as a scope refined by the entry 
 % 编译器将域附加到每个函数作为由入口属性细化的作用域。IR 记录每个函数的程序类型，以便代码生成可以将相同的源函数分派到 eBPF 或用户空间后端。
 Typed maps lower to a single descriptor that records key and value types once. Both backends read that descriptor to emit the eBPF \code{SEC(".maps")} definition and the userspace accessor (Listing~\ref{lst:map}).
 % 类型化映射降低到单个描述符，一次记录键和值类型。两个后端读取该描述符以发出 eBPF \code{SEC(".maps")} 定义和用户空间访问器（清单~\ref{lst:map}）。
-Lifecycle handles are enforced in the front end: only \code{load} yields a \code{ProgramHandle}, and \code{attach} and \code{detach} require one, so a misordered call fails type checking before code generation.
-% 生命周期句柄在前端强制执行：只有 \code{load} 产生 \code{ProgramHandle}，而 \code{attach} 和 \code{detach} 需要一个，因此错序调用在代码生成之前类型检查失败。
+Lifecycle handles are enforced in the front end. Only \code{load} yields a \code{ProgramHandle}, and \code{attach} and \code{detach} require one, so a misordered call fails type checking before code generation.
+% 生命周期句柄在前端强制执行。只有 \code{load} 产生 \code{ProgramHandle}，而 \code{attach} 和 \code{detach} 需要一个，因此错序调用在代码生成之前类型检查失败。
 The handle then lowers to a file descriptor via libbpf APIs.
 % 然后句柄通过 libbpf API 降低到文件描述符。
 
@@ -357,8 +357,8 @@ __u32 key = ...; __u64 val;
 bpf_map_lookup_elem(counts_fd, &key, &val);
 \end{lstlisting}
 
-The compiler does not replace the verifier, clang, bpftool, or libbpf, so existing diagnostics remain available and any compatibility failure stays visible.
-% 编译器不替换验证器、clang、bpftool 或 libbpf，因此现有诊断保持可用，任何兼容性故障都保持可见。
+The compiler does not replace the verifier, clang, bpftool, or libbpf. Existing diagnostics therefore remain available, and any compatibility failure stays visible.
+% 编译器不替换验证器、clang、bpftool 或 libbpf。因此现有诊断保持可用，任何兼容性故障都保持可见。
 For interfaces that move faster than the DSL can stabilize, \code{include} and \code{extern} declarations provide a fallback to raw header declarations.
 % 对于比 DSL 稳定更快移动的接口，\code{include} 和 \code{extern} 声明提供回退到原始头文件声明。
 
@@ -369,17 +369,17 @@ The evaluation answers three questions.
 % 评估回答三个问题。
 \emph{(Q1)} Does each typed cross-boundary invariant trigger a compile-time diagnostic?
 % (Q1) 每个类型化的跨边界不变量是否触发编译时诊断？
-\emph{(Q2)} Does one source generate a complete, buildable libbpf project, and does unifying it reduce maintenance surface?
+\emph{(Q2)} Does a single source generate a complete, buildable libbpf project, and does unifying it reduce maintenance surface?
 % (Q2) 单一源是否生成完整的、可构建的 libbpf 项目，统一它是否减少维护表面？
 \emph{(Q3)} Does generated code load, attach, and run on a real kernel?
 % (Q3) 生成的代码是否在真实内核上加载、附加和运行？
-All experiments run on Linux \KSKernelVersion{} with clang 18, bpftool 7.7, and libbpf 1.3.0, and SLOC counts exclude blank lines, comments, and generated headers.
-% 所有实验在 Linux \KSKernelVersion{} 上运行，使用 clang 18、bpftool 7.7 和 libbpf 1.3.0，SLOC 计数排除空行、注释和生成的头文件。
+All experiments run on Linux \KSKernelVersion{} with clang 18, bpftool 7.7, and libbpf 1.3.0. SLOC counts exclude blank lines, comments, and generated headers.
+% 所有实验在 Linux \KSKernelVersion{} 上运行，使用 clang 18、bpftool 7.7 和 libbpf 1.3.0。SLOC 计数排除空行、注释和生成的头文件。
 
 \subsection{Q1: Compile-Time Diagnostic Coverage}
 
-The compiler test suite contains \KSTotalUnitSuites{} suites and \KSTotalUnitTests{} tests with no failures, covering all major subsystems from lexer to code generation.
-% 编译器测试套件包含 \KSTotalUnitSuites{} 个套件和 \KSTotalUnitTests{} 个测试，无失败，覆盖从词法分析器到代码生成的所有主要子系统。
+The compiler test suite contains \KSTotalUnitSuites{} suites and \KSTotalUnitTests{} tests with no failures. These tests cover all major subsystems from lexer to code generation.
+% 编译器测试套件包含 \KSTotalUnitSuites{} 个套件和 \KSTotalUnitTests{} 个测试，无失败。这些测试覆盖从词法分析器到代码生成的所有主要子系统。
 A separate rejection suite of \KSStaticTotal{} targeted programs exercises the diagnostics of Section~\ref{sec:model} directly, with one positive control and \KSStaticExpectedFailures{} expected rejections covering lifecycle misuses, program-signature violations, map type errors, domain crossings, and safety violations.
 % 另有 \KSStaticTotal{} 个目标程序的拒绝套件直接执行第~\ref{sec:model} 节的诊断，包含一个正向控制和 \KSStaticExpectedFailures{} 个预期拒绝，涵盖生命周期误用、程序签名违规、映射类型错误、域跨越和安全违规。
 Each case carries an expected diagnostic substring, so incidental rejections do not count as passing.
@@ -389,14 +389,14 @@ To measure whether \tool{} detects mistakes \emph{earlier} than the stock toolch
 % 为了衡量 \tool{} 是否比原有工具链更早检测到错误，我们向工作中的 XDP 映射计数器注入 \KSOrganicTotal{} 个现实错误，分别在 \tool{} 和匹配的手写 C/eBPF 中，并沿共享阶梯记录最早的拒绝阶段（编译 $<$ 构建 $<$ 验证器 $<$ 附加 $<$ 运行时 $<$ 未检测）。
 As Table~\ref{tab:organic} shows, \tool{} rejects all \KSOrganicTotal{} at compile time, while C/eBPF ties on all but the cross-boundary case.
 % 如表~\ref{tab:organic} 所示，\tool{} 在编译时拒绝所有 \KSOrganicTotal{} 个错误，而 C/eBPF 除跨边界案例外均打平。
-That case passes an \texttt{@xdp} entry point a \texttt{*\_\_sk\_buff} context instead of \texttt{*xdp\_md}; \tool{} rejects it via the program-signature rule of Section~\ref{sec:model}, whereas the C version compiles and loads silently because the body never dereferences the context, giving the verifier no invalid access to flag.
-% 该案例向 \texttt{@xdp} 入口点传递 \texttt{*\_\_sk\_buff} 上下文而非 \texttt{*xdp\_md}；\tool{} 通过第~\ref{sec:model} 节的程序签名规则拒绝它，而 C 版本因主体从不解引用上下文而静默编译和加载，验证器没有无效访问可标记。
+That case passes an \texttt{@xdp} entry point a \texttt{*\_\_sk\_buff} context instead of \texttt{*xdp\_md}. \tool{} rejects it via the program-signature rule of Section~\ref{sec:model}, whereas the C version compiles and loads silently because the body never dereferences the context, giving the verifier no invalid access to flag.
+% 该案例向 \texttt{@xdp} 入口点传递 \texttt{*\_\_sk\_buff} 上下文而非 \texttt{*xdp\_md}。\tool{} 通过第~\ref{sec:model} 节的程序签名规则拒绝它，而 C 版本因主体从不解引用上下文而静默编译和加载，验证器没有无效访问可标记。
 A body that did read a context field could trip the verifier, though it would report the access violation rather than the underlying context-type confusion.
 % 读取上下文字段的主体可能触发验证器，但验证器会报告访问违规而非底层的上下文类型混淆。
 The other \KSOrganicTie{} mistakes (undeclared map, wrong value type, oversized stack) tie because clang catches them locally.
 % 其他 \KSOrganicTie{} 个错误（未声明的映射、错误的值类型、超大栈）打平，因为 clang 在本地捕获它们。
-Typing therefore helps precisely on cross-boundary relations that local C checking cannot see; Section~\ref{sec:limits} discusses the limits of this author-constructed set.
-% 因此类型化恰好帮助本地 C 检查看不到的跨边界关系；第~\ref{sec:limits} 节讨论这个作者构造集合的局限性。
+Typing therefore helps precisely on cross-boundary relations that local C checking cannot see. Section~\ref{sec:limits} discusses the limits of this author-constructed set.
+% 因此类型化恰好帮助本地 C 检查看不到的跨边界关系。第~\ref{sec:limits} 节讨论这个作者构造集合的局限性。
 
 \begin{table}[H]
 \centering
@@ -422,14 +422,14 @@ Oversized stack buffer & safety & \KSOrganicStackOverflowKS{} & \KSOrganicStackO
 
 Of \KSTotalExamples{} example programs, \KSKSCompileOK{} compile successfully and \KSMakeOK{} produce working libbpf projects.
 % 在 \KSTotalExamples{} 个示例程序中，\KSKSCompileOK{} 个编译成功，\KSMakeOK{} 个生成可工作的 libbpf 项目。
-The single compile-time rejection, \texttt{safety\_demo.ks}, demonstrates early error detection: safety analysis flags 608 bytes of stack use (above the 512-byte eBPF limit) and halts before codegen.
-% 唯一的编译时拒绝 \texttt{safety\_demo.ks} 展示了早期错误检测：安全分析标记 608 字节的栈使用（超过 512 字节的 eBPF 限制）并在代码生成前停止。
-The two struct\_ops programs that compile but fail to build expose toolchain version skew: their bpftool-generated skeletons reference a libbpf field absent from the host headers (Section~\ref{sec:eval:q3} confirms this is not an inherent limitation).
-% 两个编译但构建失败的 struct\_ops 程序暴露了工具链版本偏差：它们的 bpftool 生成骨架引用主机头文件中不存在的 libbpf 字段（第~\ref{sec:eval:q3} 节确认这不是固有限制）。
+The single compile-time rejection, \texttt{safety\_demo.ks}, demonstrates early error detection. Safety analysis flags 608 bytes of stack use (above the 512-byte eBPF limit) and halts before codegen.
+% 唯一的编译时拒绝 \texttt{safety\_demo.ks} 展示了早期错误检测。安全分析标记 608 字节的栈使用（超过 512 字节的 eBPF 限制）并在代码生成前停止。
+The two struct\_ops programs that compile but fail to build expose toolchain version skew. Their bpftool-generated skeletons reference a libbpf field absent from the host headers (Section~\ref{sec:eval:q3} confirms this is not an inherent limitation).
+% 两个编译但构建失败的 struct\_ops 程序暴露了工具链版本偏差。它们的 bpftool 生成骨架引用主机头文件中不存在的 libbpf 字段（第~\ref{sec:eval:q3} 节确认这不是固有限制）。
 For successfully built examples, the compiler emits a median of \KSMedianGeneratedSloc{} lines from \KSMedianKSSloc{} source lines.
 % 对于成功构建的示例，编译器从 \KSMedianKSSloc{} 行源代码发出中位数 \KSMedianGeneratedSloc{} 行。
-Across \KSSourceFootprintWorkloads{} workloads with hand-written C/libbpf baselines, \tool{} sources total \KSSourceFootprintUniqueKSSloc{} lines versus \KSSourceFootprintUniqueCSloc{}, and Table~\ref{tab:features} summarizes feature coverage.
-% 在 \KSSourceFootprintWorkloads{} 个有手写 C/libbpf 基线的工作负载中，\tool{} 源代码总计 \KSSourceFootprintUniqueKSSloc{} 行对比 \KSSourceFootprintUniqueCSloc{} 行，表~\ref{tab:features} 总结了功能覆盖。
+Across \KSSourceFootprintWorkloads{} workloads with hand-written C/libbpf baselines, \tool{} sources total \KSSourceFootprintUniqueKSSloc{} lines versus \KSSourceFootprintUniqueCSloc{}. Table~\ref{tab:features} summarizes feature coverage.
+% 在 \KSSourceFootprintWorkloads{} 个有手写 C/libbpf 基线的工作负载中，\tool{} 源代码总计 \KSSourceFootprintUniqueKSSloc{} 行对比 \KSSourceFootprintUniqueCSloc{} 行。表~\ref{tab:features} 总结了功能覆盖。
 
 \begin{table}[H]
 \centering
@@ -456,13 +456,13 @@ User & \KSFeatUserspaceAttempt{} & \KSFeatUserspaceKS{} & \KSFeatUserspaceBuild{
 \end{tabular}
 \end{table}
 
-Hand-porting \KSExternalPortWorkloads{} \texttt{xdp-tutorial}~\cite{xdp-tutorial} XDP programs to \tool{} yields \KSExternalPortKSSloc{} lines versus \KSExternalPortCSloc{} in the original C/eBPF, confirming comparable line counts for external code.
-% 手动将 \KSExternalPortWorkloads{} 个 \texttt{xdp-tutorial} XDP 程序移植到 \tool{} 产生 \KSExternalPortKSSloc{} 行，而原始 C/eBPF 为 \KSExternalPortCSloc{} 行，确认外部代码的行数相当。
+Hand-porting \KSExternalPortWorkloads{} \texttt{xdp-tutorial}~\cite{xdp-tutorial} XDP programs to \tool{} yields \KSExternalPortKSSloc{} lines versus \KSExternalPortCSloc{} in the original C/eBPF. This confirms comparable line counts for external code.
+% 手动将 \KSExternalPortWorkloads{} 个 \texttt{xdp-tutorial} XDP 程序移植到 \tool{} 产生 \KSExternalPortKSSloc{} 行，而原始 C/eBPF 为 \KSExternalPortCSloc{} 行。这确认外部代码的行数相当。
 A source-only scan of \KSExternalCorpusRepos{} public eBPF repositories confirms that the program types and map patterns we generate (XDP, TC, kprobe, ring buffers, struct\_ops) appear together in real projects.
 % 对 \KSExternalCorpusRepos{} 个公共 eBPF 仓库的纯源代码扫描确认我们生成的程序类型和映射模式（XDP、TC、kprobe、环形缓冲区、struct\_ops）在真实项目中一起出现。
 
-Source-footprint totals measure how much code a finished workload occupies, not how many places a requirement change must touch.
-% 源代码占用空间总计衡量完成的工作负载占用多少代码，而不是需求变更必须触及多少位置。
+Source-footprint totals measure the size of a finished workload but miss how many places a requirement change must touch.
+% 源代码占用空间总计衡量完成的工作负载的大小，但未能反映需求变更时要修改多少位置。
 To measure this change-amplification coupling, we construct \KSChangeAmpCases{} matched micro-edits (changing a map from \code{array} to \code{percpu_array}, changing a program from \code{@xdp} to \code{@tc}, moving a \code{perf_event} attach from standalone to grouped, extending a shared ringbuf event schema, and adding ringbuf reporting with userspace handling) and compare diff sizes between \tool{} and hand-written C/libbpf.
 % 为了衡量这种变更放大耦合，我们构建 \KSChangeAmpCases{} 个匹配的微编辑（将映射从 \code{array} 更改为 \code{percpu_array}，将程序从 \code{@xdp} 更改为 \code{@tc}，将 \code{perf_event} 附加从独立移至分组，扩展共享 ringbuf 事件模式，以及添加带用户空间处理的 ringbuf 报告）并比较 \tool{} 和手写 C/libbpf 之间的差异大小。
 Table~\ref{tab:change-amp} reports file count, edit-site count, changed LOC, and required manual synchronization across kernel code, userspace code, or skeleton/section conventions.
@@ -563,24 +563,24 @@ Isolated XDP attach/detach & \KSAttachEligible{} & \KSAttachOK{} \\
 \end{tabular}
 \end{table}
 
-Of \KSVerifierBuildObjects{} fully built objects, \KSVerifierBuildLoadOK{} pass the verifier; the \KSVerifierBuildLoadFailed{} failures are a reference-ownership leak, a map-creation failure, a missing kfunc symbol, and an object with no program section.
-% 在 \KSVerifierBuildObjects{} 个完全构建的对象中，\KSVerifierBuildLoadOK{} 个通过验证器；\KSVerifierBuildLoadFailed{} 个失败是引用所有权泄漏、映射创建失败、缺少 kfunc 符号和没有程序节的对象。
-For XDP, \KSAttachOK{} of \KSAttachEligible{} objects attach and detach successfully; additional workloads exercise TC and struct\_ops.
-% 对于 XDP，\KSAttachEligible{} 个对象中有 \KSAttachOK{} 个成功附加和分离；额外的工作负载执行 TC 和 struct\_ops。
+Of \KSVerifierBuildObjects{} fully built objects, \KSVerifierBuildLoadOK{} pass the verifier. The \KSVerifierBuildLoadFailed{} failures are a reference-ownership leak, a map-creation failure, a missing kfunc symbol, and an object with no program section.
+% 在 \KSVerifierBuildObjects{} 个完全构建的对象中，\KSVerifierBuildLoadOK{} 个通过验证器。\KSVerifierBuildLoadFailed{} 个失败是引用所有权泄漏、映射创建失败、缺少 kfunc 符号和没有程序节的对象。
+For XDP, \KSAttachOK{} of \KSAttachEligible{} objects attach and detach successfully. Additional workloads exercise TC and struct\_ops.
+% 对于 XDP，\KSAttachEligible{} 个对象中有 \KSAttachOK{} 个成功附加和分离。额外的工作负载执行 TC 和 struct\_ops。
 
 Matched workloads confirm the generated objects run correctly.
 % 匹配的工作负载确认生成的对象正确运行。
-Under \code{BPF_PROG_TEST_RUN}, a minimal generated XDP pass program matches its hand-written baseline in instruction count and latency; over \KSTrafficTrials{} veth/iperf3 trials, both generated and hand-written XDP and TC programs deliver comparable throughput.
-% 在 \code{BPF_PROG_TEST_RUN} 下，最小生成的 XDP 通过程序在指令数和延迟方面与其手写基线匹配；在 \KSTrafficTrials{} 次 veth/iperf3 试验中，生成的和手写的 XDP 及 TC 程序都提供相当的吞吐量。
+Under \code{BPF_PROG_TEST_RUN}, a minimal generated XDP pass program matches its hand-written baseline in instruction count and latency. Over \KSTrafficTrials{} veth/iperf3 trials, both generated and hand-written XDP and TC programs deliver comparable throughput.
+% 在 \code{BPF_PROG_TEST_RUN} 下，最小生成的 XDP 通过程序在指令数和延迟方面与其手写基线匹配。在 \KSTrafficTrials{} 次 veth/iperf3 试验中，生成的和手写的 XDP 及 TC 程序都提供相当的吞吐量。
 These numbers are sanity checks for functional equivalence, not performance claims.
 % 这些数字是功能等价的健全性检查，而不是性能声明。
 
 Preserving the kernel toolchain means \tool{} inherits its compatibility coupling.
 % 保留内核工具链意味着 \tool{} 继承其兼容性耦合。
-The two struct\_ops build failures are not parser or type errors: both compile to valid eBPF objects but fail because the bpftool-generated skeleton references a libbpf field absent from the installed headers.
-% 两个 struct\_ops 构建失败不是解析器或类型错误：两者都编译为有效的 eBPF 对象，但失败是因为 bpftool 生成的骨架引用已安装头文件中不存在的 libbpf 字段。
-A direct libbpf runner bypassing skeletons loads both the generated and a matched hand-written tcp-congestion struct\_ops object successfully, confirming this is toolchain version skew rather than an inherent limitation.
-% 绕过骨架的直接 libbpf 运行器成功加载生成的和匹配的手写 tcp-congestion struct\_ops 对象，确认这是工具链版本偏差而非固有限制。
+The two struct\_ops build failures are not parser or type errors. Both compile to valid eBPF objects but fail because the bpftool-generated skeleton references a libbpf field absent from the installed headers.
+% 两个 struct\_ops 构建失败不是解析器或类型错误。两者都编译为有效的 eBPF 对象，但失败是因为 bpftool 生成的骨架引用已安装头文件中不存在的 libbpf 字段。
+A direct libbpf runner bypassing skeletons loads both the generated and a matched hand-written tcp-congestion struct\_ops object successfully. This confirms toolchain version skew rather than an inherent limitation.
+% 绕过骨架的直接 libbpf 运行器成功加载生成的和匹配的手写 tcp-congestion struct\_ops 对象。这确认是工具链版本偏差而非固有限制。
 This is exactly the compatibility coupling of Section~\ref{sec:bg} that source unification cannot eliminate.
 % 这正是第~\ref{sec:bg} 节的兼容性耦合，源统一无法消除。
 
@@ -591,16 +591,16 @@ The differential probe injects only \KSOrganicTotal{} hand-chosen mistakes.
 % 差异探测仅注入 \KSOrganicTotal{} 个手动选择的错误。
 A stronger study would mine real eBPF bugs from revision histories.
 % 更强的研究将从修订历史中挖掘真实的 eBPF 错误。
-Lifecycle typing enforces a producer/consumer handle distinction without full typestate, so use-after-detach and leaked handles remain possible.
-% 生命周期类型化强制生产者/消费者句柄区分而没有完整的类型状态，因此分离后使用和泄漏的句柄仍然可能。
-The corpus is author-written, and the external port shows that line-count savings vary when porting existing code rather than writing from scratch.
-% 语料库是作者编写的，外部移植表明当移植现有代码而不是从头编写时，行数节省有所不同。
-The change-amplification study uses small checked-in micro-edits rather than real revision histories, so it measures maintenance-surface coupling rather than true developer time or debugging effort.
-% 变更放大研究使用小的签入微编辑而不是真实的修订历史，因此它衡量维护表面耦合而不是真正的开发者时间或调试工作。
+Lifecycle typing enforces a producer/consumer handle distinction without full typestate. Use-after-detach and leaked handles therefore remain possible.
+% 生命周期类型化强制生产者/消费者句柄区分而没有完整的类型状态。因此分离后使用和泄漏的句柄仍然可能。
+The example programs are author-written. The external port shows that line-count savings vary when porting existing code rather than writing from scratch.
+% 示例程序由作者编写。外部移植表明当移植现有代码而非从头编写时，行数节省有所不同。
+The change-amplification study uses small checked-in micro-edits instead of real revision histories. It therefore measures maintenance-surface coupling, not true developer time or debugging effort.
+% 变更放大研究使用小的签入微编辑而非真实的修订历史。因此它衡量维护表面耦合，而非真正的开发者时间或调试工作。
 Traffic numbers are local sanity checks, not performance claims.
 % 流量数字是本地健全性检查，而不是性能声明。
-Finally, the struct\_ops build failures reflect bpftool/libbpf version skew rather than a deep limitation, but they show that generated builds depend on toolchain alignment.
-% 最后，struct\_ops 构建失败反映 bpftool/libbpf 版本偏差而不是深层限制，但它们表明生成的构建依赖于工具链对齐。
+Finally, the struct\_ops build failures reflect bpftool/libbpf version skew, not a deep limitation. They do show that generated builds depend on toolchain alignment.
+% 最后，struct\_ops 构建失败反映 bpftool/libbpf 版本偏差，而非深层限制。但它们表明生成的构建依赖于工具链对齐。
 
 \section{Related Work}
 
@@ -616,14 +616,14 @@ These reduce boilerplate but leave lifecycle and representation relationships im
 % 这些减少样板但使生命周期和表示关系保持隐式。
 Verified approaches take a different direction: BeePL provides correct-by-compilation kernel extensions~\cite{beepl}, and Jitk and Serval verify JIT correctness~\cite{jitk,serval}.
 % 验证方法采取不同方向：BeePL 提供编译即正确的内核扩展，Jitk 和 Serval 验证 JIT 正确性。
-\tool{} occupies a middle ground: it generates both kernel and userspace code from one source and types cross-boundary relationships, but targets practical integration with the existing toolchain rather than formal verification.
-% \tool{} 占据中间地带：它从一个源生成内核和用户空间代码并对跨边界关系进行类型化，但目标是与现有工具链的实际集成而不是正式验证。
+\tool{} occupies a middle ground. It generates both kernel and userspace code from one source and types cross-boundary relationships. The goal is practical integration with the existing toolchain, not formal verification.
+% \tool{} 占据中间地带。它从一个源生成内核和用户空间代码并对跨边界关系进行类型化。目标是与现有工具链的实际集成，而非正式验证。
 
 \section{Conclusion}
 
-\tool{} treats the cross-boundary structure of an eBPF application (program lifecycle, shared maps, and execution domains) as something a compiler can type rather than something developers hold together by convention and discover at verifier-load or attach time.
-% \tool{} 将 eBPF 应用程序的跨边界结构（程序生命周期、共享映射和执行域）视为编译器可以类型化的东西，而不是开发者通过约定保持并在验证器加载或附加时发现的东西。
-The evaluation confirms that each typed invariant triggers a compile-time diagnostic, that one source generates buildable libbpf projects, and that generated objects load, attach, and pass traffic on a real kernel.
+\tool{} treats the cross-boundary structure of an eBPF application (program lifecycle, shared maps, and execution domains) as something a compiler can type, replacing conventions and late verifier/attach-time discovery.
+% \tool{} 将 eBPF 应用程序的跨边界结构（程序生命周期、共享映射和执行域）视为编译器可以类型化的东西，取代约定和延迟的验证器/附加时发现。
+The evaluation confirms that each typed invariant triggers a compile-time diagnostic, that a single source generates buildable libbpf projects, and that generated objects load, attach, and pass traffic on a real kernel.
 % 评估确认每个类型化的不变量触发编译时诊断，单一源生成可构建的 libbpf 项目，生成的对象在真实内核上加载、附加并传递流量。
 The result is a concrete design point: typing eBPF's cross-boundary structure is feasible.
 % 结果是一个具体的设计点：对 eBPF 的跨边界结构进行类型化是可行的。
