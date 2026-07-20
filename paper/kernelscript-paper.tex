@@ -44,9 +44,9 @@
 \renewcommand{\shortauthors}{Wang, Sun, and Zheng}
 
 \begin{abstract}
-eBPF has become the standard mechanism for extending Linux with custom packet processing, tracing, and security policies, but its programming model is fragmented.
+eBPF has become the standard mechanism for extending Linux with custom packet processing, tracing, and security policies, a verifier check before execution to make sure it won't crash the kernel. 
 % eBPF 已成为使用自定义数据包处理、追踪和安全策略扩展 Linux 的标准机制，但其编程模型是碎片化的。
-A single application spans kernel code, a userspace loader, and shared maps, yet the relationships among them (types, lifecycle ordering, shared state) are checked only at load time or not at all --- an event struct defined differently on each side silently garbles every record, and misordered lifecycle calls quietly drop events.
+However, its programming model is fragmented. A single application spans kernel code, a userspace loader, and shared maps, yet the relationships among them (types, lifecycle ordering, shared state) are not checked: an event struct defined differently on each side silently garbles every record, and misordered lifecycle calls quietly drop events.
 % 单个应用程序跨越内核代码、用户空间加载器和共享映射，但它们之间的关系（类型、生命周期顺序、共享状态）仅在加载时检查或根本不检查——两侧定义不同的事件结构体静默篡改每条记录，错序的生命周期调用静默丢失事件。
 We observe that these cross-boundary relationships are duplicated concepts that a type system can unify.
 % 我们观察到这些跨边界关系是类型系统可以统一的重复概念。
@@ -82,7 +82,7 @@ A single eBPF application spans kernel code constrained by the verifier, a users
 % 单个 eBPF 应用程序跨越受验证器约束的内核代码、打开对象并管理生命周期的用户空间加载器、共享映射和环形缓冲区，以及（对于较新功能）必须与运行中的内核匹配的生成骨架头文件。
 The relationships among these pieces, such as a map's key and value types or the order of load, attach, and detach, are checked only at load time or not at all.
 % 这些部分之间的关系，例如映射的键和值类型或加载、附加和分离的顺序，仅在加载时检查或根本不检查。
-Errors surface late as cryptic verifier rejections or, worse, go undetected entirely: when a map's value struct is redefined in kernel C but not in the userspace loader, data is silently misinterpreted at runtime; when a skeleton header becomes stale after a struct change, userspace compiles against the old layout and reads corrupt fields.
+Errors may go undetected entirely since it does not break the kernel: when a map's value struct is redefined in kernel C but not in the userspace loader, data is silently misinterpreted at runtime; when a skeleton header becomes stale after a struct change, userspace compiles against the old layout and reads corrupt fields.
 % 错误以神秘的验证器拒绝延迟出现，或者更糟，完全不被检测：当映射的值结构体在内核 C 中被重新定义但用户空间加载器未更新时，数据在运行时被静默误解；当骨架头文件在结构体更改后变得过时，用户空间针对旧布局编译并读取损坏的字段。
 
 % P3: Gap
