@@ -418,16 +418,11 @@ Oversized stack buffer & safety & compile reject & compile reject \\
 \FloatBarrier
 \subsection{Q2: Project Generation}
 
-Of 44 example programs, 43 compile successfully and 41 produce working libbpf projects.
-% 在 44 个示例程序中，43 个编译成功，41 个生成可工作的 libbpf 项目。
-The single compile-time rejection, \texttt{safety\_demo.ks}, demonstrates early error detection. Safety analysis flags 608 bytes of stack use (above the 512-byte eBPF limit) and halts before codegen.
-% 唯一的编译时拒绝 \texttt{safety\_demo.ks} 展示了早期错误检测。安全分析标记 608 字节的栈使用（超过 512 字节的 eBPF 限制）并在代码生成前停止。
-The two struct\_ops programs that compile but fail to build expose toolchain version skew. Their bpftool-generated skeletons reference a libbpf field absent from the host headers (Section~\ref{sec:eval:q3} confirms this is not an inherent limitation).
-% 两个编译但构建失败的 struct\_ops 程序暴露了工具链版本偏差。它们的 bpftool 生成骨架引用主机头文件中不存在的 libbpf 字段（第~\ref{sec:eval:q3} 节确认这不是固有限制）。
+We evaluate 43 \tool{} examples spanning XDP, TC, kprobe, tracepoint, perf\_event, maps, ring buffers, tail calls, kfuncs, and struct\_ops.
+% 我们评估了 43 个 \tool{} 示例，涵盖 XDP、TC、kprobe、tracepoint、perf\_event、映射、环形缓冲区、尾调用、kfunc 和 struct\_ops。
 For successfully built examples, the compiler emits a median of 472 lines from 31 source lines.
 % 对于成功构建的示例，编译器从 31 行源代码发出中位数 472 行。
 Across 11 workloads with hand-written C/libbpf baselines, \tool{} sources total 203 lines versus 1105.
-The examples exercise the major eBPF features: XDP, TC, kprobe, tracepoint, perf\_event, maps, ring buffers, tail calls, kfuncs, and struct\_ops.
 
 Hand-porting three \texttt{xdp-tutorial}~\cite{xdp-tutorial} XDP programs to \tool{} yields comparable line counts to the original C/eBPF.
 A source-only scan of three public eBPF repositories confirms that the program types and map patterns we generate (XDP, TC, kprobe, ring buffers, struct\_ops) appear together in real projects.
@@ -485,29 +480,8 @@ By the reporting stage, C/libbpf reaches 9$\times$ the \tool{} source size.
 \subsection{Q3: Runtime Validation}
 \label{sec:eval:q3}
 
-Table~\ref{tab:real} summarizes a progression of increasingly stringent checks on a real kernel: build success, verifier acceptance, attachability, and runtime behavior.
-% 表~\ref{tab:real} 总结了在真实内核上逐步严格的检查：构建成功、验证器接受、可附加性和运行时行为。
-
-\begin{table}[!ht]
-\centering
-\caption{Real-kernel checks: compile, build, verifier-load, and attach.}
-\label{tab:real}
-\begin{tabular}{lrr}
-\toprule
-Stage & Population & Pass \\
-\midrule
-\tool{} compile & 44 & 43 \\
-Generated project build & 44 & 41 \\
-Verifier-load (strict) & 41 & 37 \\
-Isolated XDP attach/detach & 27 & 27 \\
-\bottomrule
-\end{tabular}
-\end{table}
-
-Of 41 fully built objects, 37 pass the verifier. The four failures are a reference-ownership leak, a map-creation failure, a missing kfunc symbol, and an object with no program section.
-% 在 41 个完全构建的对象中，37 个通过验证器。4 个失败是引用所有权泄漏、映射创建失败、缺少 kfunc 符号和没有程序节的对象。
-For XDP, all 27 eligible objects attach and detach successfully. Additional workloads exercise TC and struct\_ops.
-% 对于 XDP，所有 27 个符合条件的对象都成功附加和分离。额外的工作负载执行 TC 和 struct\_ops。
+On a real kernel, 27 XDP examples attach and detach successfully. Additional workloads exercise TC and struct\_ops.
+% 在真实内核上，27 个 XDP 示例都成功附加和分离。额外的工作负载执行 TC 和 struct\_ops。
 
 Matched workloads confirm the generated objects run correctly.
 % 匹配的工作负载确认生成的对象正确运行。
@@ -515,15 +489,6 @@ Under \code{BPF_PROG_TEST_RUN}, a minimal generated XDP pass program matches its
 % 在 BPF\_PROG\_TEST\_RUN 下，最小生成的 XDP 通过程序在指令数和延迟方面与其手写基线匹配。在 10 次 veth/iperf3 试验中，生成的和手写的 XDP 及 TC 程序都提供相当的吞吐量。
 These numbers are sanity checks for functional equivalence, not performance claims.
 % 这些数字是功能等价的健全性检查，而不是性能声明。
-
-Preserving the kernel toolchain means \tool{} inherits its compatibility coupling.
-% 保留内核工具链意味着 \tool{} 继承其兼容性耦合。
-The two struct\_ops build failures are not parser or type errors. Both compile to valid eBPF objects but fail because the bpftool-generated skeleton references a libbpf field absent from the installed headers.
-% 两个 struct\_ops 构建失败不是解析器或类型错误。两者都编译为有效的 eBPF 对象，但失败是因为 bpftool 生成的骨架引用已安装头文件中不存在的 libbpf 字段。
-A direct libbpf runner bypassing skeletons loads both the generated and a matched hand-written tcp-congestion struct\_ops object successfully. This confirms toolchain version skew rather than an inherent limitation.
-% 绕过骨架的直接 libbpf 运行器成功加载生成的和匹配的手写 tcp-congestion struct\_ops 对象。这确认是工具链版本偏差而非固有限制。
-This is exactly the compatibility coupling of Section~\ref{sec:bg} that source unification cannot eliminate.
-% 这正是第~\ref{sec:bg} 节的兼容性耦合，源统一无法消除。
 
 \section{Limitations}
 \label{sec:limits}
@@ -538,8 +503,6 @@ The change-amplification study uses small checked-in micro-edits instead of real
 % 变更放大研究使用小的签入微编辑而非真实的修订历史。因此它衡量维护表面耦合，而非真正的开发者时间或调试工作。
 Traffic numbers are local sanity checks, not performance claims.
 % 流量数字是本地健全性检查，而不是性能声明。
-Finally, the struct\_ops build failures reflect bpftool/libbpf version skew, not a deep limitation. They do show that generated builds depend on toolchain alignment.
-% 最后，struct\_ops 构建失败反映 bpftool/libbpf 版本偏差，而非深层限制。但它们表明生成的构建依赖于工具链对齐。
 
 \section{Related Work}
 

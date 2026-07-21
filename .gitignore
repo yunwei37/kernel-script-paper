@@ -14,6 +14,9 @@ paper/*.fls
 paper/*.log
 paper/*.out
 
+# Generated arXiv staging directory
+/paper/arxiv/
+
 # Local editor/cache files
 __pycache__/
 .DS_Store
