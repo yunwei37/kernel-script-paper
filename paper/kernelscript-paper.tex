@@ -400,7 +400,7 @@ Typing therefore helps precisely on cross-boundary relations that local C checki
 
 \begin{table}[H]
 \centering
-\caption{Earliest detection stage per injected mistake. \tool{} is strictly
+\caption{Earliest detection stage per injected mistake (BS = \tool{}). \tool{} is strictly
 earlier only on the cross-boundary context-type mistake; the rest are ties
 clang already catches.}
 \label{tab:organic}
@@ -471,7 +471,7 @@ Table~\ref{tab:change-amp} reports file count, edit-site count, changed LOC, and
 {\setlength{\intextsep}{4pt}
 \begin{table}[H]
 \centering
-\caption{Change amplification for \KSChangeAmpCases{} matched micro-edits. ``Sync'' reports
+\caption{Change amplification for \KSChangeAmpCases{} matched micro-edits (BS = \tool{}, C = hand-written C/libbpf). ``Sync'' reports
 which manually synchronized surfaces change: kernel (K), userspace (U), or
 skeleton/section conventions (S).}
 \label{tab:change-amp}
@@ -513,7 +513,7 @@ Table~\ref{tab:evolution} tracks how source footprint grows as cross-boundary st
 
 \begin{table}[H]
 \centering
-\caption{Staged cross-boundary growth: maintained source footprint for a local
+\caption{Staged cross-boundary growth (BS = \tool{}): maintained source footprint for a local
 matched XDP progression plus a separate struct\_ops reference point. C totals
 include hand-written userspace when the feature requires it.}
 \label{tab:evolution}
