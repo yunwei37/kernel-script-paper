@@ -42,8 +42,8 @@
 \renewcommand{\shortauthors}{Wang, Sun, and Zheng}
 
 \begin{abstract}
-eBPF has become the standard mechanism for extending Linux with custom packet processing, tracing, and security policies, with a verifier check before execution to guarantee it will not crash the kernel.
-% eBPF 已成为使用自定义数据包处理、追踪和安全策略扩展 Linux 的标准机制，执行前的验证器检查保证它不会崩溃内核。
+eBPF has become a standard mechanism for extending Linux with custom packet processing, tracing, and scheduling logic, with a verifier check before execution to guarantee it will not crash the kernel.
+% eBPF 已成为使用自定义数据包处理、追踪和调度逻辑扩展 Linux 的标准机制，执行前的验证器检查保证它不会崩溃内核。
 The programming model, however, is fragmented. A single application spans kernel code, a userspace loader, and shared maps, yet the relationships among them (types, lifecycle ordering, shared state) go unchecked. An event struct defined differently on each side silently garbles every record, and a map type mismatch silently corrupts shared state.
 % 然而编程模型是碎片化的。单个应用程序跨越内核代码、用户空间加载器和共享映射，但它们之间的关系（类型、生命周期顺序、共享状态）不被检查。两侧定义不同的事件结构体静默篡改每条记录，错序的生命周期调用静默丢失事件。
 We observe that these cross-boundary relationships are duplicated concepts that a type system can unify.
@@ -70,8 +70,8 @@ Generated projects load, attach, and pass traffic on a real kernel, showing that
 % P1: Context/Importance
 eBPF lets developers run application-specific logic inside the Linux kernel under a verifier that proves memory safety and bounded execution~\cite{linux-ebpf}.
 % eBPF 让开发者在 Linux 内核内运行应用程序特定的逻辑，由验证器证明内存安全和有界执行。
-It now underpins packet processing in major cloud providers, powers observability platforms, enforces security policies, and enables scheduler experimentation within a large and growing ecosystem~\cite{ebpfsurvey}.
-% 它现在支撑着主要云提供商的数据包处理，驱动可观测性平台，执行安全策略，并在一个庞大且不断增长的生态系统中支持调度器实验。
+It now underpins packet processing in major cloud providers, powers observability platforms, and enables scheduler experimentation within a large and growing ecosystem~\cite{ebpfsurvey}.
+% 它现在支撑着主要云提供商的数据包处理，驱动可观测性平台，并在一个庞大且不断增长的生态系统中支持调度器实验。
 
 % P2: Problem
 Yet the programming model is fragmented.
@@ -136,8 +136,8 @@ This paper contributes:
 
 eBPF allows user-supplied bytecode to run inside the Linux kernel after a verifier proves memory safety and bounded execution~\cite{linux-ebpf,ebpfsurvey}.
 % eBPF 允许用户提供的字节码在验证器证明内存安全和有界执行后在 Linux 内核内运行。
-The mechanism now underpins a wide range of applications: tracing and profiling~\cite{bpftrace,bcc}, high-performance networking~\cite{xdp}, security policy enforcement~\cite{lsm-bpf}, CPU scheduling~\cite{ghost}, page-cache customization~\cite{cacheext}, GPU resource control~\cite{gpuext}, and userspace extension runtimes~\cite{bpftime}.
-% 该机制现在支撑着广泛的应用：追踪和性能分析、高性能网络、安全策略执行、CPU 调度、页缓存自定义、GPU 资源控制和用户空间扩展运行时。
+The mechanism now underpins a wide range of applications: tracing and profiling~\cite{bpftrace,bcc}, high-performance networking~\cite{xdp}, LSM policy enforcement~\cite{lsm-bpf}, CPU scheduling~\cite{ghost}, page-cache customization~\cite{cacheext}, GPU resource control~\cite{gpuext}, and userspace extension runtimes~\cite{bpftime}.
+% 该机制现在支撑着广泛的应用：追踪和性能分析、高性能网络、LSM 策略执行、CPU 调度、页缓存自定义、GPU 资源控制和用户空间扩展运行时。
 Every eBPF application has a kernel program and a userspace loader that communicate through maps or ring buffers.
 % 每个 eBPF 应用程序都有一个内核程序和一个通过映射或环形缓冲区通信的用户空间加载器。
 The standard eBPF development workflow requires developers to maintain separate kernel C, userspace C, and a Makefile~\cite{libbpf}.
@@ -508,8 +508,8 @@ Traffic numbers are local sanity checks, not performance claims.
 
 Prior work on eBPF development falls into three categories.
 % 关于 eBPF 开发的先前工作分为三类。
-Domain-specific DSLs target particular use cases: bpftrace for tracing~\cite{bpftrace}, BPFBox and ActPlane for security policies~\cite{bpfbox,actplane}, BMC for caching~\cite{bmc}, P4c-eBPF for networking~\cite{p4c-ebpf}, and Yaksha-Prashna for bytecode analysis~\cite{yaksha}.
-% 领域特定 DSL 针对特定用例：用于追踪的 bpftrace，用于安全策略的 BPFBox 和 ActPlane，用于缓存的 BMC，用于网络的 P4c-eBPF，以及用于字节码分析的 Yaksha-Prashna。
+Domain-specific DSLs target particular use cases: bpftrace for tracing~\cite{bpftrace}, BPFBox and ActPlane for policy enforcement~\cite{bpfbox,actplane}, BMC for caching~\cite{bmc}, P4c-eBPF for networking~\cite{p4c-ebpf}, and Yaksha-Prashna for bytecode analysis~\cite{yaksha}.
+% 领域特定 DSL 针对特定用例：用于追踪的 bpftrace、用于策略执行的 BPFBox 和 ActPlane、用于缓存的 BMC、用于网络的 P4c-eBPF，以及用于字节码分析的 Yaksha-Prashna。
 These DSLs primarily target kernel-side code and do not type the full cross-boundary structure that \tool{} addresses.
 % 这些 DSL 主要针对内核侧代码，不对 \tool{} 所处理的完整跨边界结构进行类型化。
 General eBPF development tools include the standard eBPF development workflow~\cite{libbpf}, Aya for Rust~\cite{aya}, Rex for safe Rust kernel extensions without a verifier~\cite{rex}, Wasm-bpf for WebAssembly deployment~\cite{wasmbpf}, and eunomia-bpf for dynamic loading~\cite{eunomia-bpf}.

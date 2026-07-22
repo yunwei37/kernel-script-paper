@@ -1295,7 +1295,7 @@
   \def\@permissionCodeOne{3066-4438}%
   \def\@permissionCodeTwo{3066-4438}%
 \or % TAISAP
-  \def\@journalName{ACM Transactions on AI Security and Privacy}%
+  \def\@journalName{ACM TAISP}%
   \def\@journalNameShort{ACM Trans. AI Secur. Priv.}%
   \def\@permissionCodeOne{3068-3564}%
   \def\@permissionCodeTwo{3068-3564}%
@@ -1354,7 +1354,7 @@
   \def\@permissionCodeOne{2577-6207}%
   \def\@permissionCodeTwo{2577-6207}%
 \or % TISSEC
-  \def\@journalName{ACM Transactions on Information and System Security}%
+  \def\@journalName{ACM TISSEC}%
   \def\@journalNameShort{ACM Trans. Info. Syst. Sec.}%
   \def\@permissionCodeOne{1094-9224}%
 \or % TIST
@@ -1458,7 +1458,7 @@
   \def\@permissionCodeOne{2836-8924}%
   \def\@permissionCodeTwo{2836-8924}%
 \or % TOPS
-  \def\@journalName{ACM Transactions on Privacy and Security}%
+  \def\@journalName{ACM TOPS}%
   \def\@journalNameShort{ACM Trans. Priv. Sec.}%
   \def\@permissionCodeOne{2471-2566}%
   \def\@permissionCodeTwo{2471-2574}%

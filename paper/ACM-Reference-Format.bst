@@ -2806,7 +2806,7 @@ MACRO {telo}  {"ACM Transactions on Evolutionary Learning"}
 MACRO {thri}  {"ACM Transactions on Human-Robot Interaction"}
 MACRO {tiis}  {"ACM Transactions on Interactive Intelligent Systems"}
 MACRO {tiot}  {"ACM Transactions on Internet of Things"}
-MACRO {tissec}  {"ACM Transactions on Information and System Security"}
+MACRO {tissec}  {"ACM TISSEC"}
 MACRO {tist}  {"ACM Transactions on Intelligent Systems and Technology"}
 MACRO {tkdd}  {"ACM Transactions on Knowledge Discovery from Data"}
 MACRO {tmis}  {"ACM Transactions on Management Information Systems"}
@@ -2826,7 +2826,7 @@ MACRO {tompecs}  {"ACM Transactions on Modeling and Performance Evaluation of Co
 MACRO {toms}  {"ACM Transactions on Mathematical Software"}
 MACRO {topc}  {"ACM Transactions on Parallel Computing"}
 MACRO {toplas}  {"ACM Transactions on Programming Languages and Systems"}
-MACRO {tops}  {"ACM Transactions on Privacy and Security"}
+MACRO {tops}  {"ACM TOPS"}
 MACRO {tos}  {"ACM Transactions on Storage"}
 MACRO {tosem}  {"ACM Transactions on Software Engineering and Methodology"}
 MACRO {tosn}  {"ACM Transactions on Sensor Networks"}
