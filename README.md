@@ -18,6 +18,9 @@ evaluation scripts, generated results, and a paper draft.
 - `experiments/run_attach_matrix.py`: isolated network-namespace XDP
   attach/detach matrix for verifier-clean single-section XDP objects.
 - `experiments/run_static_checks.py`: positive and negative static-check corpus.
+- `experiments/q1_published_bug_replay/`: Heimdall published verifier-accepted
+  exemplar replay for early detection (`run.py`; summary in
+  `results/q1_published_bug_replay_summary.json`).
 - `experiments/run_smoke.sh`: privileged attach/detach smoke test on `lo`.
 - `experiments/run_microbench.py`: XDP BPF_PROG_TEST_RUN microbenchmarks
   against hand-written C/eBPF baselines.

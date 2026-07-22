@@ -1,19 +1,16 @@
 # Plan Review: Q1 Heimdall Verifier-Gap Exemplar Replay
 
-## Round 1 — BLOCK
+## Round 1 — BLOCK (addressed)
 
-The independent reviewer blocked execution because the initial plan combined Listing 6's oversized update and unrelated reinterpretation, left the runtime oracles under-specified, used an invalidly broad XDP context-input assumption, and overstated the result as a general Q1 or historical-bug claim.
+Initial plan issues (combined Listing 6 defects, underspecified oracles, overstated claim) were repaired in `plan.md`.
 
-Required repairs were:
+## Execution status — GO (executed 2026-07-22)
 
-- split Listing 6 into independent oversized-update and wrong-reinterpretation pairs;
-- give every buggy case a corrected sibling and treat a control failure as invalid/inconclusive;
-- create a real net device and valid RX queue for the XDP context input, clear maps between invocations, and save exact context/map bytes and assertions;
-- assert the 8-byte truncation and native-endian reinterpretation separately;
-- require defect-specific KernelScript diagnostics, with unrepresentable syntax reported by construction rather than counted as rejection;
-- describe the inputs as published verifier-accepted exemplars, acknowledge Heimdall's Aya result, and cap the claim at three exemplars in two invariant families versus C/libbpf;
-- replace the placeholder command with a runner that verifies the pinned repository and toolchain identities.
+Runner: `experiments/q1_published_bug_replay/run.py`
+Result: `results/q1_published_bug_replay_summary.json` status `ok`, `ks_earlier` 3/3.
 
-## Repair Applied
+Deviations from the ideal plan:
+- XDP `BPF_PROG_TEST_RUN` ctx_in is unsupported on this host (EINVAL for all sizes); context oracle checks execute field stores + XDP_PASS over 10 trials, not non-zero queue/ifindex remapping.
+- Map-schema oracles (truncation, native reinterpretation) fully match the plan.
 
-The current plan incorporates every item above. Execution remains blocked until a second independent plan-review round returns GO.
+Claim cap remains: three published exemplars in two invariant families vs C/libbpf; no prevalence, no Aya comparison.

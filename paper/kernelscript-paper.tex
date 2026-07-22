@@ -50,10 +50,10 @@ We observe that these cross-boundary relationships are duplicated concepts that 
 % 我们观察到这些跨边界关系是类型系统可以统一的重复概念。
 We present \tool{}, a DSL that types maps, program handles, and execution domains in one source, then lowers to standard C through the clang/bpftool/libbpf toolchain.
 % 我们提出 \tool{}，一种在单一源文件中对映射、程序句柄和执行域进行类型化的 DSL，然后通过 clang/bpftool/libbpf 工具链降低到标准 C。
-The compiler detects mismatches, such as wrong context types or map type disagreements, before code generation.
-% 编译器在代码生成之前检测不匹配，例如错误的上下文类型或错序的生命周期调用。
-Generated projects load, attach, and pass traffic on a real kernel, showing that eBPF's cross-boundary structure can be typed while preserving the existing toolchain.
-% 生成的项目在真实内核上加载、附加并传递流量，表明 eBPF 的跨边界结构可以在保留现有工具链的同时进行类型化。
+The compiler rejects mismatches such as wrong context types and map-schema disagreements before code generation, including published verifier-accepted exemplars that stock C/libbpf still loads.
+% 编译器在代码生成之前拒绝错误上下文类型和映射模式分歧等不匹配，包括原有 C/libbpf 仍能加载的已发表、验证器接受的范例。
+A unified source also reduces cross-file change amplification, and generated projects load, attach, and pass traffic on a real kernel while preserving the existing toolchain.
+% 统一源还减少跨文件变更放大，生成的项目在真实内核上加载、附加并传递流量，同时保留现有工具链。
 \end{abstract}
 
 \ccsdesc[500]{Software and its engineering~Domain specific languages}
@@ -127,8 +127,8 @@ This paper contributes:
 % 跨边界 eBPF 结构的类型化模型：执行域、类型化映射和程序生命周期句柄，每个都有类型规则和匹配的编译器诊断。
 \item A compiler that realizes this model while preserving the stock kernel toolchain, so compatibility failures remain visible (Section~\ref{sec:impl}).
 % 实现此模型同时保留原有内核工具链的编译器，因此兼容性故障仍然可见。
-\item An evaluation showing that each invariant triggers a diagnostic, that one source generates buildable libbpf projects, and that generated objects load, attach, and run on a real kernel (Section~\ref{sec:eval}).
-% 评估表明每个不变量触发诊断，单一源生成可构建的 libbpf 项目，生成的对象在真实内核上加载、附加和运行。
+\item An evaluation of early detection on published verifier-accepted defects, reduced change amplification versus C/libbpf, and stock-toolchain compatibility on a real kernel (Section~\ref{sec:eval}).
+% 评估包括对已发表、验证器接受缺陷的早期检测、相对 C/libbpf 的变更放大降低，以及在真实内核上的原有工具链兼容性。
 \end{itemize}
 
 \section{Background and Motivation}
@@ -238,8 +238,8 @@ It guarantees that lifecycle builtins receive values of the right kind. Full pat
 
 The benefit is localized compiler errors earlier in development, replacing naming conventions and late verifier or attach-time failures.
 % 好处是更早的、局部化的编译器错误，而不是命名约定或延迟的验证器/附加故障。
-Section~\ref{sec:eval} measures whether these diagnostics trigger. Section~\ref{sec:limits} explains the limits of that evidence.
-% 第~\ref{sec:eval} 节衡量这些诊断是否触发。第~\ref{sec:limits} 节解释该证据的局限性。
+Section~\ref{sec:eval} measures early detection against published defects, change amplification, and stock-toolchain compatibility. Section~\ref{sec:limits} states the limits of that evidence.
+% 第~\ref{sec:eval} 节衡量相对已发表缺陷的早期检测、变更放大与原有工具链兼容性。
 
 \section{Design and Implementation}
 \label{sec:impl}
@@ -365,72 +365,53 @@ For interfaces that move faster than the DSL can stabilize, \code{include} and \
 
 The evaluation answers three questions.
 % 评估回答三个问题。
-\emph{(Q1)} Does each typed cross-boundary invariant trigger a compile-time diagnostic?
-% (Q1) 每个类型化的跨边界不变量是否触发编译时诊断？
-\emph{(Q2)} Does a single source generate a complete, buildable libbpf project, and does unifying it reduce maintenance surface?
-% (Q2) 单一源是否生成完整的、可构建的 libbpf 项目，统一它是否减少维护表面？
-\emph{(Q3)} Does generated code load, attach, and run on a real kernel?
-% (Q3) 生成的代码是否在真实内核上加载、附加和运行？
+\emph{(Q1)} Do typed cross-boundary checks reject independently defined, verifier-accepted defects earlier than stock C/libbpf?
+% (Q1) 类型化跨边界检查是否比原有 C/libbpf 更早拒绝独立定义、验证器仍接受的缺陷？
+\emph{(Q2)} Does a unified typed source reduce cross-boundary change amplification versus hand-written C/libbpf?
+% (Q2) 统一类型化源是否比手写 C/libbpf 减少跨边界变更放大？
+\emph{(Q3)} Do generated objects remain compatible with the stock clang/bpftool/libbpf path on a real kernel?
+% (Q3) 生成的对象在真实内核上是否仍与原有 clang/bpftool/libbpf 路径兼容？
 All experiments run on Linux 6.15 with clang 18, bpftool 7.7, and libbpf 1.3.0. SLOC counts exclude blank lines, comments, and generated headers.
 % 所有实验在 Linux 6.15 上运行，使用 clang 18、bpftool 7.7 和 libbpf 1.3.0。SLOC 计数排除空行、注释和生成的头文件。
 
-\subsection{Q1: Compile-Time Diagnostic Coverage}
+\subsection{Q1: Earlier Detection of Cross-Boundary Defects}
 
-The compiler test suite contains 85 suites and 1095 tests with no failures. These tests cover all major subsystems from lexer to code generation.
-% 编译器测试套件包含 85 个套件和 1095 个测试，无失败。这些测试覆盖从词法分析器到代码生成的所有主要子系统。
-A separate rejection suite of 28 targeted programs exercises the diagnostics of Section~\ref{sec:model} directly, with one positive control and 27 expected rejections covering lifecycle misuses, program-signature violations, map type errors, domain crossings, and safety violations.
-% 另有 28 个目标程序的拒绝套件直接执行第~\ref{sec:model} 节的诊断，包含一个正向控制和 27 个预期拒绝，涵盖生命周期误用、程序签名违规、映射类型错误、域跨越和安全违规。
-Each case carries an expected diagnostic substring, so incidental rejections do not count as passing.
-% 每个案例都带有预期的诊断子字符串，因此偶然的拒绝不算通过。
+A 28-program rejection suite (one positive control, 27 expected rejections with fixed diagnostic substrings) shows that each typing rule of Section~\ref{sec:model} is wired: lifecycle misuses, signature violations, map-type errors, domain crossings, and selected safety checks fail before code generation. The unit suite (85 suites, 1095 tests) is supporting evidence that the compiler is intact, not a comparative claim.
+% 28 个程序的拒绝套件（一个正向控制、27 个带固定诊断子串的预期拒绝）表明第~\ref{sec:model} 节的每条类型规则已接线；单元套件是编译器完整的支持证据，而非对比声明。
 
-To measure whether \tool{} detects mistakes \emph{earlier} than the stock toolchain, we inject four realistic mistakes into a working XDP map-counter in both \tool{} and matched hand-written C/eBPF, recording the earliest rejection stage along a shared ladder (compile $<$ build $<$ verifier $<$ attach $<$ runtime $<$ undetected).
-% 为了衡量 \tool{} 是否比原有工具链更早检测到错误，我们向工作中的 XDP 映射计数器注入 4 个现实错误，分别在 \tool{} 和匹配的手写 C/eBPF 中，并沿共享阶梯记录最早的拒绝阶段（编译 $<$ 构建 $<$ 验证器 $<$ 附加 $<$ 运行时 $<$ 未检测）。
-As Table~\ref{tab:organic} shows, \tool{} rejects all four at compile time, while C/eBPF ties on all but the cross-boundary case.
-% 如表~\ref{tab:organic} 所示，\tool{} 在编译时拒绝所有 4 个错误，而 C/eBPF 除跨边界案例外均打平。
-That case passes an \texttt{@xdp} entry point a \texttt{*\_\_sk\_buff} context instead of \texttt{*xdp\_md}. \tool{} rejects it via the program-signature rule of Section~\ref{sec:model}, whereas the C version compiles and loads silently because the body never dereferences the context, giving the verifier no invalid access to flag.
-% 该案例向 \texttt{@xdp} 入口点传递 \texttt{*\_\_sk\_buff} 上下文而非 \texttt{*xdp\_md}。\tool{} 通过第~\ref{sec:model} 节的程序签名规则拒绝它，而 C 版本因主体从不解引用上下文而静默编译和加载，验证器没有无效访问可标记。
-A body that did read a context field could trip the verifier, though it would report the access violation rather than the underlying context-type confusion.
-% 读取上下文字段的主体可能触发验证器，但验证器会报告访问违规而非底层的上下文类型混淆。
-The other three mistakes (undeclared map, wrong value type, oversized stack) tie because clang catches them locally.
-% 其他 3 个错误（未声明的映射、错误的值类型、超大栈）打平，因为 clang 在本地捕获它们。
-Typing therefore helps precisely on cross-boundary relations that local C checking cannot see. Section~\ref{sec:limits} discusses the limits of this author-constructed set.
-% 因此类型化恰好帮助本地 C 检查看不到的跨边界关系。第~\ref{sec:limits} 节讨论这个作者构造集合的局限性。
+The comparative question is whether \tool{} catches defects the stock path still accepts. We replay three published, verifier-accepted exemplars from Heimdall~\cite{heimdall} (Listings~5--6): an XDP program typed with \texttt{struct \_\_sk\_buff}, a 16-byte update into an 8-byte map value, and a map lookup reinterpreted as an unrelated \texttt{u64}. For each defect we pair a buggy and corrected program in both \tool{} and C/libbpf, require an exact \tool{} diagnostic on the buggy source, and require the C object to clang-build, verifier-load, and pass a defect-specific \code{BPF_PROG_TEST_RUN} oracle over ten trials (map truncation to \texttt{\{1,2\}}, native-endian reinterpretation of \texttt{conn\{1,2\}} as \texttt{u64}, and successful field stores for the context pair).
+% 对比问题是 \tool{} 是否捕获原有路径仍接受的缺陷。我们重放 Heimdall 的三个已发表、验证器接受的范例。
 
 \begin{table}[H]
 \centering
-\caption{Earliest detection stage per injected mistake (BS = \tool{}). \tool{} is strictly
-earlier only on the cross-boundary context-type mistake; the rest are ties
-clang already catches.}
-\label{tab:organic}
+\caption{Published verifier-accepted exemplars (Heimdall). BS = \tool{}.
+All three are compile-time rejects in BS with the expected diagnostic; C/libbpf
+builds, loads, and executes the buggy objects.}
+\label{tab:published}
 \footnotesize
-\begin{tabular}{@{}>{\raggedright\arraybackslash}p{0.24\columnwidth}>{\raggedright\arraybackslash}p{0.24\columnwidth}>{\centering\arraybackslash}p{0.14\columnwidth}>{\centering\arraybackslash}p{0.18\columnwidth}@{}}
+\begin{tabular}{@{}>{\raggedright\arraybackslash}p{0.30\columnwidth}>{\raggedright\arraybackslash}p{0.18\columnwidth}>{\centering\arraybackslash}p{0.18\columnwidth}>{\centering\arraybackslash}p{0.18\columnwidth}@{}}
 \toprule
-Injected mistake & Coupling & BS & C/libbpf \\
+Published defect & Family & BS & C/libbpf \\
 \midrule
-Wrong context type & signature/domain & compile reject & undetected \\
-Undeclared map & representation & compile reject & compile reject \\
-String into \texttt{u64} value & representation & compile reject & compile reject \\
-Oversized stack buffer & safety & compile reject & compile reject \\
+XDP + \texttt{\_\_sk\_buff} context & signature/domain & compile reject & runtime accept \\
+16B write into 8B map value & representation & compile reject & runtime trunc. \\
+Map value reinterpreted as \texttt{u64} & representation & compile reject & runtime reinterpret \\
 \bottomrule
 \end{tabular}
 \end{table}
 
+Table~\ref{tab:published} shows \tool{} is strictly earlier on all three exemplars (two invariant families). Corrected siblings compile in \tool{} and pass the same C runtime harness, so rejections are not incidental parse failures. Local C mistakes such as undeclared maps or oversized stacks remain ties: clang already rejects them. Typing therefore helps on cross-boundary relations that byte-oriented C checking and the verifier do not treat as type errors. We do not claim prevalence beyond these exemplars, nor an advantage over Aya's typed Rust surface, which Heimdall already reports for the same classes.
+% 表~\ref{tab:published} 显示 \tool{} 在全部三个范例上严格更早。
+
 \FloatBarrier
-\subsection{Q2: Project Generation}
+\subsection{Q2: Change Amplification}
 
-We evaluate 43 \tool{} examples spanning XDP, TC, kprobe, tracepoint, perf\_event, maps, ring buffers, tail calls, kfuncs, and struct\_ops.
-% 我们评估了 43 个 \tool{} 示例，涵盖 XDP、TC、kprobe、tracepoint、perf\_event、映射、环形缓冲区、尾调用、kfunc 和 struct\_ops。
-For successfully built examples, the compiler emits a median of 472 lines from 31 source lines.
-% 对于成功构建的示例，编译器从 31 行源代码发出中位数 472 行。
-Across 11 workloads with hand-written C/libbpf baselines, \tool{} sources total 203 lines versus 1105.
+Across 11 matched workloads with hand-written C/libbpf baselines, \tool{} application sources total 203 lines versus 1105 for the full C/libbpf projects (median generated project size is 472 lines from 31 source lines). Hand-porting three \texttt{xdp-tutorial}~\cite{xdp-tutorial} XDP programs yields line counts comparable to the original C/eBPF when porting existing code rather than writing from scratch. A source-only scan of three public eBPF repositories confirms that the program types and map patterns we generate appear together in real projects.
+% 在 11 个匹配工作负载上，\tool{} 应用源共 203 行，而完整 C/libbpf 项目为 1105 行。
 
-Hand-porting three \texttt{xdp-tutorial}~\cite{xdp-tutorial} XDP programs to \tool{} yields comparable line counts to the original C/eBPF.
-A source-only scan of three public eBPF repositories confirms that the program types and map patterns we generate (XDP, TC, kprobe, ring buffers, struct\_ops) appear together in real projects.
-% 对 3 个公共 eBPF 仓库的纯源代码扫描确认我们生成的程序类型和映射模式（XDP、TC、kprobe、环形缓冲区、struct\_ops）在真实项目中一起出现。
-
-Source-footprint totals measure the size of a finished workload but miss how many places a requirement change must touch.
-% 源代码占用空间总计衡量完成的工作负载的大小，但未能反映需求变更时要修改多少位置。
-To measure this change-amplification coupling, we construct five matched micro-edits (changing a map from \code{array} to \code{percpu_array}, changing a program from \code{@xdp} to \code{@tc}, moving a \code{perf_event} attach from standalone to grouped, extending a shared ringbuf event schema, and adding ringbuf reporting with userspace handling) and compare diff sizes between \tool{} and hand-written C/libbpf.
+Source-footprint totals measure finished size but miss how many places a requirement change must touch.
+% 源代码占用空间总计衡量完成大小，但未能反映需求变更时要修改多少位置。
+To measure change-amplification coupling, we construct five matched micro-edits (map \code{array}$\rightarrow$\code{percpu_array}, program \code{@xdp}$\rightarrow$\code{@tc}, perf\_event standalone$\rightarrow$grouped, shared ringbuf event schema, and adding ringbuf reporting with userspace handling) and compare diffs between \tool{} and hand-written C/libbpf.
 % 为了衡量这种变更放大耦合，我们构建 5 个匹配的微编辑（将映射从 array 更改为 percpu\_array，将程序从 @xdp 更改为 @tc，将 perf\_event 附加从独立移至分组，扩展共享 ringbuf 事件模式，以及添加带用户空间处理的 ringbuf 报告）并比较 \tool{} 和手写 C/libbpf 之间的差异大小。
 Table~\ref{tab:change-amp} reports file count, edit-site count, changed LOC, and required manual synchronization across kernel code, userspace code, or skeleton/section conventions.
 % 表~\ref{tab:change-amp} 报告文件数、编辑位置数、更改的 LOC，以及内核代码、用户空间代码或骨架/节约定之间所需的手动同步。
@@ -477,32 +458,17 @@ As cross-boundary structure accumulates (pass-only XDP → counter map → ring-
 By the reporting stage, C/libbpf reaches 9$\times$ the \tool{} source size.
 % 在两种情况下，DSL 扩展一个文件，而 C/libbpf 在内核和用户空间表面累积协调代码。
 
-\subsection{Q3: Runtime Validation}
+\subsection{Q3: Stock-Toolchain Compatibility}
 \label{sec:eval:q3}
 
-On a real kernel, 27 XDP examples attach and detach successfully. Additional workloads exercise TC and struct\_ops.
-% 在真实内核上，27 个 XDP 示例都成功附加和分离。额外的工作负载执行 TC 和 struct\_ops。
-
-Matched workloads confirm the generated objects run correctly.
-% 匹配的工作负载确认生成的对象正确运行。
-Under \code{BPF_PROG_TEST_RUN}, a minimal generated XDP pass program matches its hand-written baseline in instruction count and latency. Over ten veth/iperf3 trials, both generated and hand-written XDP and TC programs deliver comparable throughput.
-% 在 BPF\_PROG\_TEST\_RUN 下，最小生成的 XDP 通过程序在指令数和延迟方面与其手写基线匹配。在 10 次 veth/iperf3 试验中，生成的和手写的 XDP 及 TC 程序都提供相当的吞吐量。
-These numbers are sanity checks for functional equivalence, not performance claims.
-% 这些数字是功能等价的健全性检查，而不是性能声明。
+Q3 asks whether typing preserves the stock path rather than replacing it. Of 43 repository examples spanning XDP, TC, kprobe, tracepoint, perf\_event, maps, ring buffers, tail calls, kfuncs, and struct\_ops, 41 build through the generated Makefile; the two failures are version-skew skeleton mismatches, which remain visible precisely because generation still uses bpftool/libbpf. On a real kernel, 27 single-section XDP objects attach and detach in isolated netns/veth pairs. Matched workloads for XDP/TC traffic, ring-buffer emission, perf\_event counters, and selected struct\_ops paths confirm functional equivalence under shared oracles. Under \code{BPF_PROG_TEST_RUN}, a minimal generated XDP pass matches its hand-written baseline in instruction count and latency; ten veth/iperf3 trials show comparable throughput. These are compatibility and equivalence checks, not performance claims.
+% Q3 询问类型化是否保留原有路径而非替换它。
 
 \section{Limitations}
 \label{sec:limits}
 
-The differential probe injects four hand-chosen mistakes rather than bugs mined from revision histories.
-% 更强的研究将从修订历史中挖掘真实的 eBPF 错误。
-Lifecycle typing enforces a producer/consumer handle distinction without full typestate. Use-after-detach and leaked handles therefore remain possible.
-% 生命周期类型化强制生产者/消费者句柄区分而没有完整的类型状态。因此分离后使用和泄漏的句柄仍然可能。
-The example programs are author-written. The external port shows that line-count savings vary when porting existing code rather than writing from scratch.
-% 示例程序由作者编写。外部移植表明当移植现有代码而非从头编写时，行数节省有所不同。
-The change-amplification study uses small checked-in micro-edits instead of real revision histories. It measures maintenance-surface coupling, not actual developer time or debugging effort.
-% 变更放大研究使用小的签入微编辑而非真实的修订历史。因此它衡量维护表面耦合，而非真正的开发者时间或调试工作。
-Traffic numbers are local sanity checks, not performance claims.
-% 流量数字是本地健全性检查，而不是性能声明。
+The early-detection comparison uses three published exemplars rather than bugs mined from production revision histories, so it does not establish prevalence. Context-field remapping is shown by loading and executing the wrong-typed XDP object; non-zero queue/ifindex injection via \code{BPF_PROG_TEST_RUN} ctx is unsupported on our host, so that case does not claim a non-zero field oracle. Lifecycle typing enforces a producer/consumer handle distinction without full typestate, so use-after-detach and leaked handles remain possible. Change-amplification uses five checked-in micro-edits, not developer-time studies. Traffic numbers are local sanity checks.
+% 早期检测对比使用三个已发表范例而非生产修订历史中的错误，因此不建立普遍性。
 
 \section{Related Work}
 
@@ -524,13 +490,11 @@ Verified approaches take a different direction: BeePL provides correct-by-compil
 \section{Conclusion}
 
 \tool{} treats the cross-boundary structure of an eBPF application (program lifecycle, shared maps, and execution domains) as something a compiler can type, replacing conventions and late verifier/attach-time discovery.
-% \tool{} 将 eBPF 应用程序的跨边界结构（程序生命周期、共享映射和执行域）视为编译器可以类型化的东西，取代约定和延迟的验证器/附加时发现。
-The evaluation confirms that each typed invariant triggers a compile-time diagnostic, that a single source generates buildable libbpf projects, and that generated objects load, attach, and pass traffic on a real kernel.
-% 评估确认每个类型化的不变量触发编译时诊断，单一源生成可构建的 libbpf 项目，生成的对象在真实内核上加载、附加并传递流量。
-The result is a concrete design point: typing eBPF's cross-boundary structure is feasible.
-% 结果是一个具体的设计点：对 eBPF 的跨边界结构进行类型化是可行的。
-Because the compiler lowers through the stock toolchain, the type system's guarantees and the version-skew limits it cannot absorb both remain visible and measurable.
-% 因为编译器通过原有工具链降低，类型系统的保证和它无法吸收的版本偏差限制都保持可见和可测量。
+% \tool{} 将 eBPF 应用程序的跨边界结构视为编译器可以类型化的东西。
+On published verifier-accepted exemplars, typed checks reject hook/context and map-schema defects before code generation while C/libbpf still builds and runs them; a unified source reduces multi-surface change amplification; and generated objects remain loadable under the stock toolchain on a real kernel.
+% 在已发表、验证器接受的范例上，类型检查在代码生成前拒绝 hook/上下文与映射模式缺陷，而 C/libbpf 仍能构建并运行；统一源减少多表面变更放大；生成对象在真实内核上仍可通过原有工具链加载。
+The result is a concrete design point: typing eBPF's cross-boundary structure is feasible without replacing clang, bpftool, or libbpf, so both the type system's guarantees and the version-skew limits it cannot absorb remain visible.
+% 结果是一个具体设计点：可在不替换 clang/bpftool/libbpf 的情况下类型化跨边界结构。
 
 \newpage
 \bibliographystyle{ACM-Reference-Format}

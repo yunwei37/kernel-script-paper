@@ -1,0 +1,40 @@
+{
+  "name": "context",
+  "family": "signature/domain",
+  "listing": "Heimdall Listing 5",
+  "note": "XDP section with __sk_buff context; misnamed field reads",
+  "ks_bug_stage": "compile_reject",
+  "ks_bug_expected_diag": "xdp attributed function must have signature",
+  "ks_bug_diag_match": true,
+  "ks_bug_detail": "\u274c Type error in phase Type Checking at :0:-1: @xdp attributed function must have signature (ctx: *xdp_md) -> xdp_action",
+  "ks_fixed_stage": "compile_accept",
+  "ks_fixed_ok": true,
+  "ks_fixed_detail": "\ud83d\udd28 To build: cd /home/yunwei37/workspace/kernel-script-paper/results/build/q1_published_bug_replay/ks/context_fixed && make",
+  "c_bug_stage": "runtime_wrong",
+  "c_bug_runtime_ok": true,
+  "c_bug_oracle": {
+    "raw_stdout": "{\"case\":\"context_bug\",\"oracle\":\"ok\",\"observed0\":0,\"observed1\":1,\"trials\":10,\"ctx_in\":\"unsupported\"}",
+    "raw_stderr": "",
+    "case": "context_bug",
+    "oracle": "ok",
+    "observed0": 0,
+    "observed1": 1,
+    "trials": 10,
+    "ctx_in": "unsupported"
+  },
+  "c_bug_detail": "verifier accepted; runtime oracle reproduced defect",
+  "c_fixed_stage": "runtime_ok",
+  "c_fixed_ok": true,
+  "c_fixed_oracle": {
+    "raw_stdout": "{\"case\":\"context_fixed\",\"oracle\":\"ok\",\"observed0\":0,\"observed1\":1,\"trials\":10,\"ctx_in\":\"unsupported\"}",
+    "raw_stderr": "",
+    "case": "context_fixed",
+    "oracle": "ok",
+    "observed0": 0,
+    "observed1": 1,
+    "trials": 10,
+    "ctx_in": "unsupported"
+  },
+  "c_fixed_detail": "control passed",
+  "verdict": "ks_earlier"
+}
