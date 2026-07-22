@@ -379,8 +379,8 @@ All experiments run on Linux 6.15 with clang 18, bpftool 7.7, and libbpf 1.3.0. 
 A 28-program rejection suite (one positive control, 27 expected rejections with fixed diagnostic substrings) shows that each typing rule of Section~\ref{sec:model} is wired: lifecycle misuses, signature violations, map-type errors, domain crossings, and selected safety checks fail before code generation. The unit suite (85 suites, 1095 tests) is supporting evidence that the compiler is intact, not a comparative claim.
 % 28 个程序的拒绝套件（一个正向控制、27 个带固定诊断子串的预期拒绝）表明第~\ref{sec:model} 节的每条类型规则已接线；单元套件是编译器完整的支持证据，而非对比声明。
 
-The comparative question is whether \tool{} catches defects the stock path still accepts. We replay three published, verifier-accepted exemplars from Heimdall~\cite{heimdall} (Listings~5--6): an XDP program typed with \texttt{struct \_\_sk\_buff}, a 16-byte update into an 8-byte map value, and a map lookup reinterpreted as an unrelated \texttt{u64}. For each defect we pair a buggy and corrected program in both \tool{} and C/libbpf, require an exact \tool{} diagnostic on the buggy source, and require the C object to clang-build, verifier-load, and pass a defect-specific \code{BPF_PROG_TEST_RUN} oracle over ten trials (map truncation to \texttt{\{1,2\}}, native-endian reinterpretation of \texttt{conn\{1,2\}} as \texttt{u64}, and successful field stores for the context pair).
-% 对比问题是 \tool{} 是否捕获原有路径仍接受的缺陷。我们重放 Heimdall 的三个已发表、验证器接受的范例。
+The comparative question is whether \tool{} catches defects the stock path still accepts. We replay three published, verifier-accepted exemplars from Heimdall~\cite{heimdall} (Listings~5--6): an XDP program typed with \texttt{struct \_\_sk\_buff}, a 16-byte update into an 8-byte map value, and a map lookup reinterpreted as an unrelated \texttt{u64}. For each defect we pair buggy and corrected programs in both \tool{} and C/libbpf. Buggy \tool{} sources must fail with an exact diagnostic before code generation. Corrected \tool{} siblings must generate, build, verifier-load, and pass the same \code{BPF_PROG_TEST_RUN} harness as the C controls. C buggy objects must clang-build, verifier-load, and run for ten trials: map cases assert truncation to \texttt{\{1,2\}} or native-endian reinterpretation of \texttt{conn\{1,2\}} as \texttt{u64}; the context case asserts only that the wrong-typed XDP object executes (our host rejects XDP \texttt{ctx\_in}, so we do not claim a non-zero queue/ifindex remapping oracle).
+% 对比问题是 \tool{} 是否捕获原有路径仍接受的缺陷。
 
 \begin{table}[H]
 \centering
@@ -400,7 +400,7 @@ Map value reinterpreted as \texttt{u64} & representation & compile reject & runt
 \end{tabular}
 \end{table}
 
-Table~\ref{tab:published} shows \tool{} is strictly earlier on all three exemplars (two invariant families). Corrected siblings compile in \tool{} and pass the same C runtime harness, so rejections are not incidental parse failures. Local C mistakes such as undeclared maps or oversized stacks remain ties: clang already rejects them. Typing therefore helps on cross-boundary relations that byte-oriented C checking and the verifier do not treat as type errors. We do not claim prevalence beyond these exemplars, nor an advantage over Aya's typed Rust surface, which Heimdall already reports for the same classes.
+Table~\ref{tab:published} shows \tool{} is strictly earlier on all three exemplars (two invariant families). Corrected siblings generate and pass the shared runtime harness in both \tool{} and C, so rejections are not incidental parse failures. Local C mistakes such as undeclared maps or oversized stacks remain ties: clang already rejects them. Typing therefore helps on cross-boundary relations that byte-oriented C checking and the verifier do not treat as type errors. We do not claim prevalence beyond these exemplars, nor an advantage over Aya's typed Rust surface, which Heimdall already reports for the same classes.
 % 表~\ref{tab:published} 显示 \tool{} 在全部三个范例上严格更早。
 
 \FloatBarrier
@@ -467,7 +467,7 @@ Q3 asks whether typing preserves the stock path rather than replacing it. Of 43 
 \section{Limitations}
 \label{sec:limits}
 
-The early-detection comparison uses three published exemplars rather than bugs mined from production revision histories, so it does not establish prevalence. Context-field remapping is shown by loading and executing the wrong-typed XDP object; non-zero queue/ifindex injection via \code{BPF_PROG_TEST_RUN} ctx is unsupported on our host, so that case does not claim a non-zero field oracle. Lifecycle typing enforces a producer/consumer handle distinction without full typestate, so use-after-detach and leaked handles remain possible. Change-amplification uses five checked-in micro-edits, not developer-time studies. Traffic numbers are local sanity checks.
+The early-detection comparison uses three published exemplars rather than bugs mined from production revision histories, so it does not establish prevalence. For the context exemplar we claim only that C/libbpf accepts and executes the wrong-typed XDP object while \tool{} rejects it at compile time; non-zero queue/ifindex injection via \code{BPF_PROG_TEST_RUN} \texttt{ctx\_in} is unsupported on our host, so that row is labeled runtime accept rather than a field-remapping reproduction. Map-schema rows do reproduce truncated or reinterpreted values. Lifecycle typing enforces a producer/consumer handle distinction without full typestate, so use-after-detach and leaked handles remain possible. Change-amplification uses five checked-in micro-edits, not developer-time studies. Traffic numbers are local sanity checks.
 % 早期检测对比使用三个已发表范例而非生产修订历史中的错误，因此不建立普遍性。
 
 \section{Related Work}

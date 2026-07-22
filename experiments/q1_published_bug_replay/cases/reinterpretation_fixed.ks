@@ -1,19 +1,6 @@
-struct xdp_md {
-  data: u32,
-  data_end: u32,
-  data_meta: u32,
-  ingress_ifindex: u32,
-  rx_queue_index: u32,
-  egress_ifindex: u32,
-}
-
-enum xdp_action {
-  XDP_ABORTED = 0,
-  XDP_DROP = 1,
-  XDP_PASS = 2,
-  XDP_TX = 3,
-  XDP_REDIRECT = 4,
-}
+// Corrected control for Heimdall Listing 6 BUG 2.
+// Writes observed fields so the shared runtime oracle can check them.
+include "../headers/xdp.kh"
 
 struct Conn {
   src_ip: u32,
@@ -21,10 +8,13 @@ struct Conn {
 }
 
 var data : array<u32, Conn>(1)
+var observed : array<u32, u32>(2)
 
 @xdp fn map_schema_fixed(ctx: *xdp_md) -> xdp_action {
   data[0] = Conn { src_ip: 1, dst_ip: 2 }
   var conn: Conn = data[0]
+  observed[0] = conn.src_ip
+  observed[1] = conn.dst_ip
   return XDP_PASS
 }
 

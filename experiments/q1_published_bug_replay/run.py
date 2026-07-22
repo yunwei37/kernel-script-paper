@@ -210,9 +210,21 @@ def ks_compile(compiler: Path, src: Path, out: Path) -> tuple[int, str]:
     return res.returncode, text
 
 
+def ks_make_ebpf(out: Path, stem: str) -> tuple[int, str, Path | None]:
+    """Build the generated eBPF object for a successful KernelScript compile."""
+    make = run(["make", "ebpf-only"], cwd=out, timeout=180)
+    text = make.stdout + make.stderr
+    write(LOGS / f"{stem}.ks.make.log", text)
+    if make.returncode != 0:
+        return make.returncode, text, None
+    objs = sorted(out.glob("*.ebpf.o"))
+    if not objs:
+        return 1, text + "\nmissing *.ebpf.o after make ebpf-only\n", None
+    return 0, text, objs[0]
+
+
 def clang_build(src: Path, obj: Path, inc: Path) -> tuple[int, str]:
     obj.parent.mkdir(parents=True, exist_ok=True)
-    # Copy case source next to vmlinux include path for reproducible -I.
     cmd = [
         "clang",
         "-target",
@@ -274,6 +286,35 @@ def match_diag(text: str, expected: str) -> bool:
     return expected.lower() in text.lower()
 
 
+def c_bug_stage_for(pair_name: str, oracle_ok: bool) -> tuple[str, str]:
+    """Honest stage labels for C buggy objects that load and run.
+
+    Map-schema cases reproduce a concrete wrong value (truncation /
+    reinterpretation). The context case only proves the wrong-typed XDP object
+    executes under BPF_PROG_TEST_RUN; host test-run rejects XDP ctx_in, so we
+    do not claim non-zero misnamed-field remapping.
+    """
+    if not oracle_ok:
+        return "runtime_oracle_fail", "runtime oracle failed"
+    if pair_name == "context":
+        return (
+            "runtime_accept",
+            "verifier accepted; executed under BPF_PROG_TEST_RUN "
+            "(no non-zero field-remapping oracle; ctx_in unsupported)",
+        )
+    if pair_name == "oversized_update":
+        return (
+            "runtime_wrong",
+            "verifier accepted; map value truncated to native {1,2} in 8B slot",
+        )
+    if pair_name == "reinterpretation":
+        return (
+            "runtime_wrong",
+            "verifier accepted; conn{1,2} reinterpreted as native-endian u64",
+        )
+    return "runtime_accept", "verifier accepted; runtime oracle passed"
+
+
 def evaluate_pair(
     pair: Pair,
     compiler: Path,
@@ -290,9 +331,14 @@ def evaluate_pair(
         "family": pair.family,
         "listing": pair.listing,
         "note": pair.note,
+        "defect_oracle": (
+            "map_value"
+            if pair.name in {"oversized_update", "reinterpretation"}
+            else "runtime_accept_only"
+        ),
     }
 
-    # --- KernelScript buggy ---
+    # --- KernelScript buggy (compile-time reject with exact diagnostic) ---
     rc, text = ks_compile(compiler, bug_ks, BUILD / "ks" / f"{pair.name}_bug")
     expected = EXPECTED_DIAG[pair.name]
     ks_bug_ok = rc != 0 and match_diag(text, expected)
@@ -301,11 +347,35 @@ def evaluate_pair(
     row["ks_bug_diag_match"] = ks_bug_ok
     row["ks_bug_detail"] = text.strip().splitlines()[-1] if text.strip() else ""
 
-    # --- KernelScript fixed ---
-    rc_f, text_f = ks_compile(compiler, fix_ks, BUILD / "ks" / f"{pair.name}_fixed")
-    row["ks_fixed_stage"] = "compile_accept" if rc_f == 0 else "compile_reject"
-    row["ks_fixed_ok"] = rc_f == 0
-    row["ks_fixed_detail"] = text_f.strip().splitlines()[-1] if text_f.strip() else ""
+    # --- KernelScript fixed: compile → make ebpf → verifier → same oracle ---
+    ks_out = BUILD / "ks" / f"{pair.name}_fixed"
+    rc_f, text_f = ks_compile(compiler, fix_ks, ks_out)
+    if rc_f != 0:
+        row["ks_fixed_stage"] = "compile_reject"
+        row["ks_fixed_ok"] = False
+        row["ks_fixed_detail"] = text_f.strip().splitlines()[-1] if text_f.strip() else ""
+    else:
+        mrc, mtext, ks_obj = ks_make_ebpf(ks_out, f"{pair.name}_fixed")
+        if mrc != 0 or ks_obj is None:
+            row["ks_fixed_stage"] = "build_fail"
+            row["ks_fixed_ok"] = False
+            row["ks_fixed_detail"] = mtext[:400]
+        else:
+            vstage, vdetail = verifier_load(ks_obj, f"ks_{pair.name}_fixed")
+            if vstage != "verifier_accept":
+                row["ks_fixed_stage"] = "verifier_reject"
+                row["ks_fixed_ok"] = False
+                row["ks_fixed_detail"] = vdetail
+            else:
+                ok, payload = run_oracle(oracle, ks_obj, f"{pair.name}_fixed")
+                row["ks_fixed_stage"] = "runtime_ok" if ok else "runtime_oracle_fail"
+                row["ks_fixed_ok"] = ok
+                row["ks_fixed_oracle"] = payload
+                row["ks_fixed_detail"] = (
+                    "KS fixed control: generate/load/run oracle passed"
+                    if ok
+                    else payload.get("raw_stderr", "oracle failed")
+                )
 
     # --- C buggy ---
     obj_bug = BUILD / "c" / f"{pair.name}_bug.o"
@@ -322,12 +392,11 @@ def evaluate_pair(
             row["c_bug_runtime_ok"] = False
         else:
             ok, payload = run_oracle(oracle, obj_bug, f"{pair.name}_bug")
-            row["c_bug_stage"] = "runtime_wrong" if ok else "runtime_oracle_fail"
+            stage, detail = c_bug_stage_for(pair.name, ok)
+            row["c_bug_stage"] = stage
             row["c_bug_runtime_ok"] = ok
             row["c_bug_oracle"] = payload
-            row["c_bug_detail"] = "verifier accepted; runtime oracle reproduced defect" if ok else payload.get(
-                "raw_stderr", vdetail
-            )
+            row["c_bug_detail"] = detail if ok else payload.get("raw_stderr", vdetail)
 
     # --- C fixed ---
     obj_fix = BUILD / "c" / f"{pair.name}_fixed.o"
@@ -349,13 +418,16 @@ def evaluate_pair(
             row["c_fixed_oracle"] = payload
             row["c_fixed_detail"] = "control passed" if ok else payload.get("raw_stderr", "")
 
-    # Verdict: positive when KS rejects with expected diag, fixed KS compiles,
-    # C buggy reaches runtime_wrong, and C fixed control passes.
+    # Positive: KS rejects with expected diag; both fixed controls pass the
+    # shared runtime path; C buggy reaches a post-verifier runtime stage
+    # (runtime_wrong for map schema, runtime_accept for context).
+    c_bug_later = row.get("c_bug_stage") in {"runtime_wrong", "runtime_accept"}
     positive = (
         bool(row["ks_bug_diag_match"])
-        and bool(row["ks_fixed_ok"])
-        and row.get("c_bug_stage") == "runtime_wrong"
+        and bool(row.get("ks_fixed_ok"))
         and bool(row.get("c_fixed_ok"))
+        and c_bug_later
+        and bool(row.get("c_bug_runtime_ok"))
     )
     if positive:
         row["verdict"] = "ks_earlier"
@@ -379,6 +451,14 @@ def write_result_md(rows: list[dict], summary: dict) -> None:
         f"Status: **{summary['status']}**",
         f"Positive (ks_earlier) rows: {summary['ks_earlier']} / {summary['total']}",
         "",
+        "Stage vocabulary:",
+        "- `runtime_wrong`: C buggy object loads and the defect-specific map oracle holds",
+        "  (truncation or reinterpretation).",
+        "- `runtime_accept`: C buggy object loads and executes under BPF_PROG_TEST_RUN;",
+        "  used for the context case where non-zero field remapping is **not** claimed",
+        "  (`ctx_in` unsupported on this host).",
+        "- KS fixed controls run generate → `make ebpf-only` → verifier → shared oracle.",
+        "",
         "| Defect | Listing | KS buggy | C buggy | KS fixed | C fixed | Verdict |",
         "|---|---|---|---|---|---|---|",
     ]
@@ -392,9 +472,11 @@ def write_result_md(rows: list[dict], summary: dict) -> None:
         "",
         "## Claim cap",
         "",
-        "KernelScript detects these published verifier-accepted exemplars from",
-        "two invariant families earlier than stock C/libbpf on this toolchain.",
-        "This run does not establish prevalence or an advantage over Aya.",
+        "KernelScript rejects these three published verifier-accepted exemplars at",
+        "compile time while C/libbpf builds, loads, and runs them on this toolchain.",
+        "Map-schema rows reproduce wrong values; the context row only claims runtime",
+        "accept of the wrong-typed object (no non-zero remapping oracle).",
+        "No prevalence claim; no Aya comparison.",
         "",
     ]
     write(EXP / "result.md", "\n".join(lines) + "\n")

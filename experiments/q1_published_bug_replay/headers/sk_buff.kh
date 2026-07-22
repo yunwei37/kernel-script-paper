@@ -1,0 +1,22 @@
+// Minimal TC context layout for the Heimdall Listing 5 mismatch case.
+// Kept separate from xdp.kh so the wrong-context bug can name *__sk_buff.
+
+struct __sk_buff {
+  len: u32,
+  pkt_type: u32,
+  mark: u32,
+  queue_mapping: u32,
+  protocol: u32,
+  vlan_present: u32,
+  vlan_tci: u32,
+  vlan_proto: u32,
+  priority: u32,
+  ingress_ifindex: u32,
+  ifindex: u32,
+  tc_index: u32,
+  cb: u32,
+  hash: u32,
+  tc_classid: u32,
+  data: u32,
+  data_end: u32,
+}

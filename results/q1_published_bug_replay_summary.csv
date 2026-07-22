@@ -1,4 +1,4 @@
 name,family,listing,ks_bug_stage,ks_bug_diag_match,c_bug_stage,ks_fixed_stage,c_fixed_stage,verdict
-context,signature/domain,Heimdall Listing 5,compile_reject,True,runtime_wrong,compile_accept,runtime_ok,ks_earlier
-oversized_update,representation,Heimdall Listing 6 (BUG 1),compile_reject,True,runtime_wrong,compile_accept,runtime_ok,ks_earlier
-reinterpretation,representation,Heimdall Listing 6 (BUG 2),compile_reject,True,runtime_wrong,compile_accept,runtime_ok,ks_earlier
+context,signature/domain,Heimdall Listing 5,compile_reject,True,runtime_accept,runtime_ok,runtime_ok,ks_earlier
+oversized_update,representation,Heimdall Listing 6 (BUG 1),compile_reject,True,runtime_wrong,runtime_ok,runtime_ok,ks_earlier
+reinterpretation,representation,Heimdall Listing 6 (BUG 2),compile_reject,True,runtime_wrong,runtime_ok,runtime_ok,ks_earlier

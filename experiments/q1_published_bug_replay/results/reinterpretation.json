@@ -3,13 +3,23 @@
   "family": "representation",
   "listing": "Heimdall Listing 6 (BUG 2)",
   "note": "conn map lookup reinterpreted as unrelated stats u64",
+  "defect_oracle": "map_value",
   "ks_bug_stage": "compile_reject",
   "ks_bug_expected_diag": "Type mismatch in declaration",
   "ks_bug_diag_match": true,
   "ks_bug_detail": "\u274c Type error in phase Type Checking at :0:-1: Type mismatch in declaration",
-  "ks_fixed_stage": "compile_accept",
+  "ks_fixed_stage": "runtime_ok",
   "ks_fixed_ok": true,
-  "ks_fixed_detail": "\ud83d\udd28 To build: cd /home/yunwei37/workspace/kernel-script-paper/results/build/q1_published_bug_replay/ks/reinterpretation_fixed && make",
+  "ks_fixed_oracle": {
+    "raw_stdout": "{\"case\":\"reinterpretation_fixed\",\"oracle\":\"ok\",\"src\":1,\"dst\":2,\"trials\":10}",
+    "raw_stderr": "",
+    "case": "reinterpretation_fixed",
+    "oracle": "ok",
+    "src": 1,
+    "dst": 2,
+    "trials": 10
+  },
+  "ks_fixed_detail": "KS fixed control: generate/load/run oracle passed",
   "c_bug_stage": "runtime_wrong",
   "c_bug_runtime_ok": true,
   "c_bug_oracle": {
@@ -21,7 +31,7 @@
     "endian_native": true,
     "trials": 10
   },
-  "c_bug_detail": "verifier accepted; runtime oracle reproduced defect",
+  "c_bug_detail": "verifier accepted; conn{1,2} reinterpreted as native-endian u64",
   "c_fixed_stage": "runtime_ok",
   "c_fixed_ok": true,
   "c_fixed_oracle": {
